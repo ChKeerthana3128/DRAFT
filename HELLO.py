@@ -233,7 +233,7 @@ if submit_button:
     if 'savings_rate_filter' not in st.session_state:
         st.session_state.savings_rate_filter = suggested_savings_rate
     if 'income_growth_rate' not in st.session_state:
-        st.session_state.income_growth_rate = suggested_income_growth
+        st.session_state.incode_growth_rate = suggested_income_growth
     if 'expense_growth_rate' not in st.session_state:
         st.session_state.expense_growth_rate = suggested_expense_growth
     
