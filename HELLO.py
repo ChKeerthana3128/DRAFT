@@ -63,11 +63,13 @@ model, r2_score_val = get_trained_model()
 
 # Helper Functions
 def prepare_input(input_data):
-    """Prepare user input data for prediction without normalization."""
+    """Prepare user input data for prediction without normalization, using only training features."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
                     "Desired_Savings_Percentage"]
-    input_df = pd.DataFrame({col: [input_data[col]] for col in feature_cols})
+    # Filter input_data to include only feature columns
+    input_dict = {col: input_data[col] for col in feature_cols if col in input_data}
+    input_df = pd.DataFrame([input_dict])
     return input_df
 
 def calculate_financial_health_score(income, savings, debt, miscellaneous):
@@ -182,7 +184,7 @@ with st.form(key="financial_form"):
 
 # Process Inputs and Display Results
 if submit_button:
-    # Create input dictionary
+    # Create input dictionary with only training features
     input_data = {
         "Income": income,
         "Age": age,
@@ -195,8 +197,7 @@ if submit_button:
         "Healthcare": healthcare,
         "Education": education,
         "Miscellaneous": miscellaneous,
-        "Desired_Savings_Percentage": desired_savings_percentage,
-        "Desired_Savings": income * (desired_savings_percentage / 100)
+        "Desired_Savings_Percentage": desired_savings_percentage
     }
     
     total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, miscellaneous])
@@ -205,7 +206,7 @@ if submit_button:
     
     # Sidebar: Financial Health Score
     st.sidebar.subheader("Financial Health")
-    health_score = calculate_financial_health_score(income, input_data["Desired_Savings"], debt, miscellaneous)
+    health_score = calculate_financial_health_score(income, income * (desired_savings_percentage / 100), debt, miscellaneous)
     st.sidebar.metric("Score", f"{health_score:.1f}/100")
     if health_score < 40:
         st.sidebar.error("⚠️ Low: Take action!")
