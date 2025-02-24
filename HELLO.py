@@ -13,11 +13,11 @@ warnings.filterwarnings("ignore")
 # Set page configuration
 st.set_page_config(page_title="AI Financial Dashboard (INR)", layout="wide")
 
-# Load and Normalize Dataset
+# Load and Normalize Dataset with File Uploader
 @st.cache_data
-def load_and_normalize_data():
-    # Replace with your dataset file path
-    data = pd.read_csv("fianacial_data.csv")  # Replace with actual file path
+def load_and_normalize_data(uploaded_file):
+    """Load and normalize dataset from uploaded file."""
+    data = pd.read_csv("financial_data.csv")
     
     # Numeric columns for normalization (excluding Desired_Savings since it's derived)
     numeric_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
@@ -30,8 +30,6 @@ def load_and_normalize_data():
     data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
     
     return data, scaler
-
-data, scaler = load_and_normalize_data()
 
 # Model Training
 def train_model(data):
@@ -53,11 +51,9 @@ def train_model(data):
     return model, r2, rmse
 
 @st.cache_resource
-def get_trained_model():
+def get_trained_model(data):
     model, r2, rmse = train_model(data)
     return model, r2, rmse
-
-model, r2_score_val, rmse_val = get_trained_model()
 
 # Helper Functions
 def normalize_input(input_data, scaler):
@@ -107,9 +103,17 @@ def predict_future_savings(income, total_expenses, savings_rate, years):
     annual_savings = income * (savings_rate / 100) - total_expenses
     return annual_savings * years
 
-# Sidebar Layout
+# Sidebar Layout with File Uploader
 st.sidebar.title("Financial Insights")
 st.sidebar.markdown("Your key financial metrics in INR.")
+
+uploaded_file = st.sidebar.file_uploader("Upload Your Dataset (CSV)", type=["csv"])
+if not uploaded_file:
+    st.error("Please upload a dataset to proceed.")
+    st.stop()
+
+data, scaler = load_and_normalize_data(uploaded_file)
+model, r2_score_val, rmse_val = get_trained_model(data)
 
 # Main App
 st.title("AI Financial Dashboard (INR)")
