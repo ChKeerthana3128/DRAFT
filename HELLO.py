@@ -17,15 +17,15 @@ st.set_page_config(page_title="AI Financial Dashboard (INR)", layout="wide")
 @st.cache_data
 def load_and_normalize_data():
     # Replace with your dataset file path
-    data = pd.read_csv("financial_data.csv")  # Replace with actual file path
+    data = pd.read_csv("fianacial_data.csv")  # Replace with actual file path
     
-    # Select numeric columns for normalization
+    # Numeric columns for normalization (excluding Desired_Savings since it's derived)
     numeric_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Eating_Out", "Entertainment", "Utilities", 
                     "Healthcare", "Education", "Miscellaneous", "Desired_Savings_Percentage", 
                     "Disposable_Income"]
     
-    # Normalize numeric columns using MinMaxScaler
+    # Normalize numeric columns
     scaler = MinMaxScaler()
     data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
     
@@ -62,12 +62,12 @@ model, r2_score_val, rmse_val = get_trained_model()
 # Helper Functions
 def normalize_input(input_data, scaler):
     """Normalize user input data using the same scaler as training data."""
-    numeric_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
+    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Eating_Out", "Entertainment", "Utilities", 
                     "Healthcare", "Education", "Miscellaneous", "Desired_Savings_Percentage"]
-    input_df = pd.DataFrame([input_data], columns=numeric_cols)
-    input_normalized = scaler.transform(input_df[numeric_cols])
-    return pd.DataFrame(input_normalized, columns=numeric_cols)
+    input_df = pd.DataFrame([input_data])[feature_cols]  # Only use feature columns
+    input_normalized = scaler.transform(input_df)
+    return pd.DataFrame(input_normalized, columns=feature_cols)
 
 def denormalize_value(value, scaler, column_idx):
     """Denormalize a single value back to original scale."""
@@ -91,10 +91,10 @@ def calculate_financial_health_score(input_data):
 
 def predict_disposable_income(model, input_data, scaler):
     """Predict disposable income and denormalize result."""
+    normalized_input = normalize_input(input_data, scaler)
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Eating_Out", "Entertainment", "Utilities", 
                     "Healthcare", "Education", "Miscellaneous", "Desired_Savings_Percentage"]
-    normalized_input = normalize_input(input_data, scaler)
     prediction_normalized = model.predict(normalized_input[feature_cols])[0]
     
     # Denormalize prediction (Disposable_Income is the last column in numeric_cols)
@@ -109,11 +109,11 @@ def predict_future_savings(income, total_expenses, savings_rate, years):
 
 # Sidebar Layout
 st.sidebar.title("Financial Insights")
-st.sidebar.markdown("Your key financial metrics and predictions.")
+st.sidebar.markdown("Your key financial metrics in INR.")
 
 # Main App
 st.title("AI Financial Dashboard (INR)")
-st.markdown("Enter your financial details to get personalized insights in Indian Rupees.")
+st.markdown("Enter your financial details to get personalized predictions and insights in Indian Rupees.")
 
 # User Input Form (Main Area)
 with st.form(key="financial_form"):
@@ -158,13 +158,12 @@ if submit_button:
         "Healthcare": healthcare,
         "Education": education,
         "Miscellaneous": miscellaneous,
-        "Desired_Savings_Percentage": desired_savings_percentage
+        "Desired_Savings_Percentage": desired_savings_percentage,
+        "Desired_Savings": income * (desired_savings_percentage / 100)
     }
     
     total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, eating_out, 
                           entertainment, utilities, healthcare, education, miscellaneous])
-    desired_savings = income * (desired_savings_percentage / 100)
-    input_data["Desired_Savings"] = desired_savings
     
     # Sidebar: Financial Health Score
     st.sidebar.subheader("Financial Health")
@@ -225,13 +224,13 @@ if submit_button:
     # Actionable Recommendations
     st.subheader("Personalized Recommendations")
     if eating_out > income * 0.1:
-        st.write("- 🍽️ *Reduce Eating Out*: Spending exceeds 10% of income (₹{eating_out:,.2f}).")
+        st.write(f"- 🍽️ *Reduce Eating Out*: Spending exceeds 10% of income (₹{eating_out:,.2f}).")
     if loan_repayment > 0:
-        st.write("- 💳 *Clear Debt*: Loan repayment (₹{loan_repayment:,.2f}) reduces your disposable income.")
+        st.write(f"- 💳 *Clear Debt*: Loan repayment (₹{loan_repayment:,.2f}) reduces your disposable income.")
     if desired_savings_percentage < 10:
-        st.write("- 💰 *Boost Savings*: Increase your savings rate from {desired_savings_percentage:.1f}% to at least 10%.")
+        st.write(f"- 💰 *Boost Savings*: Increase your savings rate from {desired_savings_percentage:.1f}% to at least 10%.")
     if total_expenses > income * 0.8:
-        st.write("- 📉 *Cut Expenses*: Spending (₹{total_expenses:,.2f}) is over 80% of income—review your budget!")
+        st.write(f"- 📉 *Cut Expenses*: Spending (₹{total_expenses:,.2f}) is over 80% of income—review your budget!")
 
 # Model Performance in Sidebar
 st.sidebar.subheader("Model Accuracy")
