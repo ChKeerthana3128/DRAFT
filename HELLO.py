@@ -16,8 +16,7 @@ st.set_page_config(page_title="AI Financial Dashboard (INR)", layout="wide")
 @st.cache_data
 def load_data():
     """Load the dataset from a CSV file without normalization."""
-    # Assumes the dataset is saved as 'financial_data.csv' in the working directory
-    data = pd.read_csv("financial_data.csv")
+    data = pd.read_csv("financial_data.csv")  # Replace with your dataset path
     return data
 
 # Load data
@@ -89,11 +88,11 @@ def predict_future_savings(income, total_expenses, savings_rate, years, income_g
     
     for year in range(years + 1):
         annual_savings = current_income * (savings_rate / 100) - current_expenses
-        savings_trajectory.append(annual_savings * year if year > 0 else 0)  # Cumulative savings
-        current_income *= (1 + income_growth_rate / 100)  # Apply income growth
-        current_expenses *= (1 + expense_growth_rate / 100)  # Apply expense growth
+        savings_trajectory.append(annual_savings * year if year > 0 else 0)
+        current_income *= (1 + income_growth_rate / 100)
+        current_expenses *= (1 + expense_growth_rate / 100)
     
-    return savings_trajectory[-1]  # Return total savings at the end of the period
+    return savings_trajectory[-1]
 
 def get_savings_trajectory(income, total_expenses, savings_rate, years, income_growth_rate, expense_growth_rate):
     """Get savings trajectory for plotting."""
@@ -111,19 +110,19 @@ def get_savings_trajectory(income, total_expenses, savings_rate, years, income_g
 
 def suggest_wealth_management_params(income, total_expenses, years_to_retirement):
     """Suggest Wealth Management parameters based on years to retirement."""
-    # Desired Retirement Fund: 20x annual expenses as a starting point
-    suggested_fund = total_expenses * 12 * 20  # 20 years of annual expenses
+    # Desired Retirement Fund: 20x annual expenses
+    suggested_fund = total_expenses * 12 * 20
     
-    # Savings Rate: Adjust to reach fund in given years (simplified linear estimate)
+    # Savings Rate: Adjusted to reach fund in given years
     annual_savings_needed = suggested_fund / years_to_retirement
     disposable_income = income - total_expenses
     suggested_savings_rate = (annual_savings_needed / income) * 100 if income > 0 else 10.0
     suggested_savings_rate = min(max(suggested_savings_rate, 5.0), 50.0)  # Cap between 5% and 50%
     
-    # Income Growth Rate: Modest estimate based on age and years (e.g., 3% if young, lower if near retirement)
+    # Income Growth Rate: Based on time horizon
     suggested_income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
     
-    # Expense Growth Rate: Assume inflation (e.g., 2-3%)
+    # Expense Growth Rate: Assume inflation
     suggested_expense_growth = 2.5
     
     return suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth
@@ -161,29 +160,16 @@ with st.form(key="financial_form"):
         miscellaneous = st.number_input("Miscellaneous (₹)", min_value=0.0, value=1000.0, step=100.0)
         desired_savings_percentage = st.number_input("Desired Savings Percentage (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0)
     
-    # Wealth Management Filters within the Form
-    st.subheader("Wealth Management Filters")
+    # Retirement Years Input
+    st.subheader("Retirement Planning")
     max_years_to_retirement = max(1, 62 - int(age))  # Max years until age 62
-    default_years = min(30, max_years_to_retirement)  # Default to 30 or max if less
+    default_years = min(30, max_years_to_retirement)
     
     if age < 62:
         years_to_retirement = st.slider("Years to Retirement (up to age 62)", 1, max_years_to_retirement, default_years)
     else:
         years_to_retirement = st.slider("Years to Retirement (post-62)", 1, 5, 1)
         st.write("Note: As you're over 62, a shorter range is provided.")
-    
-    # Calculate total expenses for suggestions
-    total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, eating_out, 
-                          entertainment, utilities, healthcare, education, miscellaneous])
-    
-    # Suggest Wealth Management parameters
-    suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
-    
-    # Wealth Management Inputs with Suggested Defaults
-    desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=float(suggested_fund), step=100000.0)
-    savings_rate_filter = st.slider("Adjust Savings Rate (%)", 0.0, 100.0, suggested_savings_rate, step=1.0)
-    income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, suggested_income_growth, step=0.5)
-    expense_growth_rate = st.slider("Annual Expense Growth Rate (%)", 0.0, 10.0, suggested_expense_growth, step=0.5)
     
     submit_button = st.form_submit_button(label="Analyze My Finances")
 
@@ -209,6 +195,12 @@ if submit_button:
         "Desired_Savings": income * (desired_savings_percentage / 100)
     }
     
+    total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, eating_out, 
+                          entertainment, utilities, healthcare, education, miscellaneous])
+    
+    # Suggest Wealth Management parameters based on submitted years_to_retirement
+    suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
+    
     # Sidebar: Financial Health Score
     st.sidebar.subheader("Financial Health")
     health_score = calculate_financial_health_score(input_data)
@@ -225,9 +217,44 @@ if submit_button:
     st.sidebar.subheader("Predicted Disposable Income")
     st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
     
-    # Sidebar: Wealth Management Results
-    st.sidebar.subheader("Wealth Management")
+    # Wealth Management Section with Dynamic Adjustments
+    st.subheader("Wealth Management")
+    st.write(f"Adjust your retirement plan for {years_to_retirement} years:")
+    
+    # Initialize session state for Wealth Management parameters if not already set
+    if 'desired_retirement_fund' not in st.session_state:
+        st.session_state.desired_retirement_fund = suggested_fund
+    if 'savings_rate_filter' not in st.session_state:
+        st.session_state.savings_rate_filter = suggested_savings_rate
+    if 'income_growth_rate' not in st.session_state:
+        st.session_state.income_growth_rate = suggested_income_growth
+    if 'expense_growth_rate' not in st.session_state:
+        st.session_state.expense_growth_rate = suggested_expense_growth
+    
+    # Update Wealth Management parameters based on years_to_retirement
+    def update_wealth_params():
+        suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, st.session_state.years_to_retirement)
+        st.session_state.desired_retirement_fund = suggested_fund
+        st.session_state.savings_rate_filter = suggested_savings_rate
+        st.session_state.income_growth_rate = suggested_income_growth
+        st.session_state.expense_growth_rate = suggested_expense_growth
+    
+    # Wealth Management Filters with Callbacks
+    st.session_state.years_to_retirement = st.slider("Years to Retirement", 1, max_years_to_retirement if age < 62 else 5, years_to_retirement, on_change=update_wealth_params)
+    desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=float(st.session_state.desired_retirement_fund), step=100000.0, key="fund")
+    savings_rate_filter = st.slider("Adjust Savings Rate (%)", 0.0, 100.0, st.session_state.savings_rate_filter, step=1.0, key="savings")
+    income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, st.session_state.income_growth_rate, step=0.5, key="income_growth")
+    expense_growth_rate = st.slider("Annual Expense Growth Rate (%)", 0.0, 10.0, st.session_state.expense_growth_rate, step=0.5, key="expense_growth")
+    
+    # Update session state when sliders are manually adjusted
+    st.session_state.desired_retirement_fund = desired_retirement_fund
+    st.session_state.savings_rate_filter = savings_rate_filter
+    st.session_state.income_growth_rate = income_growth_rate
+    st.session_state.expense_growth_rate = expense_growth_rate
+    
+    # Calculate savings with adjusted parameters
     future_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
+    st.sidebar.subheader("Wealth Management Results")
     st.sidebar.write(f"Projected Savings: **₹{future_savings:,.2f}**")
     required_savings_rate = (desired_retirement_fund / (income * years_to_retirement)) * 100 if income > 0 else 0
     st.sidebar.write(f"Required Savings Rate (at current income): **{required_savings_rate:.2f}%**")
@@ -255,7 +282,7 @@ if submit_button:
     savings_trajectory = get_savings_trajectory(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
     
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(years, savings_trajectory[1:], marker="o", color="green", label="Projected Savings")  # Skip year 0
+    ax.plot(years, savings_trajectory[1:], marker="o", color="green", label="Projected Savings")
     ax.axhline(y=desired_retirement_fund, color="red", linestyle="--", label="Goal")
     ax.set_title("Projected Savings Growth (INR)")
     ax.set_xlabel("Years")
