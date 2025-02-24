@@ -37,11 +37,11 @@ data = load_data()
 
 # Model Training
 def train_model(data):
-    """Train a Linear Regression model on raw data."""
+    """Train a LinearRegression model on raw data with explicit feature ordering."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
                     "Desired_Savings_Percentage"]
-    X = data[feature_cols]
+    X = data[feature_cols].copy()  # Ensure we work with a copy to avoid SettingWithCopyWarning
     y = data["Disposable_Income"]
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -67,9 +67,17 @@ def prepare_input(input_data):
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
                     "Desired_Savings_Percentage"]
-    # Filter input_data to include only feature columns
-    input_dict = {col: input_data[col] for col in feature_cols if col in input_data}
-    input_df = pd.DataFrame([input_dict])
+    # Ensure all required features are present, with defaults if missing
+    input_dict = {}
+    for col in feature_cols:
+        if col in input_data:
+            input_dict[col] = input_data[col]
+        else:
+            # Default to 0 or a reasonable value for missing numeric inputs
+            input_dict[col] = 0.0 if col != "Desired_Savings_Percentage" else 10.0  # Default savings percentage
+    
+    # Create DataFrame with explicit column ordering to match training
+    input_df = pd.DataFrame([input_dict], columns=feature_cols)
     return input_df
 
 def calculate_financial_health_score(income, savings, debt, miscellaneous):
@@ -87,8 +95,12 @@ def predict_disposable_income(model, input_data):
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
                     "Desired_Savings_Percentage"]
-    prediction = model.predict(input_df[feature_cols])[0]
-    return max(0, prediction)  # Ensure non-negative disposable income
+    try:
+        prediction = model.predict(input_df[feature_cols])[0]
+        return max(0, prediction)  # Ensure non-negative disposable income
+    except ValueError as e:
+        st.error(f"Prediction error: {str(e)}. Check input data matches training features.")
+        return 0.0  # Fallback to 0 if prediction fails
 
 def predict_future_savings(income, total_expenses, savings_rate, years, income_growth_rate=0.0, expense_growth_rate=0.0):
     """Predict future savings in INR with growth rates, preventing negative savings."""
@@ -233,7 +245,7 @@ if submit_button:
     if 'savings_rate_filter' not in st.session_state:
         st.session_state.savings_rate_filter = suggested_savings_rate
     if 'income_growth_rate' not in st.session_state:
-        st.session_state.incode_growth_rate = suggested_income_growth
+        st.session_state.income_growth_rate = suggested_income_growth
     if 'expense_growth_rate' not in st.session_state:
         st.session_state.expense_growth_rate = suggested_expense_growth
     
