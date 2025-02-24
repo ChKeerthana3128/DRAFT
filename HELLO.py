@@ -81,10 +81,19 @@ def predict_disposable_income(model, input_data):
     prediction = model.predict(input_df[feature_cols])[0]
     return prediction
 
-def predict_future_savings(income, total_expenses, savings_rate, years):
-    """Predict future savings in INR."""
-    annual_savings = income * (savings_rate / 100) - total_expenses
-    return annual_savings * years
+def predict_future_savings(income, total_expenses, savings_rate, years, income_growth_rate=0.0, expense_growth_rate=0.0):
+    """Predict future savings in INR with growth rates."""
+    savings_trajectory = []
+    current_income = income
+    current_expenses = total_expenses
+    
+    for year in range(years + 1):
+        annual_savings = current_income * (savings_rate / 100) - current_expenses
+        savings_trajectory.append(annual_savings * year if year > 0 else 0)  # Cumulative savings
+        current_income *= (1 + income_growth_rate / 100)  # Apply income growth
+        current_expenses *= (1 + expense_growth_rate / 100)  # Apply expense growth
+    
+    return savings_trajectory[-1]  # Return total savings at the end of the period
 
 # Sidebar Layout
 st.sidebar.title("Financial Insights")
@@ -162,23 +171,29 @@ if submit_button:
     st.sidebar.subheader("Predicted Disposable Income")
     st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
     
-    # Sidebar: Wealth Management with dynamic range for Years to Retirement
+    # Sidebar: Wealth Management with Filters
     st.sidebar.subheader("Wealth Management")
-    max_years_to_retirement = max(1, 62 - int(age))  # Ensures at least 1 year if age > 62
+    max_years_to_retirement = max(1, 62 - int(age))  # Max years until age 62
     default_years = min(30, max_years_to_retirement)  # Default to 30 or max if less
     
     if age < 62:
-        years_to_retirement = st.sidebar.slider("Years to Retirement", 1, max_years_to_retirement, default_years)
+        years_to_retirement = st.sidebar.slider("Years to Retirement (up to age 62)", 1, max_years_to_retirement, default_years)
     else:
-        years_to_retirement = st.sidebar.slider("Years to Retirement", 1, 5, 1)  # Default range for age > 62
+        years_to_retirement = st.sidebar.slider("Years to Retirement (post-62)", 1, 5, 1)
         st.sidebar.write("Note: As you're over 62, a shorter range is provided.")
     
     desired_retirement_fund = st.sidebar.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=5000000.0, step=100000.0)
     
-    future_savings = predict_future_savings(income, total_expenses, desired_savings_percentage, years_to_retirement)
+    # Filter Options
+    st.sidebar.markdown("### Filters for Future Savings")
+    savings_rate_filter = st.sidebar.slider("Adjust Savings Rate (%)", 0.0, 100.0, desired_savings_percentage, step=1.0)
+    income_growth_rate = st.sidebar.slider("Annual Income Growth Rate (%)", 0.0, 10.0, 0.0, step=0.5)
+    expense_growth_rate = st.sidebar.slider("Annual Expense Growth Rate (%)", 0.0, 10.0, 0.0, step=0.5)
+    
+    future_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
     st.sidebar.write(f"Projected Savings: **₹{future_savings:,.2f}**")
     required_savings_rate = (desired_retirement_fund / (income * years_to_retirement)) * 100 if income > 0 else 0
-    st.sidebar.write(f"Required Savings Rate: **{required_savings_rate:.2f}%**")
+    st.sidebar.write(f"Required Savings Rate (at current income): **{required_savings_rate:.2f}%**")
     
     # Main Area: Detailed Insights
     st.header(f"Financial Insights for {name}")
@@ -200,9 +215,11 @@ if submit_button:
     # Savings Growth Plot
     st.subheader("Savings Growth Projection")
     years = np.arange(1, years_to_retirement + 1)
-    savings_trajectory = [predict_future_savings(income, total_expenses, desired_savings_percentage, y) for y in years]
+    savings_trajectory = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
+    savings_trajectory_list = [predict_future_savings(income, total_expenses, savings_rate_filter, y, income_growth_rate, expense_growth_rate) for y in years]
+    
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(years, savings_trajectory, marker="o", color="green", label="Current Trajectory")
+    ax.plot(years, savings_trajectory_list, marker="o", color="green", label="Projected Savings")
     ax.axhline(y=desired_retirement_fund, color="red", linestyle="--", label="Goal")
     ax.set_title("Projected Savings Growth (INR)")
     ax.set_xlabel("Years")
