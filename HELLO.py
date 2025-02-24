@@ -62,7 +62,7 @@ def calculate_financial_health_score(input_data):
     income = input_data["Income"]
     savings = input_data["Desired_Savings"]
     debt = input_data["Rent"] + input_data["Loan_Repayment"]
-    miscellaneous = input_data["Miscellaneous"]  # Includes discretionary spending
+    miscellaneous = input_data["Miscellaneous"]
     
     savings_ratio = savings / income if income > 0 else 0
     debt_ratio = debt / income if income > 0 else 0
@@ -118,11 +118,24 @@ def suggest_wealth_management_params(income, total_expenses, years_to_retirement
     suggested_expense_growth = 2.5
     return suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth
 
-# Sidebar Layout
+# Sidebar Layout with Dropdowns
 st.sidebar.title("Financial Insights")
 st.sidebar.markdown("Your key financial metrics in INR.")
 st.sidebar.subheader("Model Accuracy")
 st.sidebar.write(f"R² Score: {r2_score_val:.2f}")
+
+# Dropdown Menus for Insights
+with st.sidebar.expander("📊 Wealth Management Insights"):
+    st.write("""
+    - Plan your financial goals effectively.
+    - Allocate savings wisely based on your income.
+    """)
+
+with st.sidebar.expander("💡 Financial Health Insights"):
+    st.write("""
+    - Monitor your debt-to-income ratio.
+    - Optimize discretionary spending for better savings.
+    """)
 
 # Main App
 st.title("AI Financial Dashboard (INR)")
@@ -145,7 +158,7 @@ with st.form(key="financial_form"):
         transport = st.number_input("Transport (₹)", min_value=0.0, value=3000.0, step=100.0)
         healthcare = st.number_input("Healthcare (₹)", min_value=0.0, value=1500.0, step=100.0)
         education = st.number_input("Education (₹)", min_value=0.0, value=0.0, step=100.0)
-        miscellaneous = st.number_input("Miscellaneous (₹) [Eating Out, Entertainment, Utilities]", min_value=0.0, value=7500.0, step=100.0)  # Combined
+        miscellaneous = st.number_input("Miscellaneous (₹) [Eating Out, Entertainment, Utilities]", min_value=0.0, value=7500.0, step=100.0)
         desired_savings_percentage = st.number_input("Desired Savings Percentage (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0)
     
     # Retirement Age Input
@@ -272,7 +285,7 @@ if submit_button:
     
     # Actionable Recommendations
     st.subheader("Personalized Recommendations")
-    if miscellaneous > income * 0.2:  # Adjusted threshold since Miscellaneous now includes more
+    if miscellaneous > income * 0.2:
         st.write(f"- 📉 *Review Miscellaneous Spending*: Exceeds 20% of income (₹{miscellaneous:,.2f}).")
     if loan_repayment > 0:
         st.write(f"- 💳 *Clear Debt*: Loan repayment (₹{loan_repayment:,.2f}) reduces your disposable income.")
