@@ -82,7 +82,8 @@ def normalize_input(input_data, scaler):
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Eating_Out", "Entertainment", "Utilities", 
                     "Healthcare", "Education", "Miscellaneous", "Desired_Savings_Percentage"]
-    input_df = pd.DataFrame([input_data])[feature_cols]  # Only use feature columns
+    # Create DataFrame with only the feature columns expected by the scaler and model
+    input_df = pd.DataFrame({col: [input_data[col]] for col in feature_cols})
     input_normalized = scaler.transform(input_df)
     return pd.DataFrame(input_normalized, columns=feature_cols)
 
@@ -176,7 +177,7 @@ if submit_button:
         "Education": education,
         "Miscellaneous": miscellaneous,
         "Desired_Savings_Percentage": desired_savings_percentage,
-        "Desired_Savings": income * (desired_savings_percentage / 100)
+        "Desired_Savings": income * (desired_savings_percentage / 100)  # Calculated separately
     }
     
     total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, eating_out, 
