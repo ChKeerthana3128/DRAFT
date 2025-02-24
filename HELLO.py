@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import r2_score
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -20,6 +20,7 @@ def load_data():
     data = pd.read_csv("financial_data.csv")
     return data
 
+# Load data
 data = load_data()
 
 # Model Training
@@ -37,16 +38,16 @@ def train_model(data):
     
     y_pred = model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     
-    return model, r2, rmse
+    return model, r2
 
 @st.cache_resource
 def get_trained_model():
-    model, r2, rmse = train_model(data)
-    return model, r2, rmse
+    model, r2 = train_model(data)
+    return model, r2
 
-model, r2_score_val, rmse_val = get_trained_model()
+# Train the model
+model, r2_score_val = get_trained_model()
 
 # Helper Functions
 def prepare_input(input_data):
@@ -88,12 +89,14 @@ def predict_future_savings(income, total_expenses, savings_rate, years):
 # Sidebar Layout
 st.sidebar.title("Financial Insights")
 st.sidebar.markdown("Your key financial metrics in INR.")
+st.sidebar.subheader("Model Accuracy")
+st.sidebar.write(f"R² Score: {r2_score_val:.2f}")
 
 # Main App
 st.title("AI Financial Dashboard (INR)")
 st.markdown("Enter your financial details to get personalized predictions and insights in Indian Rupees.")
 
-# User Input Form (Main Area)
+# User Input Form
 with st.form(key="financial_form"):
     st.subheader("Enter Your Details")
     col1, col2 = st.columns(2)
@@ -146,11 +149,11 @@ if submit_button:
     # Sidebar: Financial Health Score
     st.sidebar.subheader("Financial Health")
     health_score = calculate_financial_health_score(input_data)
-    st.sidebar.metric("Health Score", f"{health_score:.1f}/100")
+    st.sidebar.metric("Score", f"{health_score:.1f}/100")
     if health_score < 40:
-        st.sidebar.error("⚠️ Low Health: Act now!")
+        st.sidebar.error("⚠️ Low: Take action!")
     elif health_score < 70:
-        st.sidebar.warning("⚠️ Moderate: Optimize!")
+        st.sidebar.warning("⚠️ Moderate: Room to improve!")
     else:
         st.sidebar.success("✅ Excellent!")
     
@@ -176,7 +179,7 @@ if submit_button:
     st.subheader("Spending Breakdown")
     spending_data = pd.Series({
         "Rent": rent, "Insurance": insurance, "Groceries": groceries, "Transport": transport,
-        "Eating_Out": eating_out, "Entertainment": entertainment, "Utilities": utilities,
+        "Eating Out": eating_out, "Entertainment": entertainment, "Utilities": utilities,
         "Healthcare": healthcare, "Education": education, "Miscellaneous": miscellaneous
     })
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -209,11 +212,6 @@ if submit_button:
         st.write(f"- 💰 *Boost Savings*: Increase your savings rate from {desired_savings_percentage:.1f}% to at least 10%.")
     if total_expenses > income * 0.8:
         st.write(f"- 📉 *Cut Expenses*: Spending (₹{total_expenses:,.2f}) is over 80% of income—review your budget!")
-
-# Model Performance in Sidebar
-st.sidebar.subheader("Model Accuracy")
-st.sidebar.write(f"R² Score: {r2_score_val:.2f}")
-st.sidebar.write(f"RMSE (INR): ₹{rmse_val:,.2f}")
 
 # Footer
 st.markdown("---")
