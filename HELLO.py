@@ -305,4 +305,4 @@ if submit_button:
 
 # Footer
 st.markdown("---")
-st.write("Built with ❤️ using Streamlit & AI/ML | All amounts in Indian Rupees (₹)")
+st.write("using Streamlit)
