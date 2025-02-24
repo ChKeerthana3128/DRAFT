@@ -8,29 +8,29 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 import warnings
 warnings.filterwarnings("ignore")
+import io
 
 # Set page configuration
 st.set_page_config(page_title="AI Financial Dashboard (INR)", layout="wide")
 
-# Load Dataset from CSV
+# Load Dataset from Provided Text
 @st.cache_data
 def load_data():
-    """Load the dataset from a CSV file without normalization."""
-    try:
-        data = pd.read_csv("financial_data.csv")
-        required_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
-                         "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
-                         "Desired_Savings_Percentage", "Disposable_Income"]
-        missing_cols = [col for col in required_cols if col not in data.columns]
-        if missing_cols:
-            raise ValueError(f"Missing columns in dataset: {missing_cols}")
-        return data
-    except FileNotFoundError:
-        st.error("Error: 'financial_data.csv' not found. Please ensure the file is in the working directory.")
-        st.stop()
-    except ValueError as e:
-        st.error(str(e))
-        st.stop()
+    """Load the dataset from the provided text and clean column names."""
+    # Since the dataset is provided as text, we'll simulate loading it from the document
+    data_text = """<Insert the full dataset text you provided here>"""  # Replace with your dataset text
+    data = pd.read_csv(io.StringIO(data_text))
+    
+    # Rename the problematic column for consistency
+    data = data.rename(columns={"Miscellaneous (Eating_Out,Entertainmentand Utilities)": "Miscellaneous"})
+    
+    required_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
+                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
+                     "Desired_Savings_Percentage", "Disposable_Income"]
+    missing_cols = [col for col in required_cols if col not in data.columns]
+    if missing_cols:
+        raise ValueError(f"Missing columns in dataset: {missing_cols}")
+    return data
 
 # Load data
 data = load_data()
@@ -41,7 +41,7 @@ def train_model(data):
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
                     "Desired_Savings_Percentage"]
-    X = data[feature_cols].copy()  # Ensure we work with a copy to avoid SettingWithCopyWarning
+    X = data[feature_cols].copy()
     y = data["Disposable_Income"]
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -63,20 +63,12 @@ model, r2_score_val = get_trained_model()
 
 # Helper Functions
 def prepare_input(input_data):
-    """Prepare user input data for prediction without normalization, using only training features."""
+    """Prepare user input data for prediction without normalization."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
                     "Desired_Savings_Percentage"]
-    # Ensure all required features are present, with defaults if missing
-    input_dict = {}
-    for col in feature_cols:
-        if col in input_data:
-            input_dict[col] = input_data[col]
-        else:
-            # Default to 0 or a reasonable value for missing numeric inputs
-            input_dict[col] = 0.0 if col != "Desired_Savings_Percentage" else 10.0  # Default savings percentage
-    
-    # Create DataFrame with explicit column ordering to match training
+    input_dict = {col: input_data.get(col, 0.0 if col != "Desired_Savings_Percentage" else 10.0) 
+                  for col in feature_cols}
     input_df = pd.DataFrame([input_dict], columns=feature_cols)
     return input_df
 
@@ -97,20 +89,20 @@ def predict_disposable_income(model, input_data):
                     "Desired_Savings_Percentage"]
     try:
         prediction = model.predict(input_df[feature_cols])[0]
-        return max(0, prediction)  # Ensure non-negative disposable income
-    except ValueError as e:
-        st.error(f"Prediction error: {str(e)}. Check input data matches training features.")
-        return 0.0  # Fallback to 0 if prediction fails
+        return max(0, prediction)
+    except Exception as e:
+        st.error(f"Prediction error: {str(e)}")
+        return 0.0
 
 def predict_future_savings(income, total_expenses, savings_rate, years, income_growth_rate=0.0, expense_growth_rate=0.0):
-    """Predict future savings in INR with growth rates, preventing negative savings."""
+    """Predict future savings in INR with growth rates."""
     savings_trajectory = []
     current_income = income
     current_expenses = total_expenses
     total_savings = 0.0
     
     for year in range(years + 1):
-        annual_savings = max(0, current_income * (savings_rate / 100) - current_expenses)  # Prevent negative savings
+        annual_savings = max(0, current_income * (savings_rate / 100) - current_expenses)
         total_savings += annual_savings
         savings_trajectory.append(total_savings)
         current_income *= (1 + income_growth_rate / 100)
@@ -119,7 +111,7 @@ def predict_future_savings(income, total_expenses, savings_rate, years, income_g
     return savings_trajectory[-1]
 
 def get_savings_trajectory(income, total_expenses, savings_rate, years, income_growth_rate, expense_growth_rate):
-    """Get savings trajectory for plotting, ensuring non-negative savings."""
+    """Get savings trajectory for plotting."""
     savings_trajectory = []
     current_income = income
     current_expenses = total_expenses
@@ -135,22 +127,20 @@ def get_savings_trajectory(income, total_expenses, savings_rate, years, income_g
     return savings_trajectory
 
 def suggest_wealth_management_params(income, total_expenses, years_to_retirement):
-    """Suggest Wealth Management parameters based on years to retirement."""
-    suggested_fund = total_expenses * 12 * 20  # 20x annual expenses
+    """Suggest Wealth Management parameters."""
+    suggested_fund = total_expenses * 12 * 20
     annual_savings_needed = suggested_fund / years_to_retirement if years_to_retirement > 0 else suggested_fund
-    suggested_savings_rate = (annual_savings_needed / income) * 100 if income > 0 else 10.0
-    suggested_savings_rate = min(max(suggested_savings_rate, 5.0), 50.0)  # Cap between 5% and 50%
+    suggested_savings_rate = min(max((annual_savings_needed / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
     suggested_income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
     suggested_expense_growth = 2.5
     return suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth
 
-# Sidebar Layout with Dropdowns
+# Sidebar Layout
 st.sidebar.title("Financial Insights")
 st.sidebar.markdown("Your key financial metrics in INR.")
 st.sidebar.subheader("Model Accuracy")
 st.sidebar.write(f"R² Score: {r2_score_val:.2f}")
 
-# Dropdown Menus for Insights
 with st.sidebar.expander("📊 Wealth Management Insights"):
     st.write("""
     - Plan your financial goals effectively.
@@ -187,7 +177,6 @@ with st.form(key="financial_form"):
         miscellaneous = st.number_input("Miscellaneous (₹) [Eating Out, Entertainment, Utilities]", min_value=0.0, value=7500.0, step=100.0)
         desired_savings_percentage = st.number_input("Desired Savings Percentage (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0)
     
-    # Retirement Age Input
     st.subheader("Retirement Planning")
     default_retirement_age = min(62, age + 30)
     retirement_age = st.slider("Retirement Age (up to 62)", int(age), 62, default_retirement_age)
@@ -196,7 +185,6 @@ with st.form(key="financial_form"):
 
 # Process Inputs and Display Results
 if submit_button:
-    # Create input dictionary with only training features
     input_data = {
         "Income": income,
         "Age": age,
@@ -235,11 +223,10 @@ if submit_button:
     # Suggest Wealth Management parameters
     suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
     
-    # Wealth Management Section with Dynamic Adjustments
+    # Wealth Management Section
     st.subheader("Wealth Management")
     st.write(f"Plan for retirement at age {retirement_age} ({years_to_retirement} years from now):")
     
-    # Initialize session state
     if 'desired_retirement_fund' not in st.session_state:
         st.session_state.desired_retirement_fund = suggested_fund
     if 'savings_rate_filter' not in st.session_state:
@@ -249,7 +236,6 @@ if submit_button:
     if 'expense_growth_rate' not in st.session_state:
         st.session_state.expense_growth_rate = suggested_expense_growth
     
-    # Update Wealth Management parameters
     def update_wealth_params():
         years = max(0, st.session_state.retirement_age - int(age))
         suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years)
@@ -258,7 +244,6 @@ if submit_button:
         st.session_state.income_growth_rate = suggested_income_growth
         st.session_state.expense_growth_rate = suggested_expense_growth
     
-    # Wealth Management Filters
     st.session_state.retirement_age = st.slider("Retirement Age", int(age), 62, retirement_age, on_change=update_wealth_params)
     years_to_retirement = max(0, st.session_state.retirement_age - int(age))
     desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=float(st.session_state.desired_retirement_fund), step=100000.0, key="fund")
@@ -266,13 +251,11 @@ if submit_button:
     income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, st.session_state.income_growth_rate, step=0.5, key="income_growth")
     expense_growth_rate = st.slider("Annual Expense Growth Rate (%)", 0.0, 10.0, st.session_state.expense_growth_rate, step=0.5, key="expense_growth")
     
-    # Update session state
     st.session_state.desired_retirement_fund = desired_retirement_fund
     st.session_state.savings_rate_filter = savings_rate_filter
     st.session_state.income_growth_rate = income_growth_rate
     st.session_state.expense_growth_rate = expense_growth_rate
     
-    # Calculate savings
     future_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
     st.sidebar.subheader("Wealth Management Results")
     st.sidebar.write(f"Projected Savings: **₹{future_savings:,.2f}**")
