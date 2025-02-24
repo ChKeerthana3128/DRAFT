@@ -57,13 +57,8 @@ def prepare_input(input_data):
     input_df = pd.DataFrame({col: [input_data[col]] for col in feature_cols})
     return input_df
 
-def calculate_financial_health_score(input_data):
+def calculate_financial_health_score(income, savings, debt, miscellaneous):
     """Calculate financial health score."""
-    income = input_data["Income"]
-    savings = input_data["Desired_Savings"]
-    debt = input_data["Rent"] + input_data["Loan_Repayment"]
-    miscellaneous = input_data["Miscellaneous"]
-    
     savings_ratio = savings / income if income > 0 else 0
     debt_ratio = debt / income if income > 0 else 0
     discretionary_ratio = miscellaneous / income if income > 0 else 0
@@ -78,31 +73,35 @@ def predict_disposable_income(model, input_data):
                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
                     "Desired_Savings_Percentage"]
     prediction = model.predict(input_df[feature_cols])[0]
-    return prediction
+    return max(0, prediction)  # Ensure non-negative disposable income
 
 def predict_future_savings(income, total_expenses, savings_rate, years, income_growth_rate=0.0, expense_growth_rate=0.0):
-    """Predict future savings in INR with growth rates."""
+    """Predict future savings in INR with growth rates, preventing negative savings."""
     savings_trajectory = []
     current_income = income
     current_expenses = total_expenses
+    total_savings = 0.0
     
     for year in range(years + 1):
-        annual_savings = current_income * (savings_rate / 100) - current_expenses
-        savings_trajectory.append(annual_savings * year if year > 0 else 0)
+        annual_savings = max(0, current_income * (savings_rate / 100) - current_expenses)  # Prevent negative savings
+        total_savings += annual_savings
+        savings_trajectory.append(total_savings)
         current_income *= (1 + income_growth_rate / 100)
         current_expenses *= (1 + expense_growth_rate / 100)
     
     return savings_trajectory[-1]
 
 def get_savings_trajectory(income, total_expenses, savings_rate, years, income_growth_rate, expense_growth_rate):
-    """Get savings trajectory for plotting."""
+    """Get savings trajectory for plotting, ensuring non-negative savings."""
     savings_trajectory = []
     current_income = income
     current_expenses = total_expenses
+    total_savings = 0.0
     
     for year in range(years + 1):
-        annual_savings = current_income * (savings_rate / 100) - current_expenses
-        savings_trajectory.append(annual_savings * year if year > 0 else 0)
+        annual_savings = max(0, current_income * (savings_rate / 100) - current_expenses)
+        total_savings += annual_savings
+        savings_trajectory.append(total_savings)
         current_income *= (1 + income_growth_rate / 100)
         current_expenses *= (1 + expense_growth_rate / 100)
     
@@ -113,7 +112,7 @@ def suggest_wealth_management_params(income, total_expenses, years_to_retirement
     suggested_fund = total_expenses * 12 * 20  # 20x annual expenses
     annual_savings_needed = suggested_fund / years_to_retirement if years_to_retirement > 0 else suggested_fund
     suggested_savings_rate = (annual_savings_needed / income) * 100 if income > 0 else 10.0
-    suggested_savings_rate = min(max(suggested_savings_rate, 5.0), 50.0)
+    suggested_savings_rate = min(max(suggested_savings_rate, 5.0), 50.0)  # Cap between 5% and 50%
     suggested_income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
     suggested_expense_growth = 2.5
     return suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth
@@ -189,13 +188,11 @@ if submit_button:
     
     total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, miscellaneous])
     years_to_retirement = max(0, retirement_age - int(age))
-    
-    # Suggest Wealth Management parameters
-    suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
+    debt = rent + loan_repayment
     
     # Sidebar: Financial Health Score
     st.sidebar.subheader("Financial Health")
-    health_score = calculate_financial_health_score(input_data)
+    health_score = calculate_financial_health_score(income, input_data["Desired_Savings"], debt, miscellaneous)
     st.sidebar.metric("Score", f"{health_score:.1f}/100")
     if health_score < 40:
         st.sidebar.error("⚠️ Low: Take action!")
@@ -208,6 +205,9 @@ if submit_button:
     predicted_disposable = predict_disposable_income(model, input_data)
     st.sidebar.subheader("Predicted Disposable Income")
     st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
+    
+    # Suggest Wealth Management parameters
+    suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
     
     # Wealth Management Section with Dynamic Adjustments
     st.subheader("Wealth Management")
