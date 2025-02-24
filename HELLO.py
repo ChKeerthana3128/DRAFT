@@ -162,9 +162,17 @@ if submit_button:
     st.sidebar.subheader("Predicted Disposable Income")
     st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
     
-    # Sidebar: Wealth Management
+    # Sidebar: Wealth Management with dynamic range for Years to Retirement
     st.sidebar.subheader("Wealth Management")
-    years_to_retirement = st.sidebar.slider("Years to Retirement", 1, 40, 30)
+    max_years_to_retirement = max(1, 62 - int(age))  # Ensures at least 1 year if age > 62
+    default_years = min(30, max_years_to_retirement)  # Default to 30 or max if less
+    
+    if age < 62:
+        years_to_retirement = st.sidebar.slider("Years to Retirement", 1, max_years_to_retirement, default_years)
+    else:
+        years_to_retirement = st.sidebar.slider("Years to Retirement", 1, 5, 1)  # Default range for age > 62
+        st.sidebar.write("Note: As you're over 62, a shorter range is provided.")
+    
     desired_retirement_fund = st.sidebar.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=5000000.0, step=100000.0)
     
     future_savings = predict_future_savings(income, total_expenses, desired_savings_percentage, years_to_retirement)
