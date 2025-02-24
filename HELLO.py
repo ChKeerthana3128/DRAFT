@@ -37,7 +37,7 @@ data = load_data()
 
 # Model Training
 def train_model(data):
-    """Train a LinearRegression model on raw data with explicit feature ordering."""
+    """Train a LinearRegression model on raw data with updated feature set."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
                     "Desired_Savings_Percentage"]
