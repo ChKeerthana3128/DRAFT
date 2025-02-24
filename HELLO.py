@@ -16,8 +16,21 @@ st.set_page_config(page_title="AI Financial Dashboard (INR)", layout="wide")
 @st.cache_data
 def load_data():
     """Load the dataset from a CSV file without normalization."""
-    data = pd.read_csv("financial_data.csv")  # Replace with your dataset path
-    return data
+    try:
+        data = pd.read_csv("financial_data.csv")
+        required_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
+                         "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
+                         "Desired_Savings_Percentage", "Disposable_Income"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"Missing columns in dataset: {missing_cols}")
+        return data
+    except FileNotFoundError:
+        st.error("Error: 'financial_data.csv' not found. Please ensure the file is in the working directory.")
+        st.stop()
+    except ValueError as e:
+        st.error(str(e))
+        st.stop()
 
 # Load data
 data = load_data()
