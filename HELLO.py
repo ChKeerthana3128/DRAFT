@@ -26,8 +26,11 @@ def load_data(csv_path="financial_data.csv"):
         # Load the CSV file
         data = pd.read_csv(csv_path)
         
-        # Rename the combined column for consistency
-        data = data.rename(columns={"Education(Eating_Out,Entertainmentand Utilities)": "Combined_Education_EatingOut_Entertainment_Utilities"})
+        # Use the exact column name from the CSV
+        combined_column_name = "Education(Eating_Out,Entertainmentand Utilities)"
+        if combined_column_name not in data.columns:
+            st.error(f"Column '{combined_column_name}' not found in the CSV file. Check the column name in your data.")
+            return None
         
         # Preprocess the combined column to split into separate features
         def distribute_combined_value(value):
@@ -38,11 +41,11 @@ def load_data(csv_path="financial_data.csv"):
             return [total, total, total, total]  # [Education, Eating_Out, Entertainment, Utilities]
 
         # Apply the distribution and create new columns
-        distributed_values = data['Combined_Education_EatingOut_Entertainment_Utilities'].apply(distribute_combined_value)
+        distributed_values = data[combined_column_name].apply(distribute_combined_value)
         data[['Education', 'Eating_Out', 'Entertainment', 'Utilities']] = pd.DataFrame(distributed_values.tolist(), index=data.index)
 
         # Drop the combined column since we’ve split it
-        data = data.drop(columns=['Combined_Education_EatingOut_Entertainment_Utilities'])
+        data = data.drop(columns=[combined_column_name])
 
         # Ensure required columns are present
         required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
