@@ -139,15 +139,34 @@ def train_model(data):
         st.error(f"Missing features in dataset: {missing_features}. Please check the data preprocessing.")
         return None, None
     
-    # Check if categorical columns exist before encoding
+    # Check if categorical columns exist before encoding, with detailed debugging
     categorical_cols = ['Occupation', 'City_Tier']
     for cat_col in categorical_cols:
         if cat_col not in data.columns:
             st.error(f"Categorical column '{cat_col}' not found in dataset. Adding dummy values.")
             data[cat_col] = 'Unknown'  # Add a default value if missing
+        else:
+            st.write(f"Found categorical column: {cat_col}, unique values: {data[cat_col].unique()}")  # Debug unique values
     
+    # Ensure all categorical columns have valid data before encoding
+    for cat_col in categorical_cols:
+        if data[cat_col].isnull().any():
+            st.warning(f"Null values found in '{cat_col}'. Filling with 'Unknown'.")
+            data[cat_col] = data[cat_col].fillna('Unknown')
+        if data[cat_col].dtype != 'object':
+            st.warning(f"Converting '{cat_col}' to string for encoding.")
+            data[cat_col] = data[cat_col].astype(str)
+
     # Encode categorical variables (Occupation, City_Tier)
-    X = pd.get_dummies(data[feature_cols], columns=categorical_cols)
+    try:
+        X = pd.get_dummies(data[feature_cols], columns=categorical_cols)
+    except KeyError as e:
+        st.error(f"Error in pd.get_dummies: {str(e)}. Check feature_cols and categorical_cols.")
+        st.write("Feature columns:", feature_cols)
+        st.write("Categorical columns:", categorical_cols)
+        st.write("Available columns in dataset:", data.columns.tolist())
+        return None, None
+    
     y = data["Disposable_Income"]
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
