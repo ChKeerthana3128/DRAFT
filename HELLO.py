@@ -26,26 +26,32 @@ def load_data(csv_path="financial_data.csv"):
         # Load the CSV file
         data = pd.read_csv(csv_path)
         
-        # Try different possible variations of the column name
+        # Try different possible variations of the column name, including the exact name from your CSV
         possible_column_names = [
-            "Miscellaneous (Eating_Out,Entertainmentand Utilities)",
+            "Miscellaneous (Eating_Out,Entertainmentand Utilities)",  # Exact name from your CSV, without newline
             "Miscellaneous(Eating_Out,Entertainmentand Utilities)",  # Without space after Miscellaneous
             "Miscellaneous (Eating_Out, Entertainment and Utilities)",  # With spaces
             "Miscellaneous(Eating_Out, Entertainment and Utilities)",  # Without space, with spaces in parentheses
             "Miscellaneous",  # Just in case it’s simplified
+            "Miscellaneous (Eating_Out,Entertainmentand Utilities)\n"  # With newline, in case CSV retains it
         ]
         
         combined_column_name = None
         for name in possible_column_names:
-            if name in data.columns:
-                combined_column_name = name
+            # Strip whitespace and newline characters for comparison
+            cleaned_name = name.strip()
+            for col in data.columns:
+                if col.strip() == cleaned_name:
+                    combined_column_name = col
+                    break
+            if combined_column_name:
                 break
         
         if combined_column_name is None:
             # Display all column names in the CSV for debugging
             st.error("Column not found in the CSV file. Possible column names checked: " + ", ".join(possible_column_names))
             st.write("**Available column names in your CSV file:**")
-            st.write(list(data.columns))  # Show all column names to help identify the correct one
+            st.write([col.strip() for col in data.columns])  # Show all column names, cleaned of whitespace
             st.write("Please update the `possible_column_names` list in the code with the exact column name from your CSV file.")
             return None
         
@@ -67,17 +73,18 @@ def load_data(csv_path="financial_data.csv"):
         data = data.drop(columns=[combined_column_name])
 
         # Ensure required columns are present (including Education as a separate column, set to 0 if not present)
+        # Clean required column names of any whitespace or newlines
         required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
                         "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
                         "Miscellaneous", "Desired_Savings_Percentage", "Disposable_Income"]
-        missing_cols = [col for col in required_cols if col not in data.columns]
+        missing_cols = [col for col in required_cols if col.strip() not in [c.strip() for c in data.columns]]
         if missing_cols:
             st.warning(f"Missing columns in dataset: {missing_cols}. Adding zeros for missing columns.")
             for col in missing_cols:
-                if col == "Education":
-                    data[col] = 0  # Set Education to 0 if not present, as per your data
+                if col.strip() == "Education":
+                    data[col.strip()] = 0  # Set Education to 0 if not present, as per your data
                 else:
-                    data[col] = 0
+                    data[col.strip()] = 0
 
         return data
     except Exception as e:
@@ -133,7 +140,7 @@ def prepare_input(input_data):
     
     # Create DataFrame and encode categorical variables
     input_df = pd.DataFrame([input_dict], columns=feature_cols)
-    input_df = PD.get_dummies(input_df, columns=['Occupation', 'City_Tier'])
+    input_df = pd.get_dummies(input_df, columns=['Occupation', 'City_Tier'])
     
     # Ensure all feature names match the trained model
     trained_features = model.feature_names_in_
