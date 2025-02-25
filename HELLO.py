@@ -48,14 +48,11 @@ def load_data(csv_path="financial_data.csv"):
                 break
         
         if combined_column_name is None:
-            # Display all column names in the CSV for debugging
             st.error("Column not found in the CSV file. Possible column names checked: " + ", ".join(possible_column_names))
             st.write("**Available column names in your CSV file:**")
             st.write([col.strip() for col in data.columns])  # Show all column names, cleaned of whitespace
             st.write("Please update the `possible_column_names` list in the code with the exact column name from your CSV file.")
             return None
-        
-        st.write(f"Found column: {combined_column_name}")  # Debug message to confirm the column name
 
         # Preprocess the combined column to split into separate features (Eating_Out, Entertainment, Utilities)
         def distribute_combined_value(value):
@@ -90,17 +87,12 @@ def load_data(csv_path="financial_data.csv"):
                 break
         
         if education_column:
-            st.write(f"Found Education column: {education_column}")
             # Rename the column to "Education" without stripping, preserving any trailing characters temporarily
             data = data.rename(columns={education_column: "Education\n"})  # Temporarily rename to retain newline
             # Then strip the newline for consistency in the dataset
             data.columns = [col.replace("\n", "") for col in data.columns]
         else:
-            st.warning("Education column not found in dataset. Adding zeros for Education.")
             data["Education"] = 0  # Add Education column with zeros if not found
-
-        # Debug: Show the dataset columns after preprocessing to verify Education is present
-        st.write("Columns after preprocessing:", data.columns.tolist())
 
         # Ensure required columns are present (including Education)
         # Use exact column names without stripping for verification
@@ -145,32 +137,20 @@ def train_model(data):
     # Define categorical columns explicitly
     categorical_cols = ['Occupation', 'City_Tier']
     
-    # Check if categorical columns exist before encoding, with detailed debugging
+    # Check if categorical columns exist before encoding
     for cat_col in categorical_cols:
         if cat_col not in data.columns:
-            st.error(f"Categorical column '{cat_col}' not found in dataset. Adding dummy values.")
             data[cat_col] = 'Unknown'  # Add a default value if missing
-        else:
-            st.write(f"Found categorical column: {cat_col}, unique values: {data[cat_col].unique()}")  # Debug unique values
     
     # Ensure all categorical columns have valid data before encoding
     for cat_col in categorical_cols:
         if data[cat_col].isnull().any():
-            st.warning(f"Null values found in '{cat_col}'. Filling with 'Unknown'.")
             data[cat_col] = data[cat_col].fillna('Unknown')
         if data[cat_col].dtype != 'object':
-            st.warning(f"Converting '{cat_col}' to string for encoding.")
             data[cat_col] = data[cat_col].astype(str)
 
     # Encode categorical variables (Occupation, City_Tier) using all features including categorical columns
-    try:
-        X = pd.get_dummies(data[all_features], columns=categorical_cols)
-    except KeyError as e:
-        st.error(f"Error in pd.get_dummies: {str(e)}. Check feature_cols and categorical_cols.")
-        st.write("Feature columns:", all_features)
-        st.write("Categorical columns:", categorical_cols)
-        st.write("Available columns in dataset:", data.columns.tolist())
-        return None, None
+    X = pd.get_dummies(data[all_features], columns=categorical_cols)
     
     y = data["Disposable_Income"]
     
@@ -185,6 +165,7 @@ def train_model(data):
 
 @st.cache_resource
 def get_trained_model():
+    """Get or train the model and return it with its R² score."""
     model, r2 = train_model(data)
     if model is None:
         st.stop()
@@ -295,13 +276,13 @@ st.sidebar.markdown("Your key financial metrics in INR.")
 st.sidebar.subheader("Model Accuracy")
 st.sidebar.write(f"R² Score: {r2_score_val:.2f}")
 
-with st.sidebar.expander("📊 Wealth Management Insights"):
+with st.sidebar.expander("Wealth Management Insights"):
     st.write("""
     - Plan your financial goals effectively.
     - Allocate savings wisely based on your income.
     """)
 
-with st.sidebar.expander("💡 Financial Health Insights"):
+with st.sidebar.expander("Financial Health Insights"):
     st.write("""
     - Monitor your debt-to-income ratio.
     - Optimize discretionary spending for better savings.
@@ -367,11 +348,11 @@ if submit_button:
     health_score = calculate_financial_health_score(income, income * (desired_savings_percentage / 100), debt, eating_out + entertainment + utilities)
     st.sidebar.metric("Score", f"{health_score:.1f}/100")
     if health_score < 40:
-        st.sidebar.error("⚠️ Low: Take action!")
+        st.sidebar.error("Low: Take action!")
     elif health_score < 70:
-        st.sidebar.warning("⚠️ Moderate: Room to improve!")
+        st.sidebar.warning("Moderate: Room to improve!")
     else:
-        st.sidebar.success("✅ Excellent!")
+        st.sidebar.success("Excellent!")
     
     # Sidebar: Disposable Income Prediction
     predicted_disposable = predict_disposable_income(model, input_data)
@@ -454,35 +435,14 @@ if submit_button:
     # Actionable Recommendations
     st.subheader("Personalized Recommendations")
     if (eating_out + entertainment + utilities) > income * 0.2:
-        st.write(f"- 📉 *Review Discretionary Spending*: Exceeds 20% of income (₹{(eating_out + entertainment + utilities):,.2f}).")
+        st.write("- Review Discretionary Spending: Exceeds 20% of income (₹{(eating_out + entertainment + utilities):,.2f}).")
     if loan_repayment > 0:
-        st.write(f"- 💳 *Clear Debt*: Loan repayment (₹{loan_repayment:,.2f}) reduces your disposable income.")
+        st.write("- Clear Debt: Loan repayment (₹{loan_repayment:,.2f}) reduces your disposable income.")
     if desired_savings_percentage < 10:
-        st.write(f"- 💰 *Boost Savings*: Increase your savings rate from {desired_savings_percentage:.1f}% to at least 10%.")
+        st.write("- Boost Savings: Increase your savings rate from {desired_savings_percentage:.1f}% to at least 10%.")
     if total_expenses > income * 0.8:
-        st.write(f"- 📉 *Cut Expenses*: Spending (₹{total_expenses:,.2f}) is over 80% of income—review your budget!")
+        st.write("- Cut Expenses: Spending (₹{total_expenses:,.2f}) is over 80% of income—review your budget!")
 
 # Footer
 st.markdown("---")
 st.write("Powered by Streamlit")
-
-# Remove or comment out these lines:
-# st.write(f"Found column: {combined_column_name}")  # Debug message to confirm the column name
-# st.write(f"Found Education column: {education_column}")
-# st.write("Columns after preprocessing:", data.columns.tolist())
-
-# Remove or comment out this line:
-# st.write(f"Found categorical column: {cat_col}, unique values: {data[cat_col].unique()}")  # Debug unique values
-
-import os
-DEBUG_MODE = os.environ.get("DEBUG", False)  # Set DEBUG=True in your environment or script for debugging
-
-if DEBUG_MODE:
-    st.write(f"Found column: {combined_column_name}")
-
-with st.expander("Debug Information"):
-    st.write(f"Found column: {combined_column_name}")
-    st.write(f"Found Education column: {education_column}")
-    st.write("Columns after preprocessing:", data.columns.tolist())
-    for cat_col in categorical_cols:
-        st.write(f"Found categorical column: {cat_col}, unique values: {data[cat_col].unique()}")
