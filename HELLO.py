@@ -72,7 +72,29 @@ def load_data(csv_path="financial_data.csv"):
         # Drop the combined column since we’ve split it
         data = data.drop(columns=[combined_column_name])
 
-        # Ensure required columns are present (including Education as a separate column, set to 0 if not present)
+        # Handle the Education column, checking for possible variations
+        possible_education_names = [
+            "Education",  # Standard name
+            "Education\n",  # With newline
+            " Education",  # With leading space
+            "Education "  # With trailing space
+        ]
+        
+        education_column = None
+        for name in possible_education_names:
+            if name.strip() in [col.strip() for col in data.columns]:
+                education_column = name.strip()
+                break
+        
+        if education_column:
+            st.write(f"Found Education column: {education_column}")
+            # Rename the column to "Education" for consistency
+            data = data.rename(columns={education_column: "Education"})
+        else:
+            st.warning("Education column not found in dataset. Adding zeros for Education.")
+            data["Education"] = 0  # Add Education column with zeros if not found
+
+        # Ensure required columns are present (including Education)
         # Clean required column names of any whitespace or newlines
         required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
                         "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
@@ -81,10 +103,7 @@ def load_data(csv_path="financial_data.csv"):
         if missing_cols:
             st.warning(f"Missing columns in dataset: {missing_cols}. Adding zeros for missing columns.")
             for col in missing_cols:
-                if col.strip() == "Education":
-                    data[col.strip()] = 0  # Set Education to 0 if not present, as per your data
-                else:
-                    data[col.strip()] = 0
+                data[col.strip()] = 0
 
         return data
     except Exception as e:
