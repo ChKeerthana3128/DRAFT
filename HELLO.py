@@ -72,12 +72,15 @@ def load_data(csv_path="financial_data.csv"):
         # Drop the combined column since we’ve split it
         data = data.drop(columns=[combined_column_name])
 
-        # Handle the Education column, checking for possible variations
+        # Handle the Education column, checking for possible variations with more precision
         possible_education_names = [
             "Education",  # Standard name
             "Education\n",  # With newline
             " Education",  # With leading space
-            "Education "  # With trailing space
+            "Education ",  # With trailing space
+            "Education\r\n",  # With carriage return and newline (Windows-style)
+            "Edu",  # Possible abbreviation or typo
+            "Education Expenses"  # Possible alternative name
         ]
         
         education_column = None
@@ -104,6 +107,12 @@ def load_data(csv_path="financial_data.csv"):
             st.warning(f"Missing columns in dataset: {missing_cols}. Adding zeros for missing columns.")
             for col in missing_cols:
                 data[col.strip()] = 0
+
+        # Verify all required columns are now present
+        for col in required_cols:
+            if col not in data.columns:
+                st.error(f"Column '{col}' still missing after preprocessing. Check data and column names.")
+                return None
 
         return data
     except Exception as e:
