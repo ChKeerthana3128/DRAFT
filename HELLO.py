@@ -27,27 +27,27 @@ def load_data(csv_path="financial_data.csv"):
         data = pd.read_csv(csv_path)
         
         # Use the exact column name from the CSV
-        combined_column_name = "Education(Eating_Out,Entertainmentand Utilities)"
+        combined_column_name = "Miscellaneous (Eating_Out,Entertainmentand Utilities)"
         if combined_column_name not in data.columns:
             st.error(f"Column '{combined_column_name}' not found in the CSV file. Check the column name in your data.")
             return None
         
-        # Preprocess the combined column to split into separate features
+        # Preprocess the combined column to split into separate features (Eating_Out, Entertainment, Utilities)
         def distribute_combined_value(value):
             if pd.isna(value) or value == 0:
-                return [0, 0, 0, 0]  # Return zeros for Education, Eating_Out, Entertainment, Utilities if value is 0 or NaN
-            # Distribute evenly (you can modify this based on your data)
-            total = value / 4
-            return [total, total, total, total]  # [Education, Eating_Out, Entertainment, Utilities]
+                return [0, 0, 0]  # Return zeros for Eating_Out, Entertainment, Utilities if value is 0 or NaN
+            # Distribute evenly among Eating_Out, Entertainment, and Utilities (you can modify this based on your data)
+            total = value / 3
+            return [total, total, total]  # [Eating_Out, Entertainment, Utilities]
 
         # Apply the distribution and create new columns
         distributed_values = data[combined_column_name].apply(distribute_combined_value)
-        data[['Education', 'Eating_Out', 'Entertainment', 'Utilities']] = pd.DataFrame(distributed_values.tolist(), index=data.index)
+        data[['Eating_Out', 'Entertainment', 'Utilities']] = pd.DataFrame(distributed_values.tolist(), index=data.index)
 
         # Drop the combined column since we’ve split it
         data = data.drop(columns=[combined_column_name])
 
-        # Ensure required columns are present
+        # Ensure required columns are present (including Education as a separate column, set to 0 if not present)
         required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
                         "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
                         "Miscellaneous", "Desired_Savings_Percentage", "Disposable_Income"]
@@ -55,7 +55,10 @@ def load_data(csv_path="financial_data.csv"):
         if missing_cols:
             st.warning(f"Missing columns in dataset: {missing_cols}. Adding zeros for missing columns.")
             for col in missing_cols:
-                data[col] = 0
+                if col == "Education":
+                    data[col] = 0  # Set Education to 0 if not present, as per your data
+                else:
+                    data[col] = 0
 
         return data
     except Exception as e:
@@ -72,7 +75,7 @@ if data is None:
 # Model Training
 def train_model(data):
     """Train a LinearRegression model on raw data with updated feature set."""
-    # Define feature columns (including the new split columns)
+    # Define feature columns (including the new split columns and Education)
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
                     "Utilities", "Miscellaneous", "Desired_Savings_Percentage"]
