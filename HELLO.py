@@ -24,7 +24,9 @@ def load_data(csv_path="financial_data.csv"):
     
     try:
         data = pd.read_csv(csv_path)
-        combined_column_name = "Miscellaneous (Eating_Out,Entertainmentand Utilities)"
+        
+        # Define the exact column name with newline as it appears in your data
+        combined_column_name = "Miscellaneous (Eating_Out,Entertainmentand Utilities)\n"
         
         if combined_column_name not in data.columns:
             st.error(f"Column '{combined_column_name}' not found. Available columns: {data.columns.tolist()}")
@@ -38,7 +40,7 @@ def load_data(csv_path="financial_data.csv"):
         data[['Eating_Out', 'Entertainment', 'Utilities']] = pd.DataFrame(distributed_values.tolist(), index=data.index)
         data = data.drop(columns=[combined_column_name])
 
-        # Clean Education column
+        # Clean Education column (it has a newline in your data)
         if "Education\n" in data.columns:
             data = data.rename(columns={"Education\n": "Education"})
         elif "Education" not in data.columns:
