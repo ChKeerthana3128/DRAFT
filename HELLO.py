@@ -101,13 +101,26 @@ if data is None:
 # Model Training
 def train_model(data):
     """Train a LinearRegression model on raw data with updated feature set."""
-    # Define feature columns (excluding Miscellaneous, as it’s not present)
+    # Define feature columns (excluding Miscellaneous, as it’s not present, and verify all columns exist)
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
                     "Utilities", "Desired_Savings_Percentage"]  # Removed "Miscellaneous"
     
+    # Verify that all feature columns exist in the dataset
+    missing_features = [col for col in feature_cols if col not in data.columns]
+    if missing_features:
+        st.error(f"Missing features in dataset: {missing_features}. Please check the data preprocessing.")
+        return None, None
+    
+    # Check if categorical columns exist before encoding
+    categorical_cols = ['Occupation', 'City_Tier']
+    for cat_col in categorical_cols:
+        if cat_col not in data.columns:
+            st.error(f"Categorical column '{cat_col}' not found in dataset. Adding dummy values.")
+            data[cat_col] = 'Unknown'  # Add a default value if missing
+    
     # Encode categorical variables (Occupation, City_Tier)
-    X = pd.get_dummies(data[feature_cols], columns=['Occupation', 'City_Tier'])
+    X = pd.get_dummies(data[feature_cols], columns=categorical_cols)
     y = data["Disposable_Income"]
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -122,6 +135,8 @@ def train_model(data):
 @st.cache_resource
 def get_trained_model():
     model, r2 = train_model(data)
+    if model is None:
+        st.stop()
     return model, r2
 
 # Train the model
@@ -140,6 +155,9 @@ def prepare_input(input_data):
     
     # Create DataFrame and encode categorical variables
     input_df = pd.DataFrame([input_dict], columns=feature_cols)
+    input_df['Occupation'] = 'Unknown'  # Default value for categorical column
+    input_df['City_Tier'] = 'Unknown'  # Default value for categorical column
+    
     input_df = pd.get_dummies(input_df, columns=['Occupation', 'City_Tier'])
     
     # Ensure all feature names match the trained model
