@@ -133,8 +133,11 @@ def train_model(data):
                     "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
                     "Utilities", "Desired_Savings_Percentage"]  # Removed "Miscellaneous"
     
+    # Add categorical columns to the feature set for encoding
+    all_features = feature_cols + ['Occupation', 'City_Tier']
+    
     # Verify that all feature columns exist in the dataset
-    missing_features = [col for col in feature_cols if col not in data.columns]
+    missing_features = [col for col in all_features if col not in data.columns]
     if missing_features:
         st.error(f"Missing features in dataset: {missing_features}. Please check the data preprocessing.")
         return None, None
@@ -157,12 +160,12 @@ def train_model(data):
             st.warning(f"Converting '{cat_col}' to string for encoding.")
             data[cat_col] = data[cat_col].astype(str)
 
-    # Encode categorical variables (Occupation, City_Tier)
+    # Encode categorical variables (Occupation, City_Tier) using all features including categorical columns
     try:
-        X = pd.get_dummies(data[feature_cols], columns=categorical_cols)
+        X = pd.get_dummies(data[all_features], columns=categorical_cols)
     except KeyError as e:
         st.error(f"Error in pd.get_dummies: {str(e)}. Check feature_cols and categorical_cols.")
-        st.write("Feature columns:", feature_cols)
+        st.write("Feature columns:", all_features)
         st.write("Categorical columns:", categorical_cols)
         st.write("Available columns in dataset:", data.columns.tolist())
         return None, None
@@ -199,12 +202,19 @@ def prepare_input(input_data):
     input_dict = {col: input_data.get(col, 0.0 if col not in ["Desired_Savings_Percentage"] else 10.0) 
                   for col in feature_cols}
     
-    # Create DataFrame and encode categorical variables
+    # Create DataFrame and include categorical columns
     input_df = pd.DataFrame([input_dict], columns=feature_cols)
     input_df['Occupation'] = 'Unknown'  # Default value for categorical column
     input_df['City_Tier'] = 'Unknown'  # Default value for categorical column
     
-    input_df = pd.get_dummies(input_df, columns=['Occupation', 'City_Tier'])
+    # Ensure all categorical columns are strings
+    categorical_cols = ['Occupation', 'City_Tier']
+    for cat_col in categorical_cols:
+        if input_df[cat_col].dtype != 'object':
+            input_df[cat_col] = input_df[cat_col].astype(str)
+
+    # Encode categorical variables
+    input_df = pd.get_dummies(input_df, columns=categorical_cols)
     
     # Ensure all feature names match the trained model
     trained_features = model.feature_names_in_
