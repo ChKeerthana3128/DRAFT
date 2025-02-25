@@ -465,3 +465,24 @@ if submit_button:
 # Footer
 st.markdown("---")
 st.write("Powered by Streamlit")
+
+# Remove or comment out these lines:
+# st.write(f"Found column: {combined_column_name}")  # Debug message to confirm the column name
+# st.write(f"Found Education column: {education_column}")
+# st.write("Columns after preprocessing:", data.columns.tolist())
+
+# Remove or comment out this line:
+# st.write(f"Found categorical column: {cat_col}, unique values: {data[cat_col].unique()}")  # Debug unique values
+
+import os
+DEBUG_MODE = os.environ.get("DEBUG", False)  # Set DEBUG=True in your environment or script for debugging
+
+if DEBUG_MODE:
+    st.write(f"Found column: {combined_column_name}")
+
+with st.expander("Debug Information"):
+    st.write(f"Found column: {combined_column_name}")
+    st.write(f"Found Education column: {education_column}")
+    st.write("Columns after preprocessing:", data.columns.tolist())
+    for cat_col in categorical_cols:
+        st.write(f"Found categorical column: {cat_col}, unique values: {data[cat_col].unique()}")
