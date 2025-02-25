@@ -76,7 +76,7 @@ def load_data(csv_path="financial_data.csv"):
         # Clean required column names of any whitespace or newlines
         required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
                         "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
-                        "Miscellaneous", "Desired_Savings_Percentage", "Disposable_Income"]
+                        "Desired_Savings_Percentage", "Disposable_Income"]  # Removed "Miscellaneous"
         missing_cols = [col for col in required_cols if col.strip() not in [c.strip() for c in data.columns]]
         if missing_cols:
             st.warning(f"Missing columns in dataset: {missing_cols}. Adding zeros for missing columns.")
@@ -101,10 +101,10 @@ if data is None:
 # Model Training
 def train_model(data):
     """Train a LinearRegression model on raw data with updated feature set."""
-    # Define feature columns (including the new split columns and Education)
+    # Define feature columns (excluding Miscellaneous, as it’s not present)
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
-                    "Utilities", "Miscellaneous", "Desired_Savings_Percentage"]
+                    "Utilities", "Desired_Savings_Percentage"]  # Removed "Miscellaneous"
     
     # Encode categorical variables (Occupation, City_Tier)
     X = pd.get_dummies(data[feature_cols], columns=['Occupation', 'City_Tier'])
@@ -132,7 +132,7 @@ def prepare_input(input_data):
     """Prepare user input data for prediction without normalization."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
                     "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
-                    "Utilities", "Miscellaneous", "Desired_Savings_Percentage"]
+                    "Utilities", "Desired_Savings_Percentage"]  # Removed "Miscellaneous"
     
     # Default values for missing inputs
     input_dict = {col: input_data.get(col, 0.0 if col not in ["Desired_Savings_Percentage"] else 10.0) 
@@ -279,8 +279,7 @@ if submit_button:
         "Eating_Out": eating_out,
         "Entertainment": entertainment,
         "Utilities": utilities,
-        "Miscellaneous": 0,  # Placeholder, as Miscellaneous might not be directly used here
-        "Desired_Savings_Percentage": desired_savings_percentage
+        "Desired_Savings_Percentage": desired_savings_percentage  # Removed "Miscellaneous" from input_data
     }
     
     total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, eating_out, entertainment, utilities])
