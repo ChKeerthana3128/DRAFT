@@ -18,7 +18,7 @@ st.set_page_config(page_title="AI Financial Dashboard (INR)", layout="wide")
 def load_data(csv_path="financial_data.csv"):
     """Load and preprocess the financial dataset."""
     if not os.path.exists(csv_path):
-        st.error(f"CSV file not found at {csv_path}. Please ensure 'financial_data.csv' exists.")
+        st.error(f"CSV file not found at {csv_path}. Ensure 'financial_data.csv' exists.")
         return None
     
     try:
@@ -29,7 +29,6 @@ def load_data(csv_path="financial_data.csv"):
             st.error(f"Column '{combined_column_name}' not found. Available columns: {data.columns.tolist()}")
             return None
 
-        # Split Miscellaneous into Eating_Out, Entertainment, Utilities
         def distribute_combined_value(value):
             return [value / 3] * 3 if pd.notna(value) and value > 0 else [0, 0, 0]
 
@@ -37,7 +36,6 @@ def load_data(csv_path="financial_data.csv"):
         data[['Eating_Out', 'Entertainment', 'Utilities']] = pd.DataFrame(distributed_values.tolist(), index=data.index)
         data = data.drop(columns=[combined_column_name])
 
-        # Clean Education column
         if "Education\n" in data.columns:
             data = data.rename(columns={"Education\n": "Education"})
         elif "Education" not in data.columns:
@@ -80,9 +78,9 @@ def get_trained_model(data):
     """Cache and return the trained model and its R² score."""
     return train_model(data)
 
-# --- Helper Functions ---
+# --- Predictive Functions ---
 def prepare_input(input_data, model):
-    """Prepare user input for prediction."""
+    """Prepare user input for model prediction."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
                     "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
                     "Desired_Savings_Percentage"]
@@ -110,7 +108,7 @@ def calculate_financial_health_score(income, savings, debt, discretionary):
     return max(0, min(100, score))
 
 def predict_disposable_income(model, input_data):
-    """Predict disposable income using the trained model."""
+    """Predict disposable income."""
     input_df = prepare_input(input_data, model)
     return max(0, model.predict(input_df)[0])
 
@@ -129,7 +127,7 @@ def predict_future_savings(income, total_expenses, savings_rate, years, income_g
     return total_savings
 
 def get_savings_trajectory(income, total_expenses, savings_rate, years, income_growth_rate, expense_growth_rate):
-    """Generate savings trajectory for plotting."""
+    """Generate savings trajectory for visualization."""
     trajectory = []
     current_income = income
     current_expenses = total_expenses
@@ -145,13 +143,54 @@ def get_savings_trajectory(income, total_expenses, savings_rate, years, income_g
     return trajectory
 
 def suggest_wealth_management_params(income, total_expenses, years_to_retirement):
-    """Suggest parameters for wealth management."""
+    """Suggest wealth management parameters."""
     suggested_fund = total_expenses * 12 * 20  # 20 years of expenses
     annual_savings_needed = suggested_fund / years_to_retirement if years_to_retirement > 0 else suggested_fund
     suggested_savings_rate = min(max((annual_savings_needed / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
     suggested_income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
     suggested_expense_growth = 2.5
     return suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth
+
+# --- Insight Generators ---
+def generate_wealth_management_insights(income, total_expenses, savings_rate, years_to_retirement, projected_savings, desired_retirement_fund):
+    """Generate dynamic wealth management insights."""
+    shortfall = desired_retirement_fund - projected_savings if projected_savings < desired_retirement_fund else 0
+    insights = []
+    
+    insights.append(f"With a {savings_rate:.1f}% savings rate over {years_to_retirement} years, you'll save ₹{projected_savings:,.2f}.")
+    if shortfall > 0:
+        additional_rate = (shortfall / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
+        insights.append(f"To reach ₹{desired_retirement_fund:,.2f}, increase savings rate by {additional_rate:.1f}% or reduce expenses.")
+    else:
+        insights.append("You’re on track to exceed your retirement goal—consider investing surplus!")
+    if years_to_retirement > 20:
+        insights.append("Long horizon: A 3% income growth rate could significantly boost savings.")
+    elif years_to_retirement < 10:
+        insights.append("Short horizon: Focus on higher savings now.")
+    
+    return insights
+
+def generate_financial_health_insights(health_score, debt, discretionary, income):
+    """Generate dynamic financial health insights."""
+    insights = []
+    
+    insights.append(f"Your Financial Health Score is {health_score:.1f}/100.")
+    if health_score < 40:
+        insights.append("Low score: Prioritize debt reduction and savings.")
+    elif health_score < 70:
+        insights.append("Moderate score: Room to improve—balance spending and savings.")
+    else:
+        insights.append("Excellent score: Maintain your financial discipline!")
+    
+    debt_ratio = debt / income if income > 0 else 0
+    if debt_ratio > 0.3:
+        insights.append(f"Debt (₹{debt:,.2f}) exceeds 30% of income—consider refinancing or repayment plans.")
+    
+    discretionary_ratio = discretionary / income if income > 0 else 0
+    if discretionary_ratio > 0.2:
+        insights.append(f"Discretionary spending (₹{discretionary:,.2f}) is high—review entertainment and utilities.")
+    
+    return insights
 
 # --- App Logic ---
 def main():
@@ -167,20 +206,6 @@ def main():
     st.sidebar.title("Financial Insights (INR)")
     st.sidebar.subheader("Model Accuracy")
     st.sidebar.write(f"R² Score: {r2_score_val:.2f}")
-
-    with st.sidebar.expander("Wealth Management Insights"):
-        st.write("""
-        - Plan your financial goals effectively.
-        - Allocate savings wisely based on your income.
-        - Consider income and expense growth rates for long-term planning.
-        """)
-
-    with st.sidebar.expander("Financial Health Insights"):
-        st.write("""
-        - Monitor your debt-to-income ratio.
-        - Optimize discretionary spending for better savings.
-        - Aim for a balanced financial health score.
-        """)
 
     # Main App
     st.title("AI Financial Dashboard (INR)")
@@ -253,6 +278,17 @@ def main():
         required_savings_rate = (desired_retirement_fund / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
         st.sidebar.subheader("Required Savings Rate")
         st.sidebar.metric("To Meet Goal (%)", f"{required_savings_rate:.2f}%")
+
+        # Dynamic Insights
+        with st.sidebar.expander("Wealth Management Insights"):
+            wealth_insights = generate_wealth_management_insights(income, total_expenses, savings_rate_filter, years_to_retirement, projected_savings, desired_retirement_fund)
+            for insight in wealth_insights:
+                st.write(f"- {insight}")
+
+        with st.sidebar.expander("Financial Health Insights"):
+            health_insights = generate_financial_health_insights(health_score, debt, discretionary, income)
+            for insight in health_insights:
+                st.write(f"- {insight}")
 
         # Main Insights
         st.header(f"Financial Insights for {name}")
