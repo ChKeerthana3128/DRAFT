@@ -85,14 +85,16 @@ def load_data(csv_path="financial_data.csv"):
         
         education_column = None
         for name in possible_education_names:
-            if name.strip() in [col.strip() for col in data.columns]:
+            if name in data.columns:  # Use exact match, including any trailing characters
                 education_column = name
                 break
         
         if education_column:
             st.write(f"Found Education column: {education_column}")
-            # Rename the column to "Education" for consistency, preserving the original name for now
-            data = data.rename(columns={education_column: "Education"})
+            # Rename the column to "Education" without stripping, preserving any trailing characters temporarily
+            data = data.rename(columns={education_column: "Education\n"})  # Temporarily rename to retain newline
+            # Then strip the newline for consistency in the dataset
+            data.columns = [col.replace("\n", "") for col in data.columns]
         else:
             st.warning("Education column not found in dataset. Adding zeros for Education.")
             data["Education"] = 0  # Add Education column with zeros if not found
@@ -101,7 +103,7 @@ def load_data(csv_path="financial_data.csv"):
         st.write("Columns after preprocessing:", data.columns.tolist())
 
         # Ensure required columns are present (including Education)
-        # Clean required column names of any whitespace or newlines
+        # Use exact column names without stripping for verification
         required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
                         "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
                         "Desired_Savings_Percentage", "Disposable_Income"]  # Removed "Miscellaneous"
