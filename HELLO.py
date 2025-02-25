@@ -86,33 +86,30 @@ def load_data(csv_path="financial_data.csv"):
         education_column = None
         for name in possible_education_names:
             if name.strip() in [col.strip() for col in data.columns]:
-                education_column = name.strip()
+                education_column = name
                 break
         
         if education_column:
             st.write(f"Found Education column: {education_column}")
-            # Rename the column to "Education" for consistency
+            # Rename the column to "Education" for consistency, preserving the original name for now
             data = data.rename(columns={education_column: "Education"})
         else:
             st.warning("Education column not found in dataset. Adding zeros for Education.")
             data["Education"] = 0  # Add Education column with zeros if not found
+
+        # Debug: Show the dataset columns after preprocessing to verify Education is present
+        st.write("Columns after preprocessing:", data.columns.tolist())
 
         # Ensure required columns are present (including Education)
         # Clean required column names of any whitespace or newlines
         required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
                         "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
                         "Desired_Savings_Percentage", "Disposable_Income"]  # Removed "Miscellaneous"
-        missing_cols = [col for col in required_cols if col.strip() not in [c.strip() for c in data.columns]]
+        missing_cols = [col for col in required_cols if col not in data.columns]
         if missing_cols:
-            st.warning(f"Missing columns in dataset: {missing_cols}. Adding zeros for missing columns.")
-            for col in missing_cols:
-                data[col.strip()] = 0
-
-        # Verify all required columns are now present
-        for col in required_cols:
-            if col not in data.columns:
-                st.error(f"Column '{col}' still missing after preprocessing. Check data and column names.")
-                return None
+            st.error(f"Columns still missing after preprocessing: {missing_cols}. Check data and column names.")
+            st.write("Current columns in dataset:", data.columns.tolist())
+            return None
 
         return data
     except Exception as e:
