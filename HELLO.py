@@ -7,41 +7,75 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 import warnings
+import os
+
 warnings.filterwarnings("ignore")
-import io
 
 # Set page configuration
 st.set_page_config(page_title="AI Financial Dashboard (INR)", layout="wide")
 
-# Load Dataset from Provided Text
+# Load Dataset from CSV File
 @st.cache_data
-def load_data():
-    """Load the dataset from the provided text and clean column names."""
-    # Since the dataset is provided as text, we'll simulate loading it from the document
-    data_text = """<Insert the full dataset text you provided here>"""  # Replace with your dataset text
-    data = pd.read_csv(io.StringIO(data_text))
+def load_data(csv_path="financial_data.csv"):
+    """Load the dataset from a CSV file and clean column names."""
+    if not os.path.exists(csv_path):
+        st.error(f"CSV file not found at {csv_path}. Please ensure the file exists.")
+        return None
     
-    # Rename the problematic column for consistency
-    data = data.rename(columns={"Miscellaneous (Eating_Out,Entertainmentand Utilities)": "Miscellaneous"})
-    
-    required_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
-                     "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
-                     "Desired_Savings_Percentage", "Disposable_Income"]
-    missing_cols = [col for col in required_cols if col not in data.columns]
-    if missing_cols:
-        raise ValueError(f"Missing columns in dataset: {missing_cols}")
-    return data
+    try:
+        # Load the CSV file
+        data = pd.read_csv(csv_path)
+        
+        # Rename the combined column for consistency
+        data = data.rename(columns={"Education(Eating_Out,Entertainmentand Utilities)": "Combined_Education_EatingOut_Entertainment_Utilities"})
+        
+        # Preprocess the combined column to split into separate features
+        def distribute_combined_value(value):
+            if pd.isna(value) or value == 0:
+                return [0, 0, 0, 0]  # Return zeros for Education, Eating_Out, Entertainment, Utilities if value is 0 or NaN
+            # Distribute evenly (you can modify this based on your data)
+            total = value / 4
+            return [total, total, total, total]  # [Education, Eating_Out, Entertainment, Utilities]
+
+        # Apply the distribution and create new columns
+        distributed_values = data['Combined_Education_EatingOut_Entertainment_Utilities'].apply(distribute_combined_value)
+        data[['Education', 'Eating_Out', 'Entertainment', 'Utilities']] = pd.DataFrame(distributed_values.tolist(), index=data.index)
+
+        # Drop the combined column since we’ve split it
+        data = data.drop(columns=['Combined_Education_EatingOut_Entertainment_Utilities'])
+
+        # Ensure required columns are present
+        required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
+                        "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
+                        "Miscellaneous", "Desired_Savings_Percentage", "Disposable_Income"]
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            st.warning(f"Missing columns in dataset: {missing_cols}. Adding zeros for missing columns.")
+            for col in missing_cols:
+                data[col] = 0
+
+        return data
+    except Exception as e:
+        st.error(f"Error loading CSV file: {str(e)}")
+        return None
 
 # Load data
 data = load_data()
 
+# Check if data loaded successfully
+if data is None:
+    st.stop()
+
 # Model Training
 def train_model(data):
     """Train a LinearRegression model on raw data with updated feature set."""
+    # Define feature columns (including the new split columns)
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
-                    "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
-                    "Desired_Savings_Percentage"]
-    X = data[feature_cols].copy()
+                    "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
+                    "Utilities", "Miscellaneous", "Desired_Savings_Percentage"]
+    
+    # Encode categorical variables (Occupation, City_Tier)
+    X = pd.get_dummies(data[feature_cols], columns=['Occupation', 'City_Tier'])
     y = data["Disposable_Income"]
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -65,11 +99,26 @@ model, r2_score_val = get_trained_model()
 def prepare_input(input_data):
     """Prepare user input data for prediction without normalization."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
-                    "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
-                    "Desired_Savings_Percentage"]
-    input_dict = {col: input_data.get(col, 0.0 if col != "Desired_Savings_Percentage" else 10.0) 
+                    "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
+                    "Utilities", "Miscellaneous", "Desired_Savings_Percentage"]
+    
+    # Default values for missing inputs
+    input_dict = {col: input_data.get(col, 0.0 if col not in ["Desired_Savings_Percentage"] else 10.0) 
                   for col in feature_cols}
+    
+    # Create DataFrame and encode categorical variables
     input_df = pd.DataFrame([input_dict], columns=feature_cols)
+    input_df = pd.get_dummies(input_df, columns=['Occupation', 'City_Tier'])
+    
+    # Ensure all feature names match the trained model
+    trained_features = model.feature_names_in_
+    for feature in trained_features:
+        if feature not in input_df.columns:
+            input_df[feature] = 0
+    
+    # Reorder columns to match the trained model's feature order
+    input_df = input_df[trained_features]
+    
     return input_df
 
 def calculate_financial_health_score(income, savings, debt, miscellaneous):
@@ -84,11 +133,8 @@ def calculate_financial_health_score(income, savings, debt, miscellaneous):
 def predict_disposable_income(model, input_data):
     """Predict disposable income using raw data."""
     input_df = prepare_input(input_data)
-    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
-                    "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
-                    "Desired_Savings_Percentage"]
     try:
-        prediction = model.predict(input_df[feature_cols])[0]
+        prediction = model.predict(input_df)[0]
         return max(0, prediction)
     except Exception as e:
         st.error(f"Prediction error: {str(e)}")
@@ -174,7 +220,9 @@ with st.form(key="financial_form"):
         transport = st.number_input("Transport (₹)", min_value=0.0, value=3000.0, step=100.0)
         healthcare = st.number_input("Healthcare (₹)", min_value=0.0, value=1500.0, step=100.0)
         education = st.number_input("Education (₹)", min_value=0.0, value=0.0, step=100.0)
-        miscellaneous = st.number_input("Miscellaneous (₹) [Eating Out, Entertainment, Utilities]", min_value=0.0, value=7500.0, step=100.0)
+        eating_out = st.number_input("Eating Out (₹)", min_value=0.0, value=2000.0, step=100.0)
+        entertainment = st.number_input("Entertainment (₹)", min_value=0.0, value=1500.0, step=100.0)
+        utilities = st.number_input("Utilities (₹)", min_value=0.0, value=4000.0, step=100.0)
         desired_savings_percentage = st.number_input("Desired Savings Percentage (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0)
     
     st.subheader("Retirement Planning")
@@ -196,17 +244,20 @@ if submit_button:
         "Transport": transport,
         "Healthcare": healthcare,
         "Education": education,
-        "Miscellaneous": miscellaneous,
+        "Eating_Out": eating_out,
+        "Entertainment": entertainment,
+        "Utilities": utilities,
+        "Miscellaneous": 0,  # Placeholder, as Miscellaneous might not be directly used here
         "Desired_Savings_Percentage": desired_savings_percentage
     }
     
-    total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, miscellaneous])
+    total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, eating_out, entertainment, utilities])
     years_to_retirement = max(0, retirement_age - int(age))
     debt = rent + loan_repayment
     
     # Sidebar: Financial Health Score
     st.sidebar.subheader("Financial Health")
-    health_score = calculate_financial_health_score(income, income * (desired_savings_percentage / 100), debt, miscellaneous)
+    health_score = calculate_financial_health_score(income, income * (desired_savings_percentage / 100), debt, eating_out + entertainment + utilities)
     st.sidebar.metric("Score", f"{health_score:.1f}/100")
     if health_score < 40:
         st.sidebar.error("⚠️ Low: Take action!")
@@ -269,7 +320,8 @@ if submit_button:
     st.subheader("Spending Breakdown")
     spending_data = pd.Series({
         "Rent": rent, "Loan Repayment": loan_repayment, "Insurance": insurance, "Groceries": groceries,
-        "Transport": transport, "Healthcare": healthcare, "Education": education, "Miscellaneous": miscellaneous
+        "Transport": transport, "Healthcare": healthcare, "Education": education, "Eating Out": eating_out,
+        "Entertainment": entertainment, "Utilities": utilities
     })
     fig, ax = plt.subplots(figsize=(10, 5))
     spending_data.plot(kind="bar", ax=ax, color="skyblue")
@@ -294,8 +346,8 @@ if submit_button:
     
     # Actionable Recommendations
     st.subheader("Personalized Recommendations")
-    if miscellaneous > income * 0.2:
-        st.write(f"- 📉 *Review Miscellaneous Spending*: Exceeds 20% of income (₹{miscellaneous:,.2f}).")
+    if (eating_out + entertainment + utilities) > income * 0.2:
+        st.write(f"- 📉 *Review Discretionary Spending*: Exceeds 20% of income (₹{(eating_out + entertainment + utilities):,.2f}).")
     if loan_repayment > 0:
         st.write(f"- 💳 *Clear Debt*: Loan repayment (₹{loan_repayment:,.2f}) reduces your disposable income.")
     if desired_savings_percentage < 10:
@@ -305,4 +357,4 @@ if submit_button:
 
 # Footer
 st.markdown("---")
-st.write("using Streamlit)
+st.write("Powered by Streamlit")
