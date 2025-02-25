@@ -26,12 +26,28 @@ def load_data(csv_path="financial_data.csv"):
         # Load the CSV file
         data = pd.read_csv(csv_path)
         
-        # Use the exact column name from the CSV
-        combined_column_name = "Miscellaneous (Eating_Out,Entertainmentand Utilities)"
-        if combined_column_name not in data.columns:
-            st.error(f"Column '{combined_column_name}' not found in the CSV file. Check the column name in your data.")
+        # Try different possible variations of the column name
+        possible_column_names = [
+            "Miscellaneous (Eating_Out,Entertainmentand Utilities)",
+            "Miscellaneous(Eating_Out,Entertainmentand Utilities)",  # Without space after Miscellaneous
+            "Miscellaneous (Eating_Out, Entertainment and Utilities)",  # With spaces
+            "Miscellaneous(Eating_Out, Entertainment and Utilities)",  # Without space, with spaces in parentheses
+            "Miscellaneous",  # Just in case it’s simplified
+        ]
+        
+        combined_column_name = None
+        for name in possible_column_names:
+            if name in data.columns:
+                combined_column_name = name
+                break
+        
+        if combined_column_name is None:
+            st.error("Column not found in the CSV file. Possible column names checked: " + ", ".join(possible_column_names))
+            st.write("Please check the exact column name in your CSV file and update the `possible_column_names` list in the code.")
             return None
         
+        st.write(f"Found column: {combined_column_name}")  # Debug message to confirm the column name
+
         # Preprocess the combined column to split into separate features (Eating_Out, Entertainment, Utilities)
         def distribute_combined_value(value):
             if pd.isna(value) or value == 0:
@@ -305,7 +321,7 @@ if submit_button:
     years_to_retirement = max(0, st.session_state.retirement_age - int(age))
     desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=float(st.session_state.desired_retirement_fund), step=100000.0, key="fund")
     savings_rate_filter = st.slider("Adjust Savings Rate (%)", 0.0, 100.0, st.session_state.savings_rate_filter, step=1.0, key="savings")
-    income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, st.session_state.income_growth_rate, step=0.5, key="income_growth")
+    income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, st.session_state.incode_growth_rate, step=0.5, key="income_growth")
     expense_growth_rate = st.slider("Annual Expense Growth Rate (%)", 0.0, 10.0, st.session_state.expense_growth_rate, step=0.5, key="expense_growth")
     
     st.session_state.desired_retirement_fund = desired_retirement_fund
