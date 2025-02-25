@@ -463,3 +463,18 @@ if submit_button:
 # Footer
 st.markdown("---")
 st.write("Powered by Streamlit")
+
+# Define feature columns and include categorical columns
+feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
+                "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
+                "Utilities", "Desired_Savings_Percentage"]
+all_features = feature_cols + ['Occupation', 'City_Tier']
+...
+X = pd.get_dummies(data[all_features], columns=categorical_cols)
+
+feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
+                "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
+                "Utilities", "Desired_Savings_Percentage"]
+input_df['Occupation'] = 'Unknown'
+input_df['City_Tier'] = 'Unknown'
+input_df = pd.get_dummies(input_df, columns=['Occupation', 'City_Tier'])
