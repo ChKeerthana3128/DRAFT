@@ -19,139 +19,58 @@ st.set_page_config(page_title="AI Financial Dashboard (INR)", layout="wide")
 def load_data(csv_path="financial_data.csv"):
     """Load the dataset from a CSV file and clean column names."""
     if not os.path.exists(csv_path):
-        st.error(f"CSV file not found at {csv_path}. Please ensure the file exists.")
+        st.error(f"CSV file not found at {csv_path}. Please ensure 'financial_data.csv' exists.")
         return None
     
     try:
-        # Load the CSV file
         data = pd.read_csv(csv_path)
+        combined_column_name = "Miscellaneous (Eating_Out,Entertainmentand Utilities)"
         
-        # Try different possible variations of the column name, including the exact name from your CSV
-        possible_column_names = [
-            "Miscellaneous (Eating_Out,Entertainmentand Utilities)",  # Exact name from your CSV, without newline
-            "Miscellaneous(Eating_Out,Entertainmentand Utilities)",  # Without space after Miscellaneous
-            "Miscellaneous (Eating_Out, Entertainment and Utilities)",  # With spaces
-            "Miscellaneous(Eating_Out, Entertainment and Utilities)",  # Without space, with spaces in parentheses
-            "Miscellaneous",  # Just in case it’s simplified
-            "Miscellaneous (Eating_Out,Entertainmentand Utilities)\n"  # With newline, in case CSV retains it
-        ]
-        
-        combined_column_name = None
-        for name in possible_column_names:
-            # Strip whitespace and newline characters for comparison
-            cleaned_name = name.strip()
-            for col in data.columns:
-                if col.strip() == cleaned_name:
-                    combined_column_name = col
-                    break
-            if combined_column_name:
-                break
-        
-        if combined_column_name is None:
-            st.error("Column not found in the CSV file. Possible column names checked: " + ", ".join(possible_column_names))
-            st.write("**Available column names in your CSV file:**")
-            st.write([col.strip() for col in data.columns])  # Show all column names, cleaned of whitespace
-            st.write("Please update the `possible_column_names` list in the code with the exact column name from your CSV file.")
+        if combined_column_name not in data.columns:
+            st.error(f"Column '{combined_column_name}' not found. Available columns: {data.columns.tolist()}")
             return None
 
-        # Preprocess the combined column to split into separate features (Eating_Out, Entertainment, Utilities)
+        # Split Miscellaneous into Eating_Out, Entertainment, Utilities
         def distribute_combined_value(value):
-            if pd.isna(value) or value == 0:
-                return [0, 0, 0]  # Return zeros for Eating_Out, Entertainment, Utilities if value is 0 or NaN
-            # Distribute evenly among Eating_Out, Entertainment, and Utilities (you can modify this based on your data)
-            total = value / 3
-            return [total, total, total]  # [Eating_Out, Entertainment, Utilities]
+            return [value / 3] * 3 if pd.notna(value) and value > 0 else [0, 0, 0]
 
-        # Apply the distribution and create new columns
         distributed_values = data[combined_column_name].apply(distribute_combined_value)
         data[['Eating_Out', 'Entertainment', 'Utilities']] = pd.DataFrame(distributed_values.tolist(), index=data.index)
-
-        # Drop the combined column since we’ve split it
         data = data.drop(columns=[combined_column_name])
 
-        # Handle the Education column, checking for possible variations with more precision
-        possible_education_names = [
-            "Education",  # Standard name
-            "Education\n",  # With newline
-            " Education",  # With leading space
-            "Education ",  # With trailing space
-            "Education\r\n",  # With carriage return and newline (Windows-style)
-            "Edu",  # Possible abbreviation or typo
-            "Education Expenses"  # Possible alternative name
-        ]
-        
-        education_column = None
-        for name in possible_education_names:
-            if name in data.columns:  # Use exact match, including any trailing characters
-                education_column = name
-                break
-        
-        if education_column:
-            # Rename the column to "Education" without stripping, preserving any trailing characters temporarily
-            data = data.rename(columns={education_column: "Education\n"})  # Temporarily rename to retain newline
-            # Then strip the newline for consistency in the dataset
-            data.columns = [col.replace("\n", "") for col in data.columns]
-        else:
-            data["Education"] = 0  # Add Education column with zeros if not found
+        # Clean Education column
+        if "Education\n" in data.columns:
+            data = data.rename(columns={"Education\n": "Education"})
+        elif "Education" not in data.columns:
+            data["Education"] = 0
 
-        # Ensure required columns are present (including Education)
-        # Use exact column names without stripping for verification
-        required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", "Insurance", 
-                        "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
-                        "Desired_Savings_Percentage", "Disposable_Income"]  # Removed "Miscellaneous"
+        required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", 
+                         "Insurance", "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", 
+                         "Entertainment", "Utilities", "Desired_Savings_Percentage", "Disposable_Income"]
         missing_cols = [col for col in required_cols if col not in data.columns]
         if missing_cols:
-            st.error(f"Columns still missing after preprocessing: {missing_cols}. Check data and column names.")
-            st.write("Current columns in dataset:", data.columns.tolist())
+            st.error(f"Missing columns: {missing_cols}")
             return None
 
         return data
     except Exception as e:
-        st.error(f"Error loading CSV file: {str(e)}")
+        st.error(f"Error loading CSV: {str(e)}")
         return None
 
 # Load data
 data = load_data()
-
-# Check if data loaded successfully
 if data is None:
     st.stop()
 
 # Model Training
 def train_model(data):
-    """Train a LinearRegression model on raw data with updated feature set."""
-    # Define feature columns (excluding Miscellaneous, as it’s not present, and verify all columns exist)
-    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
-                    "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
-                    "Utilities", "Desired_Savings_Percentage"]  # Removed "Miscellaneous"
+    """Train a LinearRegression model to predict Disposable_Income."""
+    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
+                    "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
+                    "Desired_Savings_Percentage"]
+    categorical_cols = ["Occupation", "City_Tier"]
     
-    # Add categorical columns to the feature set for encoding
-    all_features = feature_cols + ['Occupation', 'City_Tier']
-    
-    # Verify that all feature columns exist in the dataset
-    missing_features = [col for col in all_features if col not in data.columns]
-    if missing_features:
-        st.error(f"Missing features in dataset: {missing_features}. Please check the data preprocessing.")
-        return None, None
-    
-    # Define categorical columns explicitly
-    categorical_cols = ['Occupation', 'City_Tier']
-    
-    # Check if categorical columns exist before encoding
-    for cat_col in categorical_cols:
-        if cat_col not in data.columns:
-            data[cat_col] = 'Unknown'  # Add a default value if missing
-    
-    # Ensure all categorical columns have valid data before encoding
-    for cat_col in categorical_cols:
-        if data[cat_col].isnull().any():
-            data[cat_col] = data[cat_col].fillna('Unknown')
-        if data[cat_col].dtype != 'object':
-            data[cat_col] = data[cat_col].astype(str)
-
-    # Encode categorical variables (Occupation, City_Tier) using all features including categorical columns
-    X = pd.get_dummies(data[all_features], columns=categorical_cols)
-    
+    X = pd.get_dummies(data[feature_cols + categorical_cols], columns=categorical_cols)
     y = data["Disposable_Income"]
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -160,110 +79,82 @@ def train_model(data):
     
     y_pred = model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
-    
     return model, r2
 
 @st.cache_resource
 def get_trained_model():
-    """Get or train the model and return it with its R² score."""
     model, r2 = train_model(data)
-    if model is None:
-        st.stop()
     return model, r2
 
-# Train the model
 model, r2_score_val = get_trained_model()
 
 # Helper Functions
 def prepare_input(input_data):
-    """Prepare user input data for prediction without normalization."""
-    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
-                    "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", 
-                    "Utilities", "Desired_Savings_Percentage"]  # Removed "Miscellaneous"
+    """Prepare user input for prediction."""
+    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
+                    "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
+                    "Desired_Savings_Percentage"]
+    input_dict = {col: input_data.get(col, 0.0 if col != "Desired_Savings_Percentage" else 10.0) for col in feature_cols}
     
-    # Default values for missing inputs
-    input_dict = {col: input_data.get(col, 0.0 if col not in ["Desired_Savings_Percentage"] else 10.0) 
-                  for col in feature_cols}
-    
-    # Create DataFrame and include categorical columns
     input_df = pd.DataFrame([input_dict], columns=feature_cols)
-    input_df['Occupation'] = 'Unknown'  # Default value for categorical column
-    input_df['City_Tier'] = 'Unknown'  # Default value for categorical column
+    input_df["Occupation"] = "Unknown"
+    input_df["City_Tier"] = "Unknown"
     
-    # Ensure all categorical columns are strings
-    categorical_cols = ['Occupation', 'City_Tier']
-    for cat_col in categorical_cols:
-        if input_df[cat_col].dtype != 'object':
-            input_df[cat_col] = input_df[cat_col].astype(str)
-
-    # Encode categorical variables
-    input_df = pd.get_dummies(input_df, columns=categorical_cols)
-    
-    # Ensure all feature names match the trained model
+    input_df = pd.get_dummies(input_df, columns=["Occupation", "City_Tier"])
     trained_features = model.feature_names_in_
     for feature in trained_features:
         if feature not in input_df.columns:
             input_df[feature] = 0
-    
-    # Reorder columns to match the trained model's feature order
     input_df = input_df[trained_features]
     
     return input_df
 
 def calculate_financial_health_score(income, savings, debt, miscellaneous):
-    """Calculate financial health score."""
+    """Calculate financial health score (0-100)."""
     savings_ratio = savings / income if income > 0 else 0
     debt_ratio = debt / income if income > 0 else 0
     discretionary_ratio = miscellaneous / income if income > 0 else 0
-    
     score = (savings_ratio * 50) - (debt_ratio * 30) - (discretionary_ratio * 20)
     return max(0, min(100, score))
 
 def predict_disposable_income(model, input_data):
-    """Predict disposable income using raw data."""
+    """Predict disposable income."""
     input_df = prepare_input(input_data)
-    try:
-        prediction = model.predict(input_df)[0]
-        return max(0, prediction)
-    except Exception as e:
-        st.error(f"Prediction error: {str(e)}")
-        return 0.0
+    return max(0, model.predict(input_df)[0])
 
 def predict_future_savings(income, total_expenses, savings_rate, years, income_growth_rate=0.0, expense_growth_rate=0.0):
-    """Predict future savings in INR with growth rates."""
-    savings_trajectory = []
+    """Calculate projected savings over time."""
+    total_savings = 0.0
     current_income = income
     current_expenses = total_expenses
-    total_savings = 0.0
     
-    for year in range(years + 1):
-        annual_savings = max(0, current_income * (savings_rate / 100) - current_expenses)
+    for _ in range(years + 1):
+        annual_savings = max(0, (current_income * (savings_rate / 100)) - current_expenses)
         total_savings += annual_savings
-        savings_trajectory.append(total_savings)
         current_income *= (1 + income_growth_rate / 100)
         current_expenses *= (1 + expense_growth_rate / 100)
     
-    return savings_trajectory[-1]
+    return total_savings
 
 def get_savings_trajectory(income, total_expenses, savings_rate, years, income_growth_rate, expense_growth_rate):
-    """Get savings trajectory for plotting."""
-    savings_trajectory = []
+    """Generate savings trajectory for plotting."""
+    trajectory = []
     current_income = income
     current_expenses = total_expenses
     total_savings = 0.0
     
-    for year in range(years + 1):
-        annual_savings = max(0, current_income * (savings_rate / 100) - current_expenses)
+    for _ in range(years + 1):
+        annual_savings = max(0, (current_income * (savings_rate / 100)) - current_expenses)
         total_savings += annual_savings
-        savings_trajectory.append(total_savings)
+        trajectory.append(total_savings)
         current_income *= (1 + income_growth_rate / 100)
         current_expenses *= (1 + expense_growth_rate / 100)
     
-    return savings_trajectory
+    return trajectory
 
 def suggest_wealth_management_params(income, total_expenses, years_to_retirement):
-    """Suggest Wealth Management parameters."""
-    suggested_fund = total_expenses * 12 * 20
+    """Suggest retirement planning parameters."""
+    suggested_fund = total_expenses * 12 * 20  # 20 years of expenses
     annual_savings_needed = suggested_fund / years_to_retirement if years_to_retirement > 0 else suggested_fund
     suggested_savings_rate = min(max((annual_savings_needed / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
     suggested_income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
@@ -271,36 +162,22 @@ def suggest_wealth_management_params(income, total_expenses, years_to_retirement
     return suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth
 
 # Sidebar Layout
-st.sidebar.title("Financial Insights")
-st.sidebar.markdown("Your key financial metrics in INR.")
+st.sidebar.title("Financial Insights (INR)")
 st.sidebar.subheader("Model Accuracy")
 st.sidebar.write(f"R² Score: {r2_score_val:.2f}")
 
-with st.sidebar.expander("Wealth Management Insights"):
-    st.write("""
-    - Plan your financial goals effectively.
-    - Allocate savings wisely based on your income.
-    """)
-
-with st.sidebar.expander("Financial Health Insights"):
-    st.write("""
-    - Monitor your debt-to-income ratio.
-    - Optimize discretionary spending for better savings.
-    """)
-
 # Main App
 st.title("AI Financial Dashboard (INR)")
-st.markdown("Enter your financial details to get personalized predictions and insights in Indian Rupees.")
+st.markdown("Enter your financial details for personalized insights in Indian Rupees.")
 
 # User Input Form
 with st.form(key="financial_form"):
-    st.subheader("Enter Your Details")
     col1, col2 = st.columns(2)
     with col1:
         name = st.text_input("Name", "Amit Sharma")
         age = st.number_input("Age", min_value=18, max_value=100, value=30)
         income = st.number_input("Monthly Income (₹)", min_value=0.0, value=50000.0, step=1000.0)
-        dependents = st.number_input("Number of Dependents", min_value=0, value=0)
+        dependents = st.number_input("Dependents", min_value=0, value=0)
         rent = st.number_input("Rent (₹)", min_value=0.0, value=15000.0, step=500.0)
         loan_repayment = st.number_input("Loan Repayment (₹)", min_value=0.0, value=0.0, step=500.0)
     with col2:
@@ -312,137 +189,91 @@ with st.form(key="financial_form"):
         eating_out = st.number_input("Eating Out (₹)", min_value=0.0, value=2000.0, step=100.0)
         entertainment = st.number_input("Entertainment (₹)", min_value=0.0, value=1500.0, step=100.0)
         utilities = st.number_input("Utilities (₹)", min_value=0.0, value=4000.0, step=100.0)
-        desired_savings_percentage = st.number_input("Desired Savings Percentage (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0)
+        desired_savings_percentage = st.number_input("Desired Savings %", min_value=0.0, max_value=100.0, value=10.0)
     
-    st.subheader("Retirement Planning")
-    default_retirement_age = min(62, age + 30)
-    retirement_age = st.slider("Retirement Age (up to 62)", int(age), 62, default_retirement_age)
-    
-    submit_button = st.form_submit_button(label="Analyze My Finances")
+    retirement_age = st.slider("Retirement Age", int(age), 62, min(62, age + 30))
+    submit_button = st.form_submit_button("Analyze My Finances")
 
 # Process Inputs and Display Results
 if submit_button:
     input_data = {
-        "Income": income,
-        "Age": age,
-        "Dependents": dependents,
-        "Rent": rent,
-        "Loan_Repayment": loan_repayment,
-        "Insurance": insurance,
-        "Groceries": groceries,
-        "Transport": transport,
-        "Healthcare": healthcare,
-        "Education": education,
-        "Eating_Out": eating_out,
-        "Entertainment": entertainment,
-        "Utilities": utilities,
-        "Desired_Savings_Percentage": desired_savings_percentage  # Removed "Miscellaneous" from input_data
+        "Income": income, "Age": age, "Dependents": dependents, "Rent": rent, "Loan_Repayment": loan_repayment,
+        "Insurance": insurance, "Groceries": groceries, "Transport": transport, "Healthcare": healthcare,
+        "Education": education, "Eating_Out": eating_out, "Entertainment": entertainment, "Utilities": utilities,
+        "Desired_Savings_Percentage": desired_savings_percentage
     }
     
-    total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, eating_out, entertainment, utilities])
-    years_to_retirement = max(0, retirement_age - int(age))
+    total_expenses = rent + loan_repayment + insurance + groceries + transport + healthcare + education + eating_out + entertainment + utilities
+    years_to_retirement = max(0, retirement_age - age)
     debt = rent + loan_repayment
     
-    # Sidebar: Financial Health Score
-    st.sidebar.subheader("Financial Health")
-    health_score = calculate_financial_health_score(income, income * (desired_savings_percentage / 100), debt, eating_out + entertainment + utilities)
+    # Financial Health Score
+    savings = income * (desired_savings_percentage / 100)
+    miscellaneous = eating_out + entertainment + utilities
+    health_score = calculate_financial_health_score(income, savings, debt, miscellaneous)
+    st.sidebar.subheader("Financial Health Score")
     st.sidebar.metric("Score", f"{health_score:.1f}/100")
-    if health_score < 40:
-        st.sidebar.error("Low: Take action!")
-    elif health_score < 70:
-        st.sidebar.warning("Moderate: Room to improve!")
-    else:
-        st.sidebar.success("Excellent!")
-    
-    # Sidebar: Disposable Income Prediction
+    st.sidebar.write("Status: " + ("Low" if health_score < 40 else "Moderate" if health_score < 70 else "Excellent"))
+
+    # Predicted Disposable Income
     predicted_disposable = predict_disposable_income(model, input_data)
     st.sidebar.subheader("Predicted Disposable Income")
     st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
-    
-    # Suggest Wealth Management parameters
+
+    # Wealth Management
     suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
-    
-    # Wealth Management Section
     st.subheader("Wealth Management")
-    st.write(f"Plan for retirement at age {retirement_age} ({years_to_retirement} years from now):")
-    
-    if 'desired_retirement_fund' not in st.session_state:
-        st.session_state.desired_retirement_fund = suggested_fund
-    if 'savings_rate_filter' not in st.session_state:
-        st.session_state.savings_rate_filter = suggested_savings_rate
-    if 'income_growth_rate' not in st.session_state:
-        st.session_state.income_growth_rate = suggested_income_growth
-    if 'expense_growth_rate' not in st.session_state:
-        st.session_state.expense_growth_rate = suggested_expense_growth
-    
-    def update_wealth_params():
-        years = max(0, st.session_state.retirement_age - int(age))
-        suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years)
-        st.session_state.desired_retirement_fund = suggested_fund
-        st.session_state.savings_rate_filter = suggested_savings_rate
-        st.session_state.income_growth_rate = suggested_income_growth
-        st.session_state.expense_growth_rate = suggested_expense_growth
-    
-    st.session_state.retirement_age = st.slider("Retirement Age", int(age), 62, retirement_age, on_change=update_wealth_params)
-    years_to_retirement = max(0, st.session_state.retirement_age - int(age))
-    desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=float(st.session_state.desired_retirement_fund), step=100000.0, key="fund")
-    savings_rate_filter = st.slider("Adjust Savings Rate (%)", 0.0, 100.0, st.session_state.savings_rate_filter, step=1.0, key="savings")
-    income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, st.session_state.income_growth_rate, step=0.5, key="income_growth")
-    expense_growth_rate = st.slider("Annual Expense Growth Rate (%)", 0.0, 10.0, st.session_state.expense_growth_rate, step=0.5, key="expense_growth")
-    
-    st.session_state.desired_retirement_fund = desired_retirement_fund
-    st.session_state.savings_rate_filter = savings_rate_filter
-    st.session_state.income_growth_rate = income_growth_rate
-    st.session_state.expense_growth_rate = expense_growth_rate
-    
-    future_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
-    st.sidebar.subheader("Wealth Management Results")
-    st.sidebar.write(f"Projected Savings: **₹{future_savings:,.2f}**")
+    desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=float(suggested_fund), step=100000.0)
+    savings_rate_filter = st.slider("Savings Rate (%)", 0.0, 100.0, suggested_savings_rate, step=1.0)
+    income_growth_rate = st.slider("Income Growth Rate (%)", 0.0, 10.0, suggested_income_growth, step=0.5)
+    expense_growth_rate = st.slider("Expense Growth Rate (%)", 0.0, 10.0, suggested_expense_growth, step=0.5)
+
+    # Projected Savings
+    projected_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
+    st.sidebar.subheader("Projected Savings")
+    st.sidebar.metric("At Retirement (₹)", f"₹{projected_savings:,.2f}")
+
+    # Required Savings Rate
     required_savings_rate = (desired_retirement_fund / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
-    st.sidebar.write(f"Required Savings Rate (at current income): **{required_savings_rate:.2f}%**")
-    
-    # Main Area: Detailed Insights
+    st.sidebar.subheader("Required Savings Rate")
+    st.sidebar.metric("To Meet Goal (%)", f"{required_savings_rate:.2f}%")
+
+    # Detailed Insights
     st.header(f"Financial Insights for {name}")
     
     # Spending Breakdown
     st.subheader("Spending Breakdown")
-    spending_data = pd.Series({
-        "Rent": rent, "Loan Repayment": loan_repayment, "Insurance": insurance, "Groceries": groceries,
-        "Transport": transport, "Healthcare": healthcare, "Education": education, "Eating Out": eating_out,
-        "Entertainment": entertainment, "Utilities": utilities
-    })
-    fig, ax = plt.subplots(figsize=(10, 5))
+    spending_data = pd.Series({"Rent": rent, "Loan": loan_repayment, "Insurance": insurance, "Groceries": groceries,
+                               "Transport": transport, "Healthcare": healthcare, "Education": education,
+                               "Eating Out": eating_out, "Entertainment": entertainment, "Utilities": utilities})
+    fig, ax = plt.subplots()
     spending_data.plot(kind="bar", ax=ax, color="skyblue")
-    ax.set_title("Your Monthly Spending (INR)")
+    ax.set_title("Monthly Spending (INR)")
     ax.set_ylabel("Amount (₹)")
     plt.xticks(rotation=45)
     st.pyplot(fig)
-    
-    # Savings Growth Plot
+
+    # Savings Growth Projection
     st.subheader("Savings Growth Projection")
-    years = np.arange(1, years_to_retirement + 1) if years_to_retirement > 0 else np.arange(1, 2)
-    savings_trajectory = get_savings_trajectory(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
-    
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(years, savings_trajectory[1:], marker="o", color="green", label="Projected Savings")
+    trajectory = get_savings_trajectory(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
+    years = np.arange(years_to_retirement + 1)
+    fig, ax = plt.subplots()
+    ax.plot(years, trajectory, marker="o", color="green", label="Projected Savings")
     ax.axhline(y=desired_retirement_fund, color="red", linestyle="--", label="Goal")
-    ax.set_title("Projected Savings Growth (INR)")
+    ax.set_title("Savings Growth (INR)")
     ax.set_xlabel("Years")
     ax.set_ylabel("Savings (₹)")
     ax.legend()
     st.pyplot(fig)
-    
-    # Actionable Recommendations
-    st.subheader("Personalized Recommendations")
-    if (eating_out + entertainment + utilities) > income * 0.2:
-        st.write("- Review Discretionary Spending: Exceeds 20% of income (₹{(eating_out + entertainment + utilities):,.2f}).")
-    if loan_repayment > 0:
-        st.write("- Clear Debt: Loan repayment (₹{loan_repayment:,.2f}) reduces your disposable income.")
-    if desired_savings_percentage < 10:
-        st.write("- Boost Savings: Increase your savings rate from {desired_savings_percentage:.1f}% to at least 10%.")
-    if total_expenses > income * 0.8:
-        st.write("- Cut Expenses: Spending (₹{total_expenses:,.2f}) is over 80% of income—review your budget!")
 
-# Footer
+    # Recommendations
+    st.subheader("Recommendations")
+    if miscellaneous > income * 0.2:
+        st.write(f"- Reduce discretionary spending (₹{miscellaneous:,.2f} > 20% of income).")
+    if debt > 0:
+        st.write(f"- Address debt (₹{debt:,.2f}) to improve disposable income.")
+    if savings_rate_filter < 10:
+        st.write(f"- Increase savings rate from {savings_rate_filter:.1f}% to at least 10%.")
+
 st.markdown("---")
 st.write("Powered by Streamlit")
