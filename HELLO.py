@@ -42,8 +42,11 @@ def load_data(csv_path="financial_data.csv"):
                 break
         
         if combined_column_name is None:
+            # Display all column names in the CSV for debugging
             st.error("Column not found in the CSV file. Possible column names checked: " + ", ".join(possible_column_names))
-            st.write("Please check the exact column name in your CSV file and update the `possible_column_names` list in the code.")
+            st.write("**Available column names in your CSV file:**")
+            st.write(list(data.columns))  # Show all column names to help identify the correct one
+            st.write("Please update the `possible_column_names` list in the code with the exact column name from your CSV file.")
             return None
         
         st.write(f"Found column: {combined_column_name}")  # Debug message to confirm the column name
@@ -130,7 +133,7 @@ def prepare_input(input_data):
     
     # Create DataFrame and encode categorical variables
     input_df = pd.DataFrame([input_dict], columns=feature_cols)
-    input_df = pd.get_dummies(input_df, columns=['Occupation', 'City_Tier'])
+    input_df = PD.get_dummies(input_df, columns=['Occupation', 'City_Tier'])
     
     # Ensure all feature names match the trained model
     trained_features = model.feature_names_in_
@@ -321,7 +324,7 @@ if submit_button:
     years_to_retirement = max(0, st.session_state.retirement_age - int(age))
     desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=float(st.session_state.desired_retirement_fund), step=100000.0, key="fund")
     savings_rate_filter = st.slider("Adjust Savings Rate (%)", 0.0, 100.0, st.session_state.savings_rate_filter, step=1.0, key="savings")
-    income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, st.session_state.incode_growth_rate, step=0.5, key="income_growth")
+    income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, st.session_state.income_growth_rate, step=0.5, key="income_growth")
     expense_growth_rate = st.slider("Annual Expense Growth Rate (%)", 0.0, 10.0, st.session_state.expense_growth_rate, step=0.5, key="expense_growth")
     
     st.session_state.desired_retirement_fund = desired_retirement_fund
