@@ -62,7 +62,7 @@ def load_finance_data(csv_path="financial_data.csv"):
 def load_stock_data(csv_path="archive (3)2"):
     """Load and preprocess the stock dataset."""
     if not os.path.exists(csv_path):
-        st.error(f"Stock CSV file not found at {csv_path}. Ensure "archive (3)2")
+        st.error(f"Stock CSV file not found at {csv_path}. 'archive (3)2' exists.")
         return None
     
     try:
