@@ -334,3 +334,104 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import joblib
+import yfinance as yf
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+
+# ----------------- Streamlit UI -----------------
+st.set_page_config(page_title="AI-Based Financial Investment Dashboard", layout="wide")
+
+st.title("📈 AI-Based Financial Investment Dashboard")
+st.sidebar.header("📊 Select Analysis Options")
+
+# ----------------- Load Dataset -----------------
+@st.cache_data
+def load_data():
+    df = pd.read_csv("nifty50_historical_data.csv")  # Update the filename
+    df['Date'] = pd.to_datetime(df['Date'])
+    df = df.sort_values(by='Date')
+    return df
+
+df = load_data()
+
+# ----------------- Sidebar: User Input -----------------
+st.sidebar.subheader("📌 Select Stock for Analysis")
+selected_stock = st.sidebar.selectbox("Choose a company", df['Symbol'].unique())
+
+st.sidebar.subheader("📌 Investment Horizon")
+horizon = st.sidebar.slider("Investment Horizon (in months)", 1, 60, 12)
+
+st.sidebar.subheader("📌 Risk Tolerance")
+risk_tolerance = st.sidebar.radio("Risk Level", ["Low", "Medium", "High"])
+
+# ----------------- Filter Data Based on User Selection -----------------
+stock_data = df[df['Symbol'] == selected_stock]
+
+# ----------------- Stock Price Trend -----------------
+st.subheader(f"📊 {selected_stock} Stock Performance")
+
+fig = px.line(stock_data, x='Date', y='Close', title=f"{selected_stock} Stock Price Trend", template="plotly_dark")
+st.plotly_chart(fig, use_container_width=True)
+
+# ----------------- Moving Average & Volatility -----------------
+st.subheader("📊 Moving Averages & Volatility")
+stock_data['SMA_30'] = stock_data['Close'].rolling(window=30).mean()
+stock_data['Volatility'] = stock_data['Close'].pct_change().rolling(window=30).std()
+
+fig_ma = px.line(stock_data, x='Date', y=['Close', 'SMA_30'], title="30-Day Moving Average", template="plotly_dark")
+fig_vol = px.line(stock_data, x='Date', y='Volatility', title="Stock Volatility", template="plotly_dark")
+
+st.plotly_chart(fig_ma, use_container_width=True)
+st.plotly_chart(fig_vol, use_container_width=True)
+
+# ----------------- AI-Based Stock Price Prediction -----------------
+st.subheader("📈 AI-Based Stock Price Prediction")
+
+# Feature Engineering
+stock_data['Day'] = stock_data['Date'].dt.day
+stock_data['Month'] = stock_data['Date'].dt.month
+stock_data['Year'] = stock_data['Date'].dt.year
+
+X = stock_data[['Day', 'Month', 'Year']]
+y = stock_data['Close']
+
+# Split Data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train Model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Predict
+future_days = pd.DataFrame({"Day": [1], "Month": [horizon], "Year": [2025]})
+predicted_price = model.predict(future_days)[0]
+
+st.write(f"📌 **Predicted Price for {selected_stock} in {horizon} months:** ₹{predicted_price:.2f}")
+
+# ----------------- Portfolio Recommendation -----------------
+st.subheader("💡 Investment Portfolio Recommendation")
+
+if risk_tolerance == "Low":
+    recommendation = "✅ Invest in Blue-Chip Stocks & Bonds (HDFC, TCS, Infosys, Govt Bonds)"
+elif risk_tolerance == "Medium":
+    recommendation = "✅ Invest in Diversified Portfolio (Large Cap, Mid Cap, Real Estate, Mutual Funds)"
+else:
+    recommendation = "✅ Invest in High-Growth Stocks & Startups (Small Cap, Crypto, Emerging Markets)"
+
+st.write(recommendation)
+
+# ----------------- ESG & Financial Ratios -----------------
+st.subheader("📊 Financial Ratios & ESG Ranking")
+financial_data = stock_data[['PE_ratio', 'EPS_ratio', 'PS_ratio', 'PB_ratio', 'NetProfitMargin_ratio', 'roe_ratio', 'current_ratio', 'ESG_ranking']]
+st.dataframe(financial_data)
+
+# ----------------- Save Model -----------------
+joblib.dump(model, "stock_price_model.pkl")
+
