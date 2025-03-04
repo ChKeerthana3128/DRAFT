@@ -340,7 +340,6 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import joblib
-import yfinance as yf
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
@@ -354,9 +353,10 @@ st.sidebar.header("📊 Select Analysis Options")
 # ----------------- Load Dataset -----------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("nifty50_historical_data.csv")  # Update the filename
+    df = pd.read_csv("nifty50_historical_data.csv")  # Ensure the correct file name
     df['Date'] = pd.to_datetime(df['Date'])
     df = df.sort_values(by='Date')
+    df.dropna(inplace=True)  # Remove missing values
     return df
 
 df = load_data()
@@ -433,5 +433,4 @@ financial_data = stock_data[['PE_ratio', 'EPS_ratio', 'PS_ratio', 'PB_ratio', 'N
 st.dataframe(financial_data)
 
 # ----------------- Save Model -----------------
-joblib.dump(model, "stock_price_model.pkl")
-
+joblib.dump(model, "models/stock_price_model.pkl")
