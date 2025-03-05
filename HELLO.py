@@ -432,3 +432,51 @@ def main():
 
 if __name__ == "__main__":
     main()
+@st.cache_data
+def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
+    """Load and preprocess the stock dataset for a single index."""
+    if not os.path.exists(csv_path):
+        st.error(f"Stock CSV file not found at {csv_path}. Ensure 'archive (3) 2/NIFTY CONSUMPTION_daily_data.csv' exists.")
+        return None
+    
+    try:
+        df = pd.read_csv(csv_path)
+        
+        # Find date and close columns (case-insensitive)
+        date_col = close_col = None
+        for col in df.columns:
+            if col.lower() == "date":
+                date_col = col
+            elif col.lower() == "close":
+                close_col = col
+        
+        # Check for required columns
+        missing_cols = []
+        if date_col is None:
+            missing_cols.append("Date")
+        if close_col is None:
+            missing_cols.append("Close")
+        
+        if missing_cols:
+            st.error(f"Missing required columns in stock data: {missing_cols}. Available columns: {df.columns.tolist()}")
+            return None
+
+        # Rename columns to standard names
+        df = df.rename(columns={date_col: "Date", close_col: "Close"})
+        
+        # Add a dummy Symbol column for single index
+        df['Symbol'] = "NIFTY CONSUMPTION"
+
+        # Convert Date to datetime
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        if df['Date'].isnull().all():
+            st.error("Failed to parse 'Date' column. Please ensure dates are in a valid format (e.g., YYYY-MM-DD).")
+            return None
+
+        df = df.sort_values(by='Date')
+        df.dropna(inplace=True)
+
+        return df
+    except Exception as e:
+        st.error(f"Error loading stock CSV: {str(e)}")
+        return None
