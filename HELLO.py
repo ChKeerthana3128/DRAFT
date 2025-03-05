@@ -67,22 +67,33 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     try:
         df = pd.read_csv(csv_path)
         
-        # Find the date column (case-insensitive)
-        date_col = None
+        # Find date, symbol, and close columns (case-insensitive)
+        date_col = symbol_col = close_col = None
         for col in df.columns:
             if col.lower() == "date":
                 date_col = col
-                break
+            elif col.lower() == "symbol":
+                symbol_col = col
+            elif col.lower() == "close":
+                close_col = col
         
+        # Check for required columns
+        missing_cols = []
         if date_col is None:
-            st.error(f"No 'Date' column found in stock CSV. Available columns: {df.columns.tolist()}")
-            return None
+            missing_cols.append("Date")
+        if symbol_col is None:
+            missing_cols.append("Symbol")
+        if close_col is None:
+            missing_cols.append("Close")
         
-        # Rename to 'Date' for consistency
-        if date_col != "Date":
-            df = df.rename(columns={date_col: "Date"})
+        if missing_cols:
+            st.error(f"Missing required columns in stock data: {missing_cols}. Available columns: {df.columns.tolist()}")
+            return None
 
-        # Convert to datetime
+        # Rename columns to standard names
+        df = df.rename(columns={date_col: "Date", symbol_col: "Symbol", close_col: "Close"})
+
+        # Convert Date to datetime
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
         if df['Date'].isnull().all():
             st.error("Failed to parse 'Date' column. Please ensure dates are in a valid format (e.g., YYYY-MM-DD).")
@@ -90,13 +101,6 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
 
         df = df.sort_values(by='Date')
         df.dropna(inplace=True)
-        
-        # Ensure 'Symbol' and 'Close' are present
-        required_cols = ["Symbol", "Close"]
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        if missing_cols:
-            st.error(f"Missing required columns in stock data: {missing_cols}")
-            return None
 
         return df
     except Exception as e:
