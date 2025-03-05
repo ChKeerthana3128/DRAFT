@@ -59,7 +59,7 @@ def load_finance_data(csv_path="financial_data.csv"):
 
 @st.cache_data
 def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
-    """Load and preprocess the stock dataset from the specified directory."""
+    """Load and preprocess the NIFTY CONSUMPTION index dataset."""
     if not os.path.exists(csv_path):
         st.error(f"Stock CSV file not found at {csv_path}. Ensure 'archive (3) 2/NIFTY CONSUMPTION_daily_data.csv' exists.")
         return None
@@ -67,31 +67,18 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     try:
         df = pd.read_csv(csv_path)
         
-        # Find date, symbol, and close columns (case-insensitive)
-        date_col = symbol_col = close_col = None
-        for col in df.columns:
-            if col.lower() == "date":
-                date_col = col
-            elif col.lower() == "symbol":
-                symbol_col = col
-            elif col.lower() == "close":
-                close_col = col
+        # Rename columns to match expected names
+        df = df.rename(columns={
+            "date": "Date",
+            "close": "Close",
+            "open": "Open",
+            "high": "High",
+            "low": "Low",
+            "volume": "Volume"
+        })
         
-        # Check for required columns
-        missing_cols = []
-        if date_col is None:
-            missing_cols.append("Date")
-        if symbol_col is None:
-            missing_cols.append("Symbol")
-        if close_col is None:
-            missing_cols.append("Close")
-        
-        if missing_cols:
-            st.error(f"Missing required columns in stock data: {missing_cols}. Available columns: {df.columns.tolist()}")
-            return None
-
-        # Rename columns to standard names
-        df = df.rename(columns={date_col: "Date", symbol_col: "Symbol", close_col: "Close"})
+        # Add a dummy Symbol column since this is a single index
+        df['Symbol'] = "NIFTY CONSUMPTION"
 
         # Convert Date to datetime
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
@@ -363,18 +350,17 @@ def main():
     # --- Stock Investment Dashboard ---
     with tab2:
         st.header("Stock Investment Dashboard")
-        st.markdown("Analyze stock performance and get investment predictions.")
+        st.markdown("Analyze NIFTY CONSUMPTION index performance and get investment predictions.")
 
-        # Stock Options
-        selected_stock = st.sidebar.selectbox("Choose a Stock", stock_data['Symbol'].unique(), key="stock_select")
+        # Stock Options (only horizon and risk tolerance since it's a single index)
         horizon = st.sidebar.slider("Investment Horizon (Months)", 1, 60, 12, key="horizon")
         risk_tolerance = st.sidebar.radio("Risk Level", ["Low", "Medium", "High"], key="risk")
 
-        stock_subset = stock_data[stock_data['Symbol'] == selected_stock]
+        stock_subset = stock_data  # No filtering needed since it's a single index
 
         # Stock Price Trend
-        st.subheader(f"{selected_stock} Stock Performance")
-        fig = px.line(stock_subset, x='Date', y='Close', title=f"{selected_stock} Stock Price Trend", template="plotly_dark")
+        st.subheader("NIFTY CONSUMPTION Index Performance")
+        fig = px.line(stock_subset, x='Date', y='Close', title="NIFTY CONSUMPTION Index Price Trend", template="plotly_dark")
         st.plotly_chart(fig, use_container_width=True)
 
         # Moving Average & Volatility
@@ -383,12 +369,12 @@ def main():
         stock_subset['Volatility'] = stock_subset['Close'].pct_change().rolling(window=30).std()
 
         fig_ma = px.line(stock_subset, x='Date', y=['Close', 'SMA_30'], title="30-Day Moving Average", template="plotly_dark")
-        fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="Stock Volatility", template="plotly_dark")
+        fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="Index Volatility", template="plotly_dark")
         st.plotly_chart(fig_ma, use_container_width=True)
         st.plotly_chart(fig_vol, use_container_width=True)
 
         # AI-Based Stock Price Prediction
-        st.subheader("AI-Based Stock Price Prediction")
+        st.subheader("AI-Based Index Price Prediction")
         stock_subset['Day'] = stock_subset['Date'].dt.day
         stock_subset['Month'] = stock_subset['Date'].dt.month
         stock_subset['Year'] = stock_subset['Date'].dt.year
@@ -402,7 +388,7 @@ def main():
 
         future_days = pd.DataFrame({"Day": [1], "Month": [horizon], "Year": [2025]})
         predicted_price = stock_model.predict(future_days)[0]
-        st.write(f"📌 **Predicted Price for {selected_stock} in {horizon} months:** ₹{predicted_price:.2f}")
+        st.write(f"📌 **Predicted Price for NIFTY CONSUMPTION in {horizon} months:** ₹{predicted_price:.2f}")
 
         # Portfolio Recommendation
         st.subheader("Investment Portfolio Recommendation")
@@ -414,13 +400,13 @@ def main():
             recommendation = "✅ Invest in High-Growth Stocks & Startups (Small Cap, Crypto, Emerging Markets)"
         st.write(recommendation)
 
-        # Financial Ratios & ESG
-        st.subheader("Financial Ratios & ESG Ranking")
-        available_ratios = [col for col in ['PE_ratio', 'EPS_ratio', 'PS_ratio', 'PB_ratio', 'NetProfitMargin_ratio', 'roe_ratio', 'current_ratio', 'ESG_ranking'] if col in stock_subset.columns]
+        # Financial Ratios & ESG (not typically available for index data)
+        st.subheader("Additional Data")
+        available_ratios = [col for col in ['Open', 'High', 'Low', 'Volume'] if col in stock_subset.columns]
         if available_ratios:
             st.dataframe(stock_subset[available_ratios])
         else:
-            st.write("No financial ratios or ESG data available in the dataset.")
+            st.write("No additional data available beyond price and volume.")
 
         # Save Stock Model
         if not os.path.exists("models"):
@@ -432,51 +418,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-@st.cache_data
-def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
-    """Load and preprocess the stock dataset for a single index."""
-    if not os.path.exists(csv_path):
-        st.error(f"Stock CSV file not found at {csv_path}. Ensure 'archive (3) 2/NIFTY CONSUMPTION_daily_data.csv' exists.")
-        return None
-    
-    try:
-        df = pd.read_csv(csv_path)
-        
-        # Find date and close columns (case-insensitive)
-        date_col = close_col = None
-        for col in df.columns:
-            if col.lower() == "date":
-                date_col = col
-            elif col.lower() == "close":
-                close_col = col
-        
-        # Check for required columns
-        missing_cols = []
-        if date_col is None:
-            missing_cols.append("Date")
-        if close_col is None:
-            missing_cols.append("Close")
-        
-        if missing_cols:
-            st.error(f"Missing required columns in stock data: {missing_cols}. Available columns: {df.columns.tolist()}")
-            return None
-
-        # Rename columns to standard names
-        df = df.rename(columns={date_col: "Date", close_col: "Close"})
-        
-        # Add a dummy Symbol column for single index
-        df['Symbol'] = "NIFTY CONSUMPTION"
-
-        # Convert Date to datetime
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        if df['Date'].isnull().all():
-            st.error("Failed to parse 'Date' column. Please ensure dates are in a valid format (e.g., YYYY-MM-DD).")
-            return None
-
-        df = df.sort_values(by='Date')
-        df.dropna(inplace=True)
-
-        return df
-    except Exception as e:
-        st.error(f"Error loading stock CSV: {str(e)}")
-        return None
