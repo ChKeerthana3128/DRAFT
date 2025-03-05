@@ -20,15 +20,15 @@ st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initia
 # Custom CSS for white text and black background
 st.markdown("""
     <style>
-    .main {background-color: #000000;}
-    .sidebar .sidebar-content {background-color: #333333;}
+    .main {background-color: #000000;} /* Main background set to black */
+    .sidebar .sidebar-content {background-color: #333333;} /* Dark gray sidebar for white text */
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
-    .stMetric {background-color: #333333; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #FFFFFF !important;}
-    .stExpander {background-color: #333333; border-radius: 8px; color: #FFFFFF !important;}
-    h1, h2, h3, h4, h5, h6 {color: #FFFFFF !important;}
-    .stMarkdown, .stText, p, div, span, label {color: #FFFFFF !important;}
-    .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {color: #FFFFFF !important;}
-    .css-1d391kg, .css-1v0mbdj {color: #FFFFFF !important;}
+    .stMetric {background-color: #333333; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #FFFFFF !important;} /* White text on dark gray */
+    .stExpander {background-color: #333333; border-radius: 8px; color: #FFFFFF !important;} /* White text in expanders */
+    h1, h2, h3, h4, h5, h6 {color: #FFFFFF !important;} /* White headings */
+    .stMarkdown, .stText, p, div, span, label {color: #FFFFFF !important;} /* White for most text */
+    .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {color: #FFFFFF !important;} /* White in sidebar */
+    .css-1d391kg, .css-1v0mbdj {color: #FFFFFF !important;} /* Targets Streamlit elements */
     </style>
 """, unsafe_allow_html=True)
 
@@ -124,6 +124,7 @@ def prepare_finance_input(input_data, model):
     return input_df[model.feature_names_in_]
 
 def calculate_financial_health_score(income, total_expenses, debt, discretionary):
+    """🌡️ Gauge your financial strength!"""
     if income <= 0:
         return 0
     savings = max(0, income - total_expenses)
@@ -139,6 +140,7 @@ def predict_disposable_income(model, input_data):
     return max(0, model.predict(prepare_finance_input(input_data, model))[0])
 
 def forecast_wealth_growth(income, total_expenses, savings_rate, years, income_growth=0.0, expense_growth=0.0):
+    """📈 Project your wealth ascent!"""
     wealth = 0.0
     current_income, current_expenses = income, total_expenses
     for _ in range(years + 1):
@@ -163,6 +165,7 @@ def wealth_trajectory(income, total_expenses, savings_rate, years, income_growth
     return trajectory
 
 def smart_savings_plan(income, total_expenses, years_to_retirement):
+    """🧠 Craft your retirement blueprint!"""
     dream_fund = total_expenses * 12 * 20
     annual_target = dream_fund / years_to_retirement if years_to_retirement > 0 else dream_fund
     savings_rate = min(max((annual_target / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
@@ -170,7 +173,7 @@ def smart_savings_plan(income, total_expenses, years_to_retirement):
     expense_growth = 2.5
     return dream_fund, savings_rate, income_growth, expense_growth
 
-# 6. Insight Generators (Not displayed in sidebar as per request)
+# 6. Insight Generators
 def financial_wisdom(health_score, debt, discretionary, income, total_expenses):
     insights = [f"🌟 Your Financial Health Score: {health_score:.1f}/100"]
     status = "🎉 Excellent" if health_score >= 70 else "👍 Moderate" if health_score >= 40 else "⚠️ Needs Work"
@@ -201,6 +204,7 @@ def wealth_management_insights(income, total_expenses, savings_rate, years_to_re
     return insights
 
 def portfolio_advice(risk_tolerance):
+    """💼 Your investment playbook!"""
     if risk_tolerance == "Low":
         return {
             "Overview": "🌳 Calm and steady wins the race!",
@@ -256,7 +260,7 @@ def main():
                 age = st.number_input("🎂 Age", min_value=18, max_value=100, value=30)
                 income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, value=50000.0, step=1000.0)
                 dependents = st.number_input("👨‍👩‍👧 Dependents", min_value=0, value=0)
-                rent = st.number_input("🏠 Rent (₹onado)", min_value=0.0, value=15000.0, step=500.0)
+                rent = st.number_input("🏠 Rent (₹)", min_value=0.0, value=15000.0, step=500.0)
                 loan_repayment = st.number_input("💳 Loan Repayment (₹)", min_value=0.0, value=0.0, step=500.0)
             with col2:
                 insurance = st.number_input("🛡️ Insurance (₹)", min_value=0.0, value=2000.0, step=100.0)
@@ -272,12 +276,11 @@ def main():
             retirement_age = st.slider("👴 Retirement Age", int(age), 62, min(62, age + 30))
             submit = st.form_submit_button("🚀 Analyze My Finances")
 
-        # Sidebar for Personal Finance (Only specified elements)
+        # Sidebar for Personal Finance
         st.sidebar.title("🌟 WealthWise Insights")
         st.sidebar.subheader("Personal Finance")
         st.sidebar.write(f"📊 Finance Model R²: {finance_r2:.2f}")
 
-        st.sidebar.subheader("🌡️ Financial Health")
         if submit:
             input_data = {
                 "Income": income, "Age": age, "Dependents": dependents, "Rent": rent, "Loan_Repayment": loan_repayment,
@@ -290,32 +293,32 @@ def main():
             debt = rent + loan_repayment
             discretionary = eating_out + entertainment + utilities
 
+            st.sidebar.subheader("🌡️ Financial Health")
             health_score = calculate_financial_health_score(income, total_expenses, debt, discretionary)
             st.sidebar.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
-        else:
-            st.sidebar.metric("Score", "N/A")
 
-        st.sidebar.subheader("💸 Disposable Income")
-        if submit:
+            st.sidebar.subheader("💸 Disposable Income")
             disposable = predict_disposable_income(finance_model, input_data)
             st.sidebar.metric("Monthly (₹)", f"₹{disposable:,.2f}")
-        else:
-            st.sidebar.metric("Monthly (₹)", "N/A")
 
-        st.sidebar.subheader("🏦 Future Wealth")
-        if submit:
+            st.subheader("🌍 Wealth Roadmap")
             dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, total_expenses, years_to_retirement)
             desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=dream_fund, step=100000.0)
             savings_rate = st.slider("🎯 Savings Rate (%)", 0.0, 100.0, suggested_rate, step=1.0)
             income_growth = st.slider("📈 Income Growth (%)", 0.0, 10.0, income_growth, step=0.5)
             expense_growth = st.slider("📉 Expense Growth (%)", 0.0, 10.0, expense_growth, step=0.5)
-            wealth = forecast_wealth_growth(income, total_expenses, savings_rate, years_to_retirement, income_growth, expense_growth)
-            st.sidebar.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
-        else:
-            st.sidebar.metric("At Retirement (₹)", "N/A")
 
-        # Main content remains as before
-        if submit:
+            wealth = forecast_wealth_growth(income, total_expenses, savings_rate, years_to_retirement, income_growth, expense_growth)
+            st.sidebar.subheader("🏦 Future Wealth")
+            st.sidebar.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
+
+            with st.sidebar.expander("💡 Financial Wisdom"):
+                for tip in financial_wisdom(health_score, debt, discretionary, income, total_expenses):
+                    st.write(tip)
+            with st.sidebar.expander("🌍 Wealth Management Tips"):
+                for tip in wealth_management_insights(income, total_expenses, savings_rate, years_to_retirement, wealth, desired_fund):
+                    st.write(tip)
+
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("📊 Spending Snapshot")
@@ -327,6 +330,7 @@ def main():
                 ax.set_title("Monthly Spending (₹)")
                 ax.set_ylabel("Amount (₹)")
                 plt.xticks(rotation=45)
+                # Chart labels set to white
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
                     label.set_color("#FFFFFF")
                 ax.title.set_color("#FFFFFF")
@@ -342,6 +346,7 @@ def main():
                 ax.set_xlabel("Years")
                 ax.set_ylabel("Savings (₹)")
                 ax.legend()
+                # Chart labels set to white
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
                     label.set_color("#FFFFFF")
                 ax.title.set_color("#FFFFFF")
@@ -351,35 +356,30 @@ def main():
                 for text in ax.legend().get_texts():
                     text.set_color("#FFFFFF")
                 st.pyplot(fig)
+        else:
+            st.sidebar.subheader("🌡️ Financial Health")
+            st.sidebar.metric("Score", "N/A")
+            st.sidebar.subheader("💸 Disposable Income")
+            st.sidebar.metric("Monthly (₹)", "N/A")
+            st.sidebar.subheader("🏦 Future Wealth")
+            st.sidebar.metric("At Retirement (₹)", "N/A")
 
-    # --- Stock Investments Dashboard ---
+    # --- Stock Investment Dashboard ---
     with tabs[1]:
         st.header("📈 Stock Market Quest")
         st.markdown("Conquer the NIFTY CONSUMPTION index! 🌠")
 
-        horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=45)
+        horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=12)
         risk_tolerance = st.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
 
-        # Sidebar for Stock Investments (Only specified elements)
+        # Sidebar for Stock Investments
         st.sidebar.title("🌟 WealthWise Insights")
         st.sidebar.subheader("Stock Investments")
         st.sidebar.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
-        st.sidebar.subheader("📌 Predicted Price")
-        future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-        predicted_price = stock_model.predict(future)[0]
-        st.sidebar.metric(f"In {horizon} Months (₹)", f"₹{predicted_price:,.2f}")
-
-        # Display predicted growth in sidebar
-        st.sidebar.subheader("💡 Investment Insights")
-        st.sidebar.write(f"🎯 Risk Level: {risk_tolerance}")
-        st.sidebar.write(f"📈 Horizon: {horizon} months")
-        predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
-        st.sidebar.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
-
-        # Main content remains as before
         st.subheader("📉 NIFTY CONSUMPTION Trend")
         fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
+        # Plotly text set to white
         fig.update_layout(
             title_font_color="#FFFFFF",
             xaxis_title_font_color="#FFFFFF",
@@ -420,6 +420,10 @@ def main():
             st.plotly_chart(fig_vol, use_container_width=True)
 
         st.subheader("🔮 Price Prediction")
+        future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
+        predicted_price = stock_model.predict(future)[0]
+        st.sidebar.subheader("📌 Predicted Price")
+        st.sidebar.metric(f"In {horizon} Months (₹)", f"₹{predicted_price:,.2f}")
         st.write(f"📌 Predicted Price in {horizon} months: **₹{predicted_price:,.2f}**")
 
         st.subheader("💼 Investment Playbook")
@@ -427,6 +431,11 @@ def main():
         st.write(f"**Strategy**: {portfolio['Overview']}")
         for pick in portfolio["Picks"]:
             st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']}")
+
+        with st.sidebar.expander("💡 Investment Insights"):
+            st.write(f"🎯 Risk Level: {risk_tolerance}")
+            st.write(f"📈 Horizon: {horizon} months")
+            st.write(f"💰 Predicted Growth: ₹{predicted_price - stock_data['Close'].iloc[-1]:,.2f}")
 
         if not os.path.exists("models"):
             os.makedirs("models")
