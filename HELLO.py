@@ -17,18 +17,18 @@ warnings.filterwarnings("ignore")
 # 2. Page Configuration and Styling
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for light headings and black main background
+# Custom CSS for white text and black background
 st.markdown("""
     <style>
     .main {background-color: #000000;} /* Main background set to black */
-    .sidebar .sidebar-content {background-color: #e6f3ff;} /* Sidebar light blue */
+    .sidebar .sidebar-content {background-color: #333333;} /* Dark gray sidebar for white text */
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
-    .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #1A2526 !important;}
-    .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #1A2526 !important;}
-    h1, h2, h3, h4, h5, h6 {color: #E6F0FF !important;} /* Light blue for headings */
-    .stMarkdown, .stText, p, div, span, label {color: #1A2526 !important;} /* Other text remains dark charcoal gray */
-    .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {color: #1A2526 !important;}
-    .css-1d391kg, .css-1v0mbdj {color: #1A2526 !important;} /* Targets Streamlit elements */
+    .stMetric {background-color: #333333; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #FFFFFF !important;} /* White text on dark gray */
+    .stExpander {background-color: #333333; border-radius: 8px; color: #FFFFFF !important;} /* White text in expanders */
+    h1, h2, h3, h4, h5, h6 {color: #FFFFFF !important;} /* White headings */
+    .stMarkdown, .stText, p, div, span, label {color: #FFFFFF !important;} /* White for most text */
+    .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {color: #FFFFFF !important;} /* White in sidebar */
+    .css-1d391kg, .css-1v0mbdj {color: #FFFFFF !important;} /* Targets Streamlit elements */
     </style>
 """, unsafe_allow_html=True)
 
@@ -330,11 +330,11 @@ def main():
                 ax.set_title("Monthly Spending (₹)")
                 ax.set_ylabel("Amount (₹)")
                 plt.xticks(rotation=45)
-                # Chart labels remain dark charcoal gray
+                # Chart labels set to white
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
-                    label.set_color("#1A2526")
-                ax.title.set_color("#1A2526")
-                ax.yaxis.label.set_color("#1A2526")
+                    label.set_color("#FFFFFF")
+                ax.title.set_color("#FFFFFF")
+                ax.yaxis.label.set_color("#FFFFFF")
                 st.pyplot(fig)
             with col2:
                 st.subheader("🌱 Wealth Growth")
@@ -346,15 +346,15 @@ def main():
                 ax.set_xlabel("Years")
                 ax.set_ylabel("Savings (₹)")
                 ax.legend()
-                # Chart labels remain dark charcoal gray
+                # Chart labels set to white
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
-                    label.set_color("#1A2526")
-                ax.title.set_color("#1A2526")
-                ax.xaxis.label.set_color("#1A2526")
-                ax.yaxis.label.set_color("#1A2526")
+                    label.set_color("#FFFFFF")
+                ax.title.set_color("#FFFFFF")
+                ax.xaxis.label.set_color("#FFFFFF")
+                ax.yaxis.label.set_color("#FFFFFF")
                 ax.legend().set_title("")
                 for text in ax.legend().get_texts():
-                    text.set_color("#1A2526")
+                    text.set_color("#FFFFFF")
                 st.pyplot(fig)
         else:
             st.sidebar.subheader("🌡️ Financial Health")
@@ -379,13 +379,13 @@ def main():
 
         st.subheader("📉 NIFTY CONSUMPTION Trend")
         fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
-        # Plotly text remains dark charcoal gray
+        # Plotly text set to white
         fig.update_layout(
-            title_font_color="#1A2526",
-            xaxis_title_font_color="#1A2526",
-            yaxis_title_font_color="#1A2526",
-            xaxis_tickfont_color="#1A2526",
-            yaxis_tickfont_color="#1A2526"
+            title_font_color="#FFFFFF",
+            xaxis_title_font_color="#FFFFFF",
+            yaxis_title_font_color="#FFFFFF",
+            xaxis_tickfont_color="#FFFFFF",
+            yaxis_tickfont_color="#FFFFFF"
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -398,24 +398,24 @@ def main():
             st.subheader("📏 Moving Average")
             fig_ma = px.line(stock_subset, x='Date', y=['Close', 'SMA_30'], title="30-Day SMA", template="plotly_dark")
             fig_ma.update_layout(
-                title_font_color="#1A2526",
-                xaxis_title_font_color="#1A2526",
-                yaxis_title_font_color="#1A2526",
-                xaxis_tickfont_color="#1A2526",
-                yaxis_tickfont_color="#1A2526",
-                legend_font_color="#1A2526"
+                title_font_color="#FFFFFF",
+                xaxis_title_font_color="#FFFFFF",
+                yaxis_title_font_color="#FFFFFF",
+                xaxis_tickfont_color="#FFFFFF",
+                yaxis_tickfont_color="#FFFFFF",
+                legend_font_color="#FFFFFF"
             )
             st.plotly_chart(fig_ma, use_container_width=True)
         with col2:
             st.subheader("🌩️ Volatility")
             fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="30-Day Volatility", template="plotly_dark")
             fig_vol.update_layout(
-                title_font_color="#1A2526",
-                xaxis_title_font_color="#1A2526",
-                yaxis_title_font_color="#1A2526",
-                xaxis_tickfont_color="#1A2526",
-                yaxis_tickfont_color="#1A2526",
-                legend_font_color="#1A2526"
+                title_font_color="#FFFFFF",
+                xaxis_title_font_color="#FFFFFF",
+                yaxis_title_font_color="#FFFFFF",
+                xaxis_tickfont_color="#FFFFFF",
+                yaxis_tickfont_color="#FFFFFF",
+                legend_font_color="#FFFFFF"
             )
             st.plotly_chart(fig_vol, use_container_width=True)
 
