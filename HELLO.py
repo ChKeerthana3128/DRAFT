@@ -17,16 +17,16 @@ warnings.filterwarnings("ignore")
 # 2. Page Configuration and Styling
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for high-contrast text and vibrant design
+# Custom CSS for light headings and black main background
 st.markdown("""
     <style>
-    .main {background-color: #f0f8ff;}
-    .sidebar .sidebar-content {background-color: #e6f3ff;}
+    .main {background-color: #000000;} /* Main background set to black */
+    .sidebar .sidebar-content {background-color: #e6f3ff;} /* Sidebar light blue */
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
     .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #1A2526 !important;}
     .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #1A2526 !important;}
-    h1, h2, h3, h4, h5, h6 {color: #1A2526 !important;}
-    .stMarkdown, .stText, p, div, span, label {color: #1A2526 !important;}
+    h1, h2, h3, h4, h5, h6 {color: #E6F0FF !important;} /* Light blue for headings */
+    .stMarkdown, .stText, p, div, span, label {color: #1A2526 !important;} /* Other text remains dark charcoal gray */
     .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {color: #1A2526 !important;}
     .css-1d391kg, .css-1v0mbdj {color: #1A2526 !important;} /* Targets Streamlit elements */
     </style>
@@ -330,7 +330,7 @@ def main():
                 ax.set_title("Monthly Spending (₹)")
                 ax.set_ylabel("Amount (₹)")
                 plt.xticks(rotation=45)
-                # Ensure chart labels are dark charcoal gray
+                # Chart labels remain dark charcoal gray
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
                     label.set_color("#1A2526")
                 ax.title.set_color("#1A2526")
@@ -346,7 +346,7 @@ def main():
                 ax.set_xlabel("Years")
                 ax.set_ylabel("Savings (₹)")
                 ax.legend()
-                # Ensure chart labels are dark charcoal gray
+                # Chart labels remain dark charcoal gray
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
                     label.set_color("#1A2526")
                 ax.title.set_color("#1A2526")
@@ -379,7 +379,7 @@ def main():
 
         st.subheader("📉 NIFTY CONSUMPTION Trend")
         fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
-        # Ensure Plotly text is readable (dark charcoal gray)
+        # Plotly text remains dark charcoal gray
         fig.update_layout(
             title_font_color="#1A2526",
             xaxis_title_font_color="#1A2526",
