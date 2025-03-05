@@ -13,18 +13,19 @@ import os
 
 warnings.filterwarnings("ignore")
 
-# Set page configuration with a vibrant theme
+# Page configuration with a vibrant theme
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for colorful styling
+# Custom CSS for enhanced readability and vibrancy
 st.markdown("""
     <style>
     .main {background-color: #f0f8ff;}
     .sidebar .sidebar-content {background-color: #e6f3ff;}
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
-    .stMetric {background-color: #fff3e6; border: 1px solid #ffa500; border-radius: 8px; padding: 10px;}
+    .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px;}
     .stExpander {background-color: #f9f9f9; border-radius: 8px;}
     h1, h2 {color: #2E8B57;}
+    .stMarkdown {color: #333333;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -108,28 +109,28 @@ def prepare_finance_input(input_data, model):
     return input_df[model.feature_names_in_]
 
 def calculate_financial_health_score(income, total_expenses, debt, discretionary):
-    """🌟 Calculate your financial wellness score (0-100) based on real-world benchmarks."""
+    """🌡️ Assess your financial vitality with precision!"""
     if income <= 0:
         return 0
     savings = max(0, income - total_expenses)
     savings_ratio = savings / income
     debt_ratio = debt / income
     discretionary_ratio = discretionary / income
-    # Adjusted to align with CSV patterns
     savings_score = min(25, (savings_ratio / 0.2) * 25)  # 25 points for 20% savings
-    debt_score = max(0, 50 - (debt_ratio * 100))  # 50 points, heavy debt penalty
-    discretionary_score = max(0, 25 - (discretionary_ratio * 125))  # 25 points, moderate penalty
+    debt_score = max(0, 50 - (debt_ratio * 100))  # 50 points, penalize high debt
+    discretionary_score = max(0, 25 - (discretionary_ratio * 125))  # 25 points, moderate discretionary penalty
     return max(0, min(100, savings_score + debt_score + discretionary_score))
 
 def predict_disposable_income(model, input_data):
     return max(0, model.predict(prepare_finance_input(input_data, model))[0])
 
 def forecast_wealth_growth(income, total_expenses, savings_rate, years, income_growth=0.0, expense_growth=0.0):
-    """📈 Project your financial future with optimism!"""
+    """📈 Envision your financial horizon!"""
     wealth = 0.0
     current_income, current_expenses = income, total_expenses
-    for _ in range(years + 1):
-        annual_savings = max(0, (current_income * (savings_rate / 100)) - current_expenses)
+    for year in range(years + 1):
+        disposable = current_income - current_expenses
+        annual_savings = max(0, disposable * (savings_rate / 100))
         wealth += annual_savings
         current_income *= (1 + income_growth / 100)
         current_expenses *= (1 + expense_growth / 100)
@@ -140,7 +141,8 @@ def wealth_trajectory(income, total_expenses, savings_rate, years, income_growth
     wealth = 0.0
     current_income, current_expenses = income, total_expenses
     for _ in range(years + 1):
-        annual_savings = max(0, (current_income * (savings_rate / 100)) - current_expenses)
+        disposable = current_income - current_expenses
+        annual_savings = max(0, disposable * (savings_rate / 100))
         wealth += annual_savings
         trajectory.append(wealth)
         current_income *= (1 + income_growth / 100)
@@ -148,8 +150,8 @@ def wealth_trajectory(income, total_expenses, savings_rate, years, income_growth
     return trajectory
 
 def smart_savings_plan(income, total_expenses, years_to_retirement):
-    """🧠 Craft a clever savings strategy!"""
-    dream_fund = total_expenses * 12 * 20
+    """🧠 Design your golden retirement plan!"""
+    dream_fund = total_expenses * 12 * 20  # 20 years of expenses
     annual_target = dream_fund / years_to_retirement if years_to_retirement > 0 else dream_fund
     savings_rate = min(max((annual_target / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
     income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
@@ -163,43 +165,58 @@ def financial_wisdom(health_score, debt, discretionary, income, total_expenses):
     insights.append(f"Status: {status}")
     debt_ratio = debt / income if income > 0 else 0
     if debt_ratio > 0.36:
-        insights.append(f"💸 Debt (₹{debt:,.2f}) is {debt_ratio:.1%} of income—above 36%. Time to strategize!")
+        insights.append(f"💸 Debt (₹{debt:,.2f}) is {debt_ratio:.1%} of income—above 36%. Time to tackle it!")
     discretionary_ratio = discretionary / income if income > 0 else 0
     if discretionary_ratio > 0.15:
-        insights.append(f"🎭 Discretionary (₹{discretionary:,.2f}) at {discretionary_ratio:.1%}—over 15%. Trim the fun?")
+        insights.append(f"🎭 Discretionary (₹{discretionary:,.2f}) at {discretionary_ratio:.1%}—over 15%. Cut back a bit?")
     savings_ratio = max(0, income - total_expenses) / income if income > 0 else 0
     if savings_ratio < 0.2:
-        insights.append(f"💰 Savings at {savings_ratio:.1%}—below 20%. Boost it up!")
+        insights.append(f"💰 Savings at {savings_ratio:.1%}—below 20%. Let’s boost that!")
+    return insights
+
+def wealth_management_insights(income, total_expenses, savings_rate, years_to_retirement, wealth, desired_fund):
+    """🌍 Navigate your wealth-building journey!"""
+    insights = [f"🏦 With {savings_rate:.1f}% savings over {years_to_retirement} years, you’ll hit ₹{wealth:,.2f}."]
+    shortfall = desired_fund - wealth if wealth < desired_fund else 0
+    if shortfall > 0:
+        extra_rate = (shortfall / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
+        insights.append(f"📉 Shortfall of ₹{shortfall:,.2f}. Boost savings by {extra_rate:.1f}% or trim expenses.")
+    else:
+        insights.append(f"🎯 You’re set to exceed your goal by ₹{-shortfall:,.2f}! Consider investing the surplus.")
+    if years_to_retirement > 20:
+        insights.append("⏳ Long road ahead—leverage a 3% income growth for bigger gains!")
+    elif years_to_retirement < 10:
+        insights.append("⏰ Short timeline—prioritize savings now!")
     return insights
 
 def portfolio_advice(risk_tolerance):
-    """💼 Your personalized investment playbook!"""
+    """💼 Your investment treasure map!"""
     if risk_tolerance == "Low":
         return {
-            "Overview": "🌳 Steady growth with minimal risk!",
+            "Overview": "🌳 Steady growth with peace of mind!",
             "Picks": [
-                {"Type": "Blue-Chip", "Name": "HDFC Bank 🏦", "Why": "Reliable dividends, strong banking leader."},
-                {"Type": "Blue-Chip", "Name": "TCS 💻", "Why": "Stable IT giant with global reach."},
+                {"Type": "Blue-Chip", "Name": "HDFC Bank 🏦", "Why": "Solid dividends, banking titan."},
+                {"Type": "Blue-Chip", "Name": "TCS 💻", "Why": "Stable IT leader with global reach."},
                 {"Type": "Bonds", "Name": "RBI Bonds 📜", "Why": "Safe, guaranteed returns."}
             ]
         }
     elif risk_tolerance == "Medium":
         return {
-            "Overview": "⚖️ Balanced growth with calculated risks!",
+            "Overview": "⚖️ Balanced growth with smart risks!",
             "Picks": [
-                {"Type": "Large Cap", "Name": "Reliance Industries 🏭", "Why": "Diversified powerhouse."},
-                {"Type": "Mid Cap", "Name": "Bajaj Finance 📈", "Why": "High-growth financial player."},
-                {"Type": "Real Estate", "Name": "DLF 🏡", "Why": "Steady property appreciation."},
-                {"Type": "Mutual Fund", "Name": "SBI Bluechip Fund 🌟", "Why": "Diversified with moderate risk."}
+                {"Type": "Large Cap", "Name": "Reliance Industries 🏭", "Why": "Diversified giant."},
+                {"Type": "Mid Cap", "Name": "Bajaj Finance 📈", "Why": "High-growth finance star."},
+                {"Type": "Real Estate", "Name": "DLF 🏡", "Why": "Steady property gains."},
+                {"Type": "Mutual Fund", "Name": "SBI Bluechip Fund 🌟", "Why": "Balanced risk-reward."}
             ]
         }
     else:
         return {
-            "Overview": "🚀 High stakes, high rewards!",
+            "Overview": "🚀 High stakes, epic rewards!",
             "Picks": [
-                {"Type": "Small Cap", "Name": "Paytm 💳", "Why": "Fintech innovator with big potential."},
-                {"Type": "Small Cap", "Name": "Zomato 🍽️", "Why": "Rapidly expanding food tech."},
-                {"Type": "Crypto", "Name": "Bitcoin ₿", "Why": "High-risk, high-reward asset."}
+                {"Type": "Small Cap", "Name": "Paytm 💳", "Why": "Fintech with explosive potential."},
+                {"Type": "Small Cap", "Name": "Zomato 🍽️", "Why": "Food tech on the rise."},
+                {"Type": "Crypto", "Name": "Bitcoin ₿", "Why": "High-risk, high-reward thrill!"}
             ]
         }
 
@@ -221,8 +238,8 @@ def main():
 
     # --- Personal Finance Dashboard ---
     with tabs[0]:
-        st.header("💵 Your Personal Finance Journey")
-        st.markdown("Plan your financial future with flair! 🌈")
+        st.header("💵 Your Money Mastery Hub")
+        st.markdown("Shape your financial destiny with style! 🌈")
 
         with st.form(key="finance_form"):
             col1, col2 = st.columns(2)
@@ -281,6 +298,9 @@ def main():
             with st.sidebar.expander("💡 Financial Wisdom"):
                 for tip in financial_wisdom(health_score, debt, discretionary, income, total_expenses):
                     st.write(tip)
+            with st.sidebar.expander("🌍 Wealth Management Tips"):
+                for tip in wealth_management_insights(income, total_expenses, savings_rate, years_to_retirement, wealth, desired_fund):
+                    st.write(tip)
 
             col1, col2 = st.columns(2)
             with col1:
@@ -308,8 +328,8 @@ def main():
 
     # --- Stock Investment Dashboard ---
     with tabs[1]:
-        st.header("📈 Stock Market Adventure")
-        st.markdown("Explore NIFTY CONSUMPTION and plan your investments! 🌠")
+        st.header("📈 Stock Market Quest")
+        st.markdown("Dive into NIFTY CONSUMPTION and conquer your investments! 🌠")
 
         horizon = st.sidebar.slider("⏳ Investment Horizon (Months)", 1, 60, 12)
         risk_tolerance = st.sidebar.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
