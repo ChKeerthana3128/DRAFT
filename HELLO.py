@@ -13,16 +13,18 @@ import os
 
 warnings.filterwarnings("ignore")
 
-# Page configuration with a vibrant theme
+# Page configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for enhanced readability and vibrancy
+# Custom CSS for readability and vibrancy
 st.markdown("""
     <style>
     .main {background-color: #f0f8ff;}
     .sidebar .sidebar-content {background-color: #e6f3ff;}
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
-    .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px;}
+    .stMetric {background-color: #d9e6ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #333333;}
+    .stMetric label {color: #333333 !important; font-weight: bold;}
+    .stMetric div {color: #333333 !important;}
     .stExpander {background-color: #f9f9f9; border-radius: 8px;}
     h1, h2 {color: #2E8B57;}
     .stMarkdown {color: #333333;}
@@ -33,13 +35,13 @@ st.markdown("""
 @st.cache_data
 def load_finance_data(csv_path="financial_data.csv"):
     if not os.path.exists(csv_path):
-        st.error("🚨 Finance CSV not found! Please upload 'financial_data.csv'.")
+        st.error("🚨 Finance CSV not found!")
         return None
     try:
         data = pd.read_csv(csv_path)
         combined_col = "Miscellaneous (Eating_Out,Entertainmentand Utilities)\n"
         if combined_col not in data.columns:
-            st.error(f"🚨 Missing '{combined_col}' column. Available: {data.columns.tolist()}")
+            st.error(f"🚨 Missing '{combined_col}' column!")
             return None
         data[['Eating_Out', 'Entertainment', 'Utilities']] = data[combined_col].apply(
             lambda x: [x/3]*3 if pd.notna(x) and x > 0 else [0, 0, 0]
@@ -64,7 +66,7 @@ def load_finance_data(csv_path="financial_data.csv"):
 @st.cache_data
 def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
-        st.error("🚨 Stock CSV not found! Ensure 'NIFTY CONSUMPTION_daily_data.csv' exists.")
+        st.error("🚨 Stock CSV not found!")
         return None
     try:
         df = pd.read_csv(csv_path)
@@ -93,6 +95,18 @@ def train_finance_model(data):
     model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
+@st.cache_resource
+def train_stock_model(data):
+    data['Day'] = data['Date'].dt.day
+    data['Month'] = data['Date'].dt.month
+    data['Year'] = data['Date'].dt.year
+    X = data[['Day', 'Month', 'Year']]
+    y = data['Close']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    return model, r2_score(y_test, model.predict(X_test))
+
 # --- Predictive Functions ---
 def prepare_finance_input(input_data, model):
     features = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
@@ -109,28 +123,28 @@ def prepare_finance_input(input_data, model):
     return input_df[model.feature_names_in_]
 
 def calculate_financial_health_score(income, total_expenses, debt, discretionary):
-    """🌡️ Assess your financial vitality with precision!"""
+    """🌡️ Gauge your financial vitality!"""
     if income <= 0:
         return 0
     savings = max(0, income - total_expenses)
     savings_ratio = savings / income
     debt_ratio = debt / income
     discretionary_ratio = discretionary / income
-    savings_score = min(25, (savings_ratio / 0.2) * 25)  # 25 points for 20% savings
-    debt_score = max(0, 50 - (debt_ratio * 100))  # 50 points, penalize high debt
-    discretionary_score = max(0, 25 - (discretionary_ratio * 125))  # 25 points, moderate discretionary penalty
+    savings_score = min(25, (savings_ratio / 0.2) * 25)
+    debt_score = max(0, 50 - (debt_ratio * 100))
+    discretionary_score = max(0, 25 - (discretionary_ratio * 125))
     return max(0, min(100, savings_score + debt_score + discretionary_score))
 
 def predict_disposable_income(model, input_data):
     return max(0, model.predict(prepare_finance_input(input_data, model))[0])
 
 def forecast_wealth_growth(income, total_expenses, savings_rate, years, income_growth=0.0, expense_growth=0.0):
-    """📈 Envision your financial horizon!"""
+    """📈 Project your wealth with precision!"""
     wealth = 0.0
     current_income, current_expenses = income, total_expenses
-    for year in range(years + 1):
-        disposable = current_income - current_expenses
-        annual_savings = max(0, disposable * (savings_rate / 100))
+    for _ in range(years):
+        disposable = max(0, current_income - current_expenses)
+        annual_savings = disposable * (savings_rate / 100)
         wealth += annual_savings
         current_income *= (1 + income_growth / 100)
         current_expenses *= (1 + expense_growth / 100)
@@ -141,8 +155,8 @@ def wealth_trajectory(income, total_expenses, savings_rate, years, income_growth
     wealth = 0.0
     current_income, current_expenses = income, total_expenses
     for _ in range(years + 1):
-        disposable = current_income - current_expenses
-        annual_savings = max(0, disposable * (savings_rate / 100))
+        disposable = max(0, current_income - current_expenses)
+        annual_savings = disposable * (savings_rate / 100)
         wealth += annual_savings
         trajectory.append(wealth)
         current_income *= (1 + income_growth / 100)
@@ -150,8 +164,8 @@ def wealth_trajectory(income, total_expenses, savings_rate, years, income_growth
     return trajectory
 
 def smart_savings_plan(income, total_expenses, years_to_retirement):
-    """🧠 Design your golden retirement plan!"""
-    dream_fund = total_expenses * 12 * 20  # 20 years of expenses
+    """🧠 Craft a savvy savings strategy!"""
+    dream_fund = total_expenses * 12 * 20
     annual_target = dream_fund / years_to_retirement if years_to_retirement > 0 else dream_fund
     savings_rate = min(max((annual_target / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
     income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
@@ -165,58 +179,57 @@ def financial_wisdom(health_score, debt, discretionary, income, total_expenses):
     insights.append(f"Status: {status}")
     debt_ratio = debt / income if income > 0 else 0
     if debt_ratio > 0.36:
-        insights.append(f"💸 Debt (₹{debt:,.2f}) is {debt_ratio:.1%} of income—above 36%. Time to tackle it!")
+        insights.append(f"💸 Debt (₹{debt:,.2f}) is {debt_ratio:.1%} of income—above 36%!")
     discretionary_ratio = discretionary / income if income > 0 else 0
     if discretionary_ratio > 0.15:
-        insights.append(f"🎭 Discretionary (₹{discretionary:,.2f}) at {discretionary_ratio:.1%}—over 15%. Cut back a bit?")
+        insights.append(f"🎭 Discretionary (₹{discretionary:,.2f}) at {discretionary_ratio:.1%}—over 15%!")
     savings_ratio = max(0, income - total_expenses) / income if income > 0 else 0
     if savings_ratio < 0.2:
-        insights.append(f"💰 Savings at {savings_ratio:.1%}—below 20%. Let’s boost that!")
+        insights.append(f"💰 Savings at {savings_ratio:.1%}—below 20%!")
     return insights
 
 def wealth_management_insights(income, total_expenses, savings_rate, years_to_retirement, wealth, desired_fund):
-    """🌍 Navigate your wealth-building journey!"""
-    insights = [f"🏦 With {savings_rate:.1f}% savings over {years_to_retirement} years, you’ll hit ₹{wealth:,.2f}."]
+    insights = [f"🏦 With {savings_rate:.1f}% savings over {years_to_retirement} years, you’ll reach ₹{wealth:,.2f}."]
     shortfall = desired_fund - wealth if wealth < desired_fund else 0
     if shortfall > 0:
         extra_rate = (shortfall / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
-        insights.append(f"📉 Shortfall of ₹{shortfall:,.2f}. Boost savings by {extra_rate:.1f}% or trim expenses.")
+        insights.append(f"📉 Short ₹{shortfall:,.2f}. Increase savings by {extra_rate:.1f}% or cut costs.")
     else:
-        insights.append(f"🎯 You’re set to exceed your goal by ₹{-shortfall:,.2f}! Consider investing the surplus.")
+        insights.append(f"🎯 Surplus of ₹{-shortfall:,.2f}! Invest the extra wisely.")
     if years_to_retirement > 20:
-        insights.append("⏳ Long road ahead—leverage a 3% income growth for bigger gains!")
+        insights.append("⏳ Long haul—ride a 3% income growth wave!")
     elif years_to_retirement < 10:
-        insights.append("⏰ Short timeline—prioritize savings now!")
+        insights.append("⏰ Short fuse—save aggressively now!")
     return insights
 
 def portfolio_advice(risk_tolerance):
-    """💼 Your investment treasure map!"""
+    """💼 Your investment playbook!"""
     if risk_tolerance == "Low":
         return {
-            "Overview": "🌳 Steady growth with peace of mind!",
+            "Overview": "🌳 Steady & Safe!",
             "Picks": [
-                {"Type": "Blue-Chip", "Name": "HDFC Bank 🏦", "Why": "Solid dividends, banking titan."},
-                {"Type": "Blue-Chip", "Name": "TCS 💻", "Why": "Stable IT leader with global reach."},
-                {"Type": "Bonds", "Name": "RBI Bonds 📜", "Why": "Safe, guaranteed returns."}
+                {"Type": "Blue-Chip", "Name": "HDFC Bank 🏦", "Why": "Reliable dividends."},
+                {"Type": "Blue-Chip", "Name": "TCS 💻", "Why": "Stable IT giant."},
+                {"Type": "Bonds", "Name": "RBI Bonds 📜", "Why": "Guaranteed returns."}
             ]
         }
     elif risk_tolerance == "Medium":
         return {
-            "Overview": "⚖️ Balanced growth with smart risks!",
+            "Overview": "⚖️ Balanced Gains!",
             "Picks": [
-                {"Type": "Large Cap", "Name": "Reliance Industries 🏭", "Why": "Diversified giant."},
-                {"Type": "Mid Cap", "Name": "Bajaj Finance 📈", "Why": "High-growth finance star."},
-                {"Type": "Real Estate", "Name": "DLF 🏡", "Why": "Steady property gains."},
-                {"Type": "Mutual Fund", "Name": "SBI Bluechip Fund 🌟", "Why": "Balanced risk-reward."}
+                {"Type": "Large Cap", "Name": "Reliance Industries 🏭", "Why": "Diversified strength."},
+                {"Type": "Mid Cap", "Name": "Bajaj Finance 📈", "Why": "Growth with stability."},
+                {"Type": "Real Estate", "Name": "DLF 🏡", "Why": "Property appreciation."},
+                {"Type": "Mutual Fund", "Name": "SBI Bluechip Fund 🌟", "Why": "Moderate risk-reward."}
             ]
         }
     else:
         return {
-            "Overview": "🚀 High stakes, epic rewards!",
+            "Overview": "🚀 High Flyer!",
             "Picks": [
-                {"Type": "Small Cap", "Name": "Paytm 💳", "Why": "Fintech with explosive potential."},
-                {"Type": "Small Cap", "Name": "Zomato 🍽️", "Why": "Food tech on the rise."},
-                {"Type": "Crypto", "Name": "Bitcoin ₿", "Why": "High-risk, high-reward thrill!"}
+                {"Type": "Small Cap", "Name": "Paytm 💳", "Why": "Fintech boom potential."},
+                {"Type": "Small Cap", "Name": "Zomato 🍽️", "Why": "Food tech growth."},
+                {"Type": "Crypto", "Name": "Bitcoin ₿", "Why": "High stakes, high reward!"}
             ]
         }
 
@@ -228,18 +241,17 @@ def main():
         st.stop()
 
     finance_model, finance_r2 = train_finance_model(finance_data)
+    stock_model, stock_r2 = train_stock_model(stock_data)
 
     # Sidebar
     st.sidebar.title("🌟 WealthWise Insights")
-    st.sidebar.subheader("Model Performance")
-    st.sidebar.write(f"📊 Finance Model R²: {finance_r2:.2f}")
 
     tabs = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
 
     # --- Personal Finance Dashboard ---
     with tabs[0]:
         st.header("💵 Your Money Mastery Hub")
-        st.markdown("Shape your financial destiny with style! 🌈")
+        st.markdown("Shape your financial future with flair! 🌈")
 
         with st.form(key="finance_form"):
             col1, col2 = st.columns(2)
@@ -276,13 +288,13 @@ def main():
             debt = rent + loan_repayment
             discretionary = eating_out + entertainment + utilities
 
-            st.sidebar.subheader("🌡️ Financial Health")
+            # Personal Finance Sidebar
+            st.sidebar.subheader("💵 Personal Finance Insights")
+            st.sidebar.write(f"📊 Finance Model R²: {finance_r2:.2f}")
             health_score = calculate_financial_health_score(income, total_expenses, debt, discretionary)
-            st.sidebar.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
-
-            st.sidebar.subheader("💸 Disposable Income")
+            st.sidebar.metric("🌡️ Financial Health", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
             disposable = predict_disposable_income(finance_model, input_data)
-            st.sidebar.metric("Monthly (₹)", f"₹{disposable:,.2f}")
+            st.sidebar.metric("💸 Disposable Income (₹)", f"₹{disposable:,.2f}")
 
             st.subheader("🌍 Wealth Roadmap")
             dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, total_expenses, years_to_retirement)
@@ -292,13 +304,12 @@ def main():
             expense_growth = st.slider("📉 Expense Growth (%)", 0.0, 10.0, expense_growth, step=0.5)
 
             wealth = forecast_wealth_growth(income, total_expenses, savings_rate, years_to_retirement, income_growth, expense_growth)
-            st.sidebar.subheader("🏦 Future Wealth")
-            st.sidebar.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
+            st.sidebar.metric("🏦 Future Wealth (₹)", f"₹{wealth:,.2f}")
 
             with st.sidebar.expander("💡 Financial Wisdom"):
                 for tip in financial_wisdom(health_score, debt, discretionary, income, total_expenses):
                     st.write(tip)
-            with st.sidebar.expander("🌍 Wealth Management Tips"):
+            with st.sidebar.expander("🌍 Wealth Tips"):
                 for tip in wealth_management_insights(income, total_expenses, savings_rate, years_to_retirement, wealth, desired_fund):
                     st.write(tip)
 
@@ -329,10 +340,10 @@ def main():
     # --- Stock Investment Dashboard ---
     with tabs[1]:
         st.header("📈 Stock Market Quest")
-        st.markdown("Dive into NIFTY CONSUMPTION and conquer your investments! 🌠")
+        st.markdown("Master the NIFTY CONSUMPTION index! 🌠")
 
-        horizon = st.sidebar.slider("⏳ Investment Horizon (Months)", 1, 60, 12)
-        risk_tolerance = st.sidebar.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
+        horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, key="horizon")
+        risk_tolerance = st.radio("🎲 Risk Appetite", ["Low", "Medium", "High"], key="risk")
 
         st.subheader("📉 NIFTY CONSUMPTION Trend")
         fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
@@ -353,17 +364,14 @@ def main():
             st.plotly_chart(fig_vol, use_container_width=True)
 
         st.subheader("🔮 Price Prediction")
-        stock_subset['Day'] = stock_subset['Date'].dt.day
-        stock_subset['Month'] = stock_subset['Date'].dt.month
-        stock_subset['Year'] = stock_subset['Date'].dt.year
-        X = stock_subset[['Day', 'Month', 'Year']]
-        y = stock_subset['Close']
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        stock_model = RandomForestRegressor(n_estimators=100, random_state=42)
-        stock_model.fit(X_train, y_train)
         future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
         predicted_price = stock_model.predict(future)[0]
         st.write(f"📌 Predicted Price in {horizon} months: **₹{predicted_price:,.2f}**")
+
+        # Stock Investment Sidebar
+        st.sidebar.subheader("📈 Stock Investment Insights")
+        st.sidebar.write(f"📊 Stock Model R²: {stock_r2:.2f}")
+        st.sidebar.metric("🔮 Predicted Price (₹)", f"₹{predicted_price:,.2f}")
 
         st.subheader("💼 Investment Playbook")
         portfolio = portfolio_advice(risk_tolerance)
