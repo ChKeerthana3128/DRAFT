@@ -1,3 +1,4 @@
+# 1. Imports
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -13,25 +14,25 @@ import os
 
 warnings.filterwarnings("ignore")
 
-# Page configuration
+# 2. Page Configuration and Styling
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS to ensure all text is black for maximum visibility
+# Custom CSS for high-contrast text and vibrant design
 st.markdown("""
     <style>
     .main {background-color: #f0f8ff;}
     .sidebar .sidebar-content {background-color: #e6f3ff;}
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
-    .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #000000 !important;}
-    .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #000000 !important;}
-    h1, h2, h3, h4, h5, h6 {color: #000000 !important;}
-    .stMarkdown, .stText, p, div, span, label {color: #000000 !important;}
-    .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {color: #000000 !important;}
-    .css-1d391kg, .css-1v0mbdj {color: #000000 !important;} /* Ensures all Streamlit elements are black */
+    .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #1A2526 !important;}
+    .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #1A2526 !important;}
+    h1, h2, h3, h4, h5, h6 {color: #1A2526 !important;}
+    .stMarkdown, .stText, p, div, span, label {color: #1A2526 !important;}
+    .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {color: #1A2526 !important;}
+    .css-1d391kg, .css-1v0mbdj {color: #1A2526 !important;} /* Targets Streamlit elements */
     </style>
 """, unsafe_allow_html=True)
 
-# --- Data Loading ---
+# 3. Data Loading
 @st.cache_data
 def load_finance_data(csv_path="financial_data.csv"):
     if not os.path.exists(csv_path):
@@ -82,7 +83,7 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
         st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
 
-# --- Model Training ---
+# 4. Model Training
 @st.cache_resource
 def train_finance_model(data):
     features = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
@@ -107,7 +108,7 @@ def train_stock_model(data):
     model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
-# --- Predictive Functions ---
+# 5. Predictive Functions
 def prepare_finance_input(input_data, model):
     features = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
                 "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
@@ -172,7 +173,7 @@ def smart_savings_plan(income, total_expenses, years_to_retirement):
     expense_growth = 2.5
     return dream_fund, savings_rate, income_growth, expense_growth
 
-# --- Insight Generators ---
+# 6. Insight Generators
 def financial_wisdom(health_score, debt, discretionary, income, total_expenses):
     insights = [f"🌟 Your Financial Health Score: {health_score:.1f}/100"]
     status = "🎉 Excellent" if health_score >= 70 else "👍 Moderate" if health_score >= 40 else "⚠️ Needs Work"
@@ -233,13 +234,15 @@ def portfolio_advice(risk_tolerance):
             ]
         }
 
-# --- Main Application ---
+# 7. Main Application
 def main():
+    # Load data
     finance_data = load_finance_data()
     stock_data = load_stock_data()
     if finance_data is None or stock_data is None:
         st.stop()
 
+    # Train models
     finance_model, finance_r2 = train_finance_model(finance_data)
     stock_model, stock_r2 = train_stock_model(stock_data)
 
@@ -327,11 +330,11 @@ def main():
                 ax.set_title("Monthly Spending (₹)")
                 ax.set_ylabel("Amount (₹)")
                 plt.xticks(rotation=45)
-                # Ensure chart labels are black
+                # Ensure chart labels are dark charcoal gray
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
-                    label.set_color("#000000")
-                ax.title.set_color("#000000")
-                ax.yaxis.label.set_color("#000000")
+                    label.set_color("#1A2526")
+                ax.title.set_color("#1A2526")
+                ax.yaxis.label.set_color("#1A2526")
                 st.pyplot(fig)
             with col2:
                 st.subheader("🌱 Wealth Growth")
@@ -343,15 +346,15 @@ def main():
                 ax.set_xlabel("Years")
                 ax.set_ylabel("Savings (₹)")
                 ax.legend()
-                # Ensure chart labels are black
+                # Ensure chart labels are dark charcoal gray
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
-                    label.set_color("#000000")
-                ax.title.set_color("#000000")
-                ax.xaxis.label.set_color("#000000")
-                ax.yaxis.label.set_color("#000000")
+                    label.set_color("#1A2526")
+                ax.title.set_color("#1A2526")
+                ax.xaxis.label.set_color("#1A2526")
+                ax.yaxis.label.set_color("#1A2526")
                 ax.legend().set_title("")
                 for text in ax.legend().get_texts():
-                    text.set_color("#000000")
+                    text.set_color("#1A2526")
                 st.pyplot(fig)
         else:
             st.sidebar.subheader("🌡️ Financial Health")
@@ -376,13 +379,13 @@ def main():
 
         st.subheader("📉 NIFTY CONSUMPTION Trend")
         fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
-        # Ensure Plotly text is readable (black)
+        # Ensure Plotly text is readable (dark charcoal gray)
         fig.update_layout(
-            title_font_color="#000000",
-            xaxis_title_font_color="#000000",
-            yaxis_title_font_color="#000000",
-            xaxis_tickfont_color="#000000",
-            yaxis_tickfont_color="#000000"
+            title_font_color="#1A2526",
+            xaxis_title_font_color="#1A2526",
+            yaxis_title_font_color="#1A2526",
+            xaxis_tickfont_color="#1A2526",
+            yaxis_tickfont_color="#1A2526"
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -395,24 +398,24 @@ def main():
             st.subheader("📏 Moving Average")
             fig_ma = px.line(stock_subset, x='Date', y=['Close', 'SMA_30'], title="30-Day SMA", template="plotly_dark")
             fig_ma.update_layout(
-                title_font_color="#000000",
-                xaxis_title_font_color="#000000",
-                yaxis_title_font_color="#000000",
-                xaxis_tickfont_color="#000000",
-                yaxis_tickfont_color="#000000",
-                legend_font_color="#000000"
+                title_font_color="#1A2526",
+                xaxis_title_font_color="#1A2526",
+                yaxis_title_font_color="#1A2526",
+                xaxis_tickfont_color="#1A2526",
+                yaxis_tickfont_color="#1A2526",
+                legend_font_color="#1A2526"
             )
             st.plotly_chart(fig_ma, use_container_width=True)
         with col2:
             st.subheader("🌩️ Volatility")
             fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="30-Day Volatility", template="plotly_dark")
             fig_vol.update_layout(
-                title_font_color="#000000",
-                xaxis_title_font_color="#000000",
-                yaxis_title_font_color="#000000",
-                xaxis_tickfont_color="#000000",
-                yaxis_tickfont_color="#000000",
-                legend_font_color="#000000"
+                title_font_color="#1A2526",
+                xaxis_title_font_color="#1A2526",
+                yaxis_title_font_color="#1A2526",
+                xaxis_tickfont_color="#1A2526",
+                yaxis_tickfont_color="#1A2526",
+                legend_font_color="#1A2526"
             )
             st.plotly_chart(fig_vol, use_container_width=True)
 
