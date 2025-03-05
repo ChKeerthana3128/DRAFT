@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 # Set page configuration at the top
 st.set_page_config(page_title="AI Financial & Investment Dashboard (INR)", layout="wide")
 
-# --- Data Loading for Personal Finance ---
+# --- Data Loading ---
 @st.cache_data
 def load_finance_data(csv_path="financial_data.csv"):
     """Load and preprocess the personal finance dataset."""
@@ -57,12 +57,11 @@ def load_finance_data(csv_path="financial_data.csv"):
         st.error(f"Error loading finance CSV: {str(e)}")
         return None
 
-# --- Data Loading for Stock Data ---
 @st.cache_data
-def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
-    """Load and preprocess the stock dataset."""
+def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
+    """Load and preprocess the stock dataset from the specified directory."""
     if not os.path.exists(csv_path):
-        st.error(f"Stock CSV file not found at {csv_path}. Ensure 'NIFTY CONSUMPTION_daily_data.csv'. ")
+        st.error(f"Stock CSV file not found at {csv_path}. Ensure 'archive (3) 2/NIFTY CONSUMPTION_daily_data.csv' exists.")
         return None
     
     try:
@@ -75,7 +74,7 @@ def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
         st.error(f"Error loading stock CSV: {str(e)}")
         return None
 
-# --- Model Training for Personal Finance ---
+# --- Model Training ---
 def train_finance_model(data):
     """Train a LinearRegression model to predict Disposable_Income."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
@@ -96,10 +95,12 @@ def train_finance_model(data):
 
 @st.cache_resource
 def get_trained_finance_model(data):
+    """Cache and return the trained finance model and its R² score."""
     return train_finance_model(data)
 
 # --- Predictive Functions for Personal Finance ---
 def prepare_finance_input(input_data, model):
+    """Prepare user input for finance model prediction."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
                     "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
                     "Desired_Savings_Percentage"]
@@ -119,6 +120,7 @@ def prepare_finance_input(input_data, model):
     return input_df
 
 def calculate_financial_health_score(income, savings, debt, discretionary):
+    """Calculate financial health score (0-100)."""
     savings_ratio = savings / income if income > 0 else 0
     debt_ratio = debt / income if income > 0 else 0
     discretionary_ratio = discretionary / income if income > 0 else 0
@@ -126,10 +128,12 @@ def calculate_financial_health_score(income, savings, debt, discretionary):
     return max(0, min(100, score))
 
 def predict_disposable_income(model, input_data):
+    """Predict disposable income."""
     input_df = prepare_finance_input(input_data, model)
     return max(0, model.predict(input_df)[0])
 
 def predict_future_savings(income, total_expenses, savings_rate, years, income_growth_rate=0.0, expense_growth_rate=0.0):
+    """Calculate projected savings over time."""
     total_savings = 0.0
     current_income = income
     current_expenses = total_expenses
@@ -143,6 +147,7 @@ def predict_future_savings(income, total_expenses, savings_rate, years, income_g
     return total_savings
 
 def get_savings_trajectory(income, total_expenses, savings_rate, years, income_growth_rate, expense_growth_rate):
+    """Generate savings trajectory for visualization."""
     trajectory = []
     current_income = income
     current_expenses = total_expenses
@@ -158,6 +163,7 @@ def get_savings_trajectory(income, total_expenses, savings_rate, years, income_g
     return trajectory
 
 def suggest_wealth_management_params(income, total_expenses, years_to_retirement):
+    """Suggest wealth management parameters."""
     suggested_fund = total_expenses * 12 * 20
     annual_savings_needed = suggested_fund / years_to_retirement if years_to_retirement > 0 else suggested_fund
     suggested_savings_rate = min(max((annual_savings_needed / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
@@ -167,6 +173,7 @@ def suggest_wealth_management_params(income, total_expenses, years_to_retirement
 
 # --- Insight Generators ---
 def generate_wealth_management_insights(income, total_expenses, savings_rate, years_to_retirement, projected_savings, desired_retirement_fund):
+    """Generate dynamic wealth management insights."""
     shortfall = desired_retirement_fund - projected_savings if projected_savings < desired_retirement_fund else 0
     insights = []
     insights.append(f"With a {savings_rate:.1f}% savings rate over {years_to_retirement} years, you'll save ₹{projected_savings:,.2f}.")
@@ -182,6 +189,7 @@ def generate_wealth_management_insights(income, total_expenses, savings_rate, ye
     return insights
 
 def generate_financial_health_insights(health_score, debt, discretionary, income):
+    """Generate dynamic financial health insights."""
     insights = []
     insights.append(f"Your Financial Health Score is {health_score:.1f}/100.")
     if health_score < 40:
@@ -198,7 +206,7 @@ def generate_financial_health_insights(health_score, debt, discretionary, income
         insights.append(f"Discretionary spending (₹{discretionary:,.2f}) is high—review entertainment and utilities.")
     return insights
 
-# --- App Logic ---
+# --- Main Application ---
 def main():
     # Load data
     finance_data = load_finance_data()
@@ -210,6 +218,11 @@ def main():
     # Train finance model
     finance_model, finance_r2 = get_trained_finance_model(finance_data)
 
+    # Sidebar (shared for both tabs)
+    st.sidebar.title("Dashboard Insights")
+    st.sidebar.subheader("Finance Model Accuracy")
+    st.sidebar.write(f"R² Score: {finance_r2:.2f}")
+
     # Tabs for navigation
     tab1, tab2 = st.tabs(["Personal Finance Dashboard", "Stock Investment Dashboard"])
 
@@ -217,11 +230,6 @@ def main():
     with tab1:
         st.header("Personal Finance Dashboard (INR)")
         st.markdown("Analyze your personal finances and plan for retirement.")
-
-        # Sidebar for Personal Finance
-        st.sidebar.title("Personal Finance Insights")
-        st.sidebar.subheader("Model Accuracy")
-        st.sidebar.write(f"R² Score: {finance_r2:.2f}")
 
         with st.form(key="finance_form"):
             col1, col2 = st.columns(2)
@@ -260,7 +268,7 @@ def main():
             discretionary = eating_out + entertainment + utilities
             savings = income * (desired_savings_percentage / 100)
 
-            # Sidebar Metrics
+            # Sidebar Metrics for Finance
             st.sidebar.subheader("Financial Health Score")
             health_score = calculate_financial_health_score(income, savings, debt, discretionary)
             st.sidebar.metric("Score", f"{health_score:.1f}/100")
@@ -270,12 +278,13 @@ def main():
             predicted_disposable = predict_disposable_income(finance_model, input_data)
             st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
 
+            # Wealth Management Section
             st.subheader("Wealth Management")
             suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
-            desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=suggested_fund, step=100000.0)
-            savings_rate_filter = st.slider("Savings Rate (%)", 0.0, 100.0, suggested_savings_rate, step=1.0)
-            income_growth_rate = st.slider("Income Growth Rate (%)", 0.0, 10.0, suggested_income_growth, step=0.5)
-            expense_growth_rate = st.slider("Expense Growth Rate (%)", 0.0, 10.0, suggested_expense_growth, step=0.5)
+            desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=suggested_fund, step=100000.0, key="retirement_fund")
+            savings_rate_filter = st.slider("Savings Rate (%)", 0.0, 100.0, suggested_savings_rate, step=1.0, key="savings_rate")
+            income_growth_rate = st.slider("Income Growth Rate (%)", 0.0, 10.0, suggested_income_growth, step=0.5, key="income_growth")
+            expense_growth_rate = st.slider("Expense Growth Rate (%)", 0.0, 10.0, suggested_expense_growth, step=0.5, key="expense_growth")
 
             projected_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
             st.sidebar.subheader("Projected Savings at Retirement")
@@ -285,6 +294,7 @@ def main():
             st.sidebar.subheader("Required Savings Rate")
             st.sidebar.metric("To Meet Goal (%)", f"{required_savings_rate:.2f}%")
 
+            # Insights
             with st.sidebar.expander("Wealth Management Insights"):
                 for insight in generate_wealth_management_insights(income, total_expenses, savings_rate_filter, years_to_retirement, projected_savings, desired_retirement_fund):
                     st.write(f"- {insight}")
@@ -293,7 +303,7 @@ def main():
                 for insight in generate_financial_health_insights(health_score, debt, discretionary, income):
                     st.write(f"- {insight}")
 
-            # Main Visuals
+            # Visualizations
             st.subheader("Spending Breakdown")
             spending_data = pd.Series({"Rent": rent, "Loan": loan_repayment, "Insurance": insurance, "Groceries": groceries,
                                        "Transport": transport, "Healthcare": healthcare, "Education": education,
@@ -322,11 +332,10 @@ def main():
         st.header("Stock Investment Dashboard")
         st.markdown("Analyze stock performance and get investment predictions.")
 
-        # Sidebar for Stock Options
-        st.sidebar.title("Stock Investment Options")
-        selected_stock = st.sidebar.selectbox("Choose a Stock", stock_data['Symbol'].unique())
-        horizon = st.sidebar.slider("Investment Horizon (Months)", 1, 60, 12)
-        risk_tolerance = st.sidebar.radio("Risk Level", ["Low", "Medium", "High"])
+        # Stock Options
+        selected_stock = st.sidebar.selectbox("Choose a Stock", stock_data['Symbol'].unique(), key="stock_select")
+        horizon = st.sidebar.slider("Investment Horizon (Months)", 1, 60, 12, key="horizon")
+        risk_tolerance = st.sidebar.radio("Risk Level", ["Low", "Medium", "High"], key="risk")
 
         stock_subset = stock_data[stock_data['Symbol'] == selected_stock]
 
@@ -372,7 +381,7 @@ def main():
             recommendation = "✅ Invest in High-Growth Stocks & Startups (Small Cap, Crypto, Emerging Markets)"
         st.write(recommendation)
 
-        # Financial Ratios & ESG (assuming available in data)
+        # Financial Ratios & ESG
         st.subheader("Financial Ratios & ESG Ranking")
         available_ratios = [col for col in ['PE_ratio', 'EPS_ratio', 'PS_ratio', 'PB_ratio', 'NetProfitMargin_ratio', 'roe_ratio', 'current_ratio', 'ESG_ranking'] if col in stock_subset.columns]
         if available_ratios:
