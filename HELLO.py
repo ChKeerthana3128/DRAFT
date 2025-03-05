@@ -66,9 +66,38 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     
     try:
         df = pd.read_csv(csv_path)
-        df['Date'] = pd.to_datetime(df['Date'])
+        
+        # Find the date column (case-insensitive)
+        date_col = None
+        for col in df.columns:
+            if col.lower() == "date":
+                date_col = col
+                break
+        
+        if date_col is None:
+            st.error(f"No 'Date' column found in stock CSV. Available columns: {df.columns.tolist()}")
+            return None
+        
+        # Rename to 'Date' for consistency
+        if date_col != "Date":
+            df = df.rename(columns={date_col: "Date"})
+
+        # Convert to datetime
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        if df['Date'].isnull().all():
+            st.error("Failed to parse 'Date' column. Please ensure dates are in a valid format (e.g., YYYY-MM-DD).")
+            return None
+
         df = df.sort_values(by='Date')
         df.dropna(inplace=True)
+        
+        # Ensure 'Symbol' and 'Close' are present
+        required_cols = ["Symbol", "Close"]
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        if missing_cols:
+            st.error(f"Missing required columns in stock data: {missing_cols}")
+            return None
+
         return df
     except Exception as e:
         st.error(f"Error loading stock CSV: {str(e)}")
