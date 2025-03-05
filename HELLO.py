@@ -13,10 +13,10 @@ import os
 
 warnings.filterwarnings("ignore")
 
-# Set page configuration at the top
+# Set page configuration
 st.set_page_config(page_title="AI Financial & Investment Dashboard (INR)", layout="wide")
 
-# --- Data Loading ---
+# --- Data Loading Functions ---
 @st.cache_data
 def load_finance_data(csv_path="financial_data.csv"):
     """Load and preprocess the personal finance dataset."""
@@ -94,7 +94,7 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
         st.error(f"Error loading stock CSV: {str(e)}")
         return None
 
-# --- Model Training ---
+# --- Model Training Functions ---
 def train_finance_model(data):
     """Train a LinearRegression model to predict Disposable_Income."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
@@ -226,6 +226,39 @@ def generate_financial_health_insights(health_score, debt, discretionary, income
         insights.append(f"Discretionary spending (₹{discretionary:,.2f}) is high—review entertainment and utilities.")
     return insights
 
+def generate_portfolio_recommendation(risk_tolerance):
+    """Generate detailed investment portfolio recommendations based on risk tolerance."""
+    if risk_tolerance == "Low":
+        return {
+            "Summary": "Focus on stability and low volatility with blue-chip stocks and government bonds.",
+            "Recommendations": [
+                {"Category": "Blue-Chip Stocks", "Details": "HDFC Bank - Strong banking sector leader with consistent dividends."},
+                {"Category": "Blue-Chip Stocks", "Details": "TCS - IT giant with stable growth and global presence."},
+                {"Category": "Blue-Chip Stocks", "Details": "Infosys - Reliable IT firm with steady returns."},
+                {"Category": "Government Bonds", "Details": "RBI Bonds - Safe, guaranteed returns with minimal risk."}
+            ]
+        }
+    elif risk_tolerance == "Medium":
+        return {
+            "Summary": "Balance growth and stability with a diversified portfolio across large cap, mid cap, real estate, and mutual funds.",
+            "Recommendations": [
+                {"Category": "Large Cap", "Details": "Reliance Industries - Diversified conglomerate with strong market position."},
+                {"Category": "Mid Cap", "Details": "Bajaj Finance - High-growth financial services company."},
+                {"Category": "Real Estate", "Details": "DLF - Leading real estate developer with steady appreciation."},
+                {"Category": "Mutual Funds", "Details": "SBI Bluechip Fund - Diversified large-cap fund with moderate risk."}
+            ]
+        }
+    else:  # High Risk
+        return {
+            "Summary": "Pursue high growth potential with investments in small cap stocks, startups, and emerging markets.",
+            "Recommendations": [
+                {"Category": "Small Cap", "Details": "Paytm - Fintech innovator with high growth potential."},
+                {"Category": "Small Cap", "Details": "Zomato - Food delivery leader with rapid expansion."},
+                {"Category": "Startups/Crypto", "Details": "Bitcoin - High-risk, high-reward digital asset."},
+                {"Category": "Emerging Markets", "Details": "Tata Elxsi - Tech growth stock in emerging sectors."}
+            ]
+        }
+
 # --- Main Application ---
 def main():
     # Load data
@@ -238,7 +271,7 @@ def main():
     # Train finance model
     finance_model, finance_r2 = get_trained_finance_model(finance_data)
 
-    # Sidebar (shared for both tabs)
+    # Sidebar
     st.sidebar.title("Dashboard Insights")
     st.sidebar.subheader("Finance Model Accuracy")
     st.sidebar.write(f"R² Score: {finance_r2:.2f}")
@@ -288,7 +321,7 @@ def main():
             discretionary = eating_out + entertainment + utilities
             savings = income * (desired_savings_percentage / 100)
 
-            # Sidebar Metrics for Finance
+            # Sidebar Metrics
             st.sidebar.subheader("Financial Health Score")
             health_score = calculate_financial_health_score(income, savings, debt, discretionary)
             st.sidebar.metric("Score", f"{health_score:.1f}/100")
@@ -352,11 +385,11 @@ def main():
         st.header("Stock Investment Dashboard")
         st.markdown("Analyze NIFTY CONSUMPTION index performance and get investment predictions.")
 
-        # Stock Options (only horizon and risk tolerance since it's a single index)
+        # Stock Options
         horizon = st.sidebar.slider("Investment Horizon (Months)", 1, 60, 12, key="horizon")
         risk_tolerance = st.sidebar.radio("Risk Level", ["Low", "Medium", "High"], key="risk")
 
-        stock_subset = stock_data  # No filtering needed since it's a single index
+        stock_subset = stock_data  # Single index data
 
         # Stock Price Trend
         st.subheader("NIFTY CONSUMPTION Index Performance")
@@ -392,19 +425,17 @@ def main():
 
         # Portfolio Recommendation
         st.subheader("Investment Portfolio Recommendation")
-        if risk_tolerance == "Low":
-            recommendation = "✅ Invest in Blue-Chip Stocks & Bonds (HDFC, TCS, Infosys, Govt Bonds)"
-        elif risk_tolerance == "Medium":
-            recommendation = "✅ Invest in Diversified Portfolio (Large Cap, Mid Cap, Real Estate, Mutual Funds)"
-        else:
-            recommendation = "✅ Invest in High-Growth Stocks & Startups (Small Cap, Crypto, Emerging Markets)"
-        st.write(recommendation)
+        portfolio = generate_portfolio_recommendation(risk_tolerance)
+        st.write(f"**Strategy Overview**: {portfolio['Summary']}")
+        st.write("**Detailed Recommendations**:")
+        for rec in portfolio["Recommendations"]:
+            st.write(f"- **{rec['Category']}**: {rec['Details']}")
 
-        # Financial Ratios & ESG (not typically available for index data)
-        st.subheader("Additional Data")
-        available_ratios = [col for col in ['Open', 'High', 'Low', 'Volume'] if col in stock_subset.columns]
-        if available_ratios:
-            st.dataframe(stock_subset[available_ratios])
+        # Additional Data
+        st.subheader("Additional Index Data")
+        available_data = [col for col in ['Open', 'High', 'Low', 'Volume'] if col in stock_subset.columns]
+        if available_data:
+            st.dataframe(stock_subset[available_data])
         else:
             st.write("No additional data available beyond price and volume.")
 
