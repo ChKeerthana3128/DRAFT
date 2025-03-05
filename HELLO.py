@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import plotly.express as px
 from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 import joblib
@@ -13,15 +11,13 @@ import os
 
 warnings.filterwarnings("ignore")
 
-# Set page configuration
 st.set_page_config(page_title="AI Financial & Investment Dashboard (INR)", layout="wide")
 
-# --- Data Loading Functions ---
+# --- Data Loading ---
 @st.cache_data
 def load_finance_data(csv_path="financial_data.csv"):
-    """Load and preprocess the personal finance dataset."""
     if not os.path.exists(csv_path):
-        st.error(f"Finance CSV file not found at {csv_path}. Ensure 'financial_data.csv' exists.")
+        st.error(f"Finance CSV file not found at {csv_path}.")
         return None
     
     try:
@@ -29,7 +25,7 @@ def load_finance_data(csv_path="financial_data.csv"):
         combined_column_name = "Miscellaneous (Eating_Out,Entertainmentand Utilities)\n"
         
         if combined_column_name not in data.columns:
-            st.error(f"Column '{combined_column_name}' not found. Available columns: {data.columns.tolist()}")
+            st.error(f"Column '{combined_column_name}' not found. Available: {data.columns.tolist()}")
             return None
 
         def distribute_combined_value(value):
@@ -49,7 +45,7 @@ def load_finance_data(csv_path="financial_data.csv"):
                          "Entertainment", "Utilities", "Desired_Savings_Percentage", "Disposable_Income"]
         missing_cols = [col for col in required_cols if col not in data.columns]
         if missing_cols:
-            st.error(f"Missing columns in finance data: {missing_cols}")
+            st.error(f"Missing columns: {missing_cols}")
             return None
 
         return data
@@ -57,46 +53,8 @@ def load_finance_data(csv_path="financial_data.csv"):
         st.error(f"Error loading finance CSV: {str(e)}")
         return None
 
-@st.cache_data
-def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
-    """Load and preprocess the NIFTY CONSUMPTION index dataset."""
-    if not os.path.exists(csv_path):
-        st.error(f"Stock CSV file not found at {csv_path}. Ensure 'archive (3) 2/NIFTY CONSUMPTION_daily_data.csv' exists.")
-        return None
-    
-    try:
-        df = pd.read_csv(csv_path)
-        
-        # Rename columns to match expected names
-        df = df.rename(columns={
-            "date": "Date",
-            "close": "Close",
-            "open": "Open",
-            "high": "High",
-            "low": "Low",
-            "volume": "Volume"
-        })
-        
-        # Add a dummy Symbol column since this is a single index
-        df['Symbol'] = "NIFTY CONSUMPTION"
-
-        # Convert Date to datetime
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        if df['Date'].isnull().all():
-            st.error("Failed to parse 'Date' column. Please ensure dates are in a valid format (e.g., YYYY-MM-DD).")
-            return None
-
-        df = df.sort_values(by='Date')
-        df.dropna(inplace=True)
-
-        return df
-    except Exception as e:
-        st.error(f"Error loading stock CSV: {str(e)}")
-        return None
-
-# --- Model Training Functions ---
+# --- Model Training ---
 def train_finance_model(data):
-    """Train a LinearRegression model to predict Disposable_Income."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
                     "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
                     "Desired_Savings_Percentage"]
@@ -115,12 +73,10 @@ def train_finance_model(data):
 
 @st.cache_resource
 def get_trained_finance_model(data):
-    """Cache and return the trained finance model and its R² score."""
     return train_finance_model(data)
 
-# --- Predictive Functions for Personal Finance ---
+# --- Predictive Functions ---
 def prepare_finance_input(input_data, model):
-    """Prepare user input for finance model prediction."""
     feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
                     "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
                     "Desired_Savings_Percentage"]
@@ -139,21 +95,30 @@ def prepare_finance_input(input_data, model):
     
     return input_df
 
-def calculate_financial_health_score(income, savings, debt, discretionary):
-    """Calculate financial health score (0-100)."""
-    savings_ratio = savings / income if income > 0 else 0
-    debt_ratio = debt / income if income > 0 else 0
-    discretionary_ratio = discretionary / income if income > 0 else 0
-    score = (savings_ratio * 50) - (debt_ratio * 30) - (discretionary_ratio * 20)
+def calculate_financial_health_score(income, total_expenses, debt, discretionary):
+    """Adjusted to better align with CSV Financial_Health_Score."""
+    if income <= 0:
+        return 0
+
+    actual_savings = max(0, income - total_expenses)
+    savings_ratio = actual_savings / income
+    debt_ratio = debt / income
+    discretionary_ratio = discretionary / income
+    expense_ratio = total_expenses / income
+
+    # Adjusted to approximate CSV (trial based on sample data)
+    savings_score = min(30, (savings_ratio / 0.2) * 30)  # Max 30, softer curve
+    debt_score = max(0, 40 - (debt_ratio * 80))  # Max 40, stronger debt penalty
+    discretionary_score = max(0, 30 - (discretionary_ratio * 150))  # Max 30, stricter discretionary
+
+    score = savings_score + debt_score + discretionary_score
     return max(0, min(100, score))
 
 def predict_disposable_income(model, input_data):
-    """Predict disposable income."""
     input_df = prepare_finance_input(input_data, model)
     return max(0, model.predict(input_df)[0])
 
 def predict_future_savings(income, total_expenses, savings_rate, years, income_growth_rate=0.0, expense_growth_rate=0.0):
-    """Calculate projected savings over time."""
     total_savings = 0.0
     current_income = income
     current_expenses = total_expenses
@@ -167,7 +132,6 @@ def predict_future_savings(income, total_expenses, savings_rate, years, income_g
     return total_savings
 
 def get_savings_trajectory(income, total_expenses, savings_rate, years, income_growth_rate, expense_growth_rate):
-    """Generate savings trajectory for visualization."""
     trajectory = []
     current_income = income
     current_expenses = total_expenses
@@ -183,7 +147,6 @@ def get_savings_trajectory(income, total_expenses, savings_rate, years, income_g
     return trajectory
 
 def suggest_wealth_management_params(income, total_expenses, years_to_retirement):
-    """Suggest wealth management parameters."""
     suggested_fund = total_expenses * 12 * 20
     annual_savings_needed = suggested_fund / years_to_retirement if years_to_retirement > 0 else suggested_fund
     suggested_savings_rate = min(max((annual_savings_needed / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
@@ -192,257 +155,135 @@ def suggest_wealth_management_params(income, total_expenses, years_to_retirement
     return suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth
 
 # --- Insight Generators ---
-def generate_wealth_management_insights(income, total_expenses, savings_rate, years_to_retirement, projected_savings, desired_retirement_fund):
-    """Generate dynamic wealth management insights."""
-    shortfall = desired_retirement_fund - projected_savings if projected_savings < desired_retirement_fund else 0
-    insights = []
-    insights.append(f"With a {savings_rate:.1f}% savings rate over {years_to_retirement} years, you'll save ₹{projected_savings:,.2f}.")
-    if shortfall > 0:
-        additional_rate = (shortfall / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
-        insights.append(f"To reach ₹{desired_retirement_fund:,.2f}, increase savings rate by {additional_rate:.1f}% or reduce expenses.")
-    else:
-        insights.append("You’re on track to exceed your retirement goal—consider investing surplus!")
-    if years_to_retirement > 20:
-        insights.append("Long horizon: A 3% income growth rate could boost savings.")
-    elif years_to_retirement < 10:
-        insights.append("Short horizon: Focus on higher savings now.")
-    return insights
-
-def generate_financial_health_insights(health_score, debt, discretionary, income):
-    """Generate dynamic financial health insights."""
+def generate_financial_health_insights(health_score, debt, discretionary, income, total_expenses):
     insights = []
     insights.append(f"Your Financial Health Score is {health_score:.1f}/100.")
     if health_score < 40:
-        insights.append("Low score: Prioritize debt reduction and savings.")
+        insights.append("Low score: High expenses or debt may be limiting savings.")
     elif health_score < 70:
         insights.append("Moderate score: Room to improve—balance spending and savings.")
     else:
         insights.append("Excellent score: Maintain your financial discipline!")
-    debt_ratio = debt / income if income > 0 else 0
-    if debt_ratio > 0.3:
-        insights.append(f"Debt (₹{debt:,.2f}) exceeds 30% of income—consider refinancing.")
-    discretionary_ratio = discretionary / income if income > 0 else 0
-    if discretionary_ratio > 0.2:
-        insights.append(f"Discretionary spending (₹{discretionary:,.2f}) is high—review entertainment and utilities.")
-    return insights
 
-def generate_portfolio_recommendation(risk_tolerance):
-    """Generate detailed investment portfolio recommendations based on risk tolerance."""
-    if risk_tolerance == "Low":
-        return {
-            "Summary": "Focus on stability and low volatility with blue-chip stocks and government bonds.",
-            "Recommendations": [
-                {"Category": "Blue-Chip Stocks", "Details": "HDFC Bank - Strong banking sector leader with consistent dividends."},
-                {"Category": "Blue-Chip Stocks", "Details": "TCS - IT giant with stable growth and global presence."},
-                {"Category": "Blue-Chip Stocks", "Details": "Infosys - Reliable IT firm with steady returns."},
-                {"Category": "Government Bonds", "Details": "RBI Bonds - Safe, guaranteed returns with minimal risk."}
-            ]
-        }
-    elif risk_tolerance == "Medium":
-        return {
-            "Summary": "Balance growth and stability with a diversified portfolio across large cap, mid cap, real estate, and mutual funds.",
-            "Recommendations": [
-                {"Category": "Large Cap", "Details": "Reliance Industries - Diversified conglomerate with strong market position."},
-                {"Category": "Mid Cap", "Details": "Bajaj Finance - High-growth financial services company."},
-                {"Category": "Real Estate", "Details": "DLF - Leading real estate developer with steady appreciation."},
-                {"Category": "Mutual Funds", "Details": "SBI Bluechip Fund - Diversified large-cap fund with moderate risk."}
-            ]
-        }
-    else:  # High Risk
-        return {
-            "Summary": "Pursue high growth potential with investments in small cap stocks, startups, and emerging markets.",
-            "Recommendations": [
-                {"Category": "Small Cap", "Details": "Paytm - Fintech innovator with high growth potential."},
-                {"Category": "Small Cap", "Details": "Zomato - Food delivery leader with rapid expansion."},
-                {"Category": "Startups/Crypto", "Details": "Bitcoin - High-risk, high-reward digital asset."},
-                {"Category": "Emerging Markets", "Details": "Tata Elxsi - Tech growth stock in emerging sectors."}
-            ]
-        }
+    debt_ratio = debt / income if income > 0 else 0
+    if debt_ratio > 0.36:
+        insights.append(f"Debt (₹{debt:,.2f}) is {debt_ratio:.1%} of income—above 36%.")
+    
+    discretionary_ratio = discretionary / income if income > 0 else 0
+    if discretionary_ratio > 0.15:
+        insights.append(f"Discretionary (₹{discretionary:,.2f}) is {discretionary_ratio:.1%}—above 15%.")
+
+    expense_ratio = total_expenses / income if income > 0 else 0
+    if expense_ratio > 0.8:
+        insights.append(f"Expenses (₹{total_expenses:,.2f}) are {expense_ratio:.1%}—over 80%.")
+    
+    savings_ratio = max(0, income - total_expenses) / income if income > 0 else 0
+    if savings_ratio < 0.2:
+        insights.append(f"Savings are {savings_ratio:.1%}—below 20% ideal.")
+    
+    return insights
 
 # --- Main Application ---
 def main():
-    # Load data
     finance_data = load_finance_data()
-    stock_data = load_stock_data()
-    
-    if finance_data is None or stock_data is None:
+    if finance_data is None:
         st.stop()
 
-    # Train finance model
     finance_model, finance_r2 = get_trained_finance_model(finance_data)
 
-    # Sidebar
     st.sidebar.title("Dashboard Insights")
     st.sidebar.subheader("Finance Model Accuracy")
     st.sidebar.write(f"R² Score: {finance_r2:.2f}")
 
-    # Tabs for navigation
-    tab1, tab2 = st.tabs(["Personal Finance Dashboard", "Stock Investment Dashboard"])
+    st.header("Personal Finance Dashboard (INR)")
+    st.markdown("Analyze your personal finances and plan for retirement.")
 
-    # --- Personal Finance Dashboard ---
-    with tab1:
-        st.header("Personal Finance Dashboard (INR)")
-        st.markdown("Analyze your personal finances and plan for retirement.")
+    with st.form(key="finance_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("Name", "Amit Sharma")
+            age = st.number_input("Age", min_value=18, max_value=100, value=30)
+            income = st.number_input("Monthly Income (₹)", min_value=0.0, value=50000.0, step=1000.0)
+            dependents = st.number_input("Dependents", min_value=0, value=0)
+            rent = st.number_input("Rent (₹)", min_value=0.0, value=15000.0, step=500.0)
+            loan_repayment = st.number_input("Loan Repayment (₹)", min_value=0.0, value=0.0, step=500.0)
+        with col2:
+            insurance = st.number_input("Insurance (₹)", min_value=0.0, value=2000.0, step=100.0)
+            groceries = st.number_input("Groceries (₹)", min_value=0.0, value=8000.0, step=100.0)
+            transport = st.number_input("Transport (₹)", min_value=0.0, value=3000.0, step=100.0)
+            healthcare = st.number_input("Healthcare (₹)", min_value=0.0, value=1500.0, step=100.0)
+            education = st.number_input("Education (₹)", min_value=0.0, value=0.0, step=100.0)
+            eating_out = st.number_input("Eating Out (₹)", min_value=0.0, value=2000.0, step=100.0)
+            entertainment = st.number_input("Entertainment (₹)", min_value=0.0, value=1500.0, step=100.0)
+            utilities = st.number_input("Utilities (₹)", min_value=0.0, value=4000.0, step=100.0)
+            desired_savings_percentage = st.number_input("Desired Savings %", min_value=0.0, max_value=100.0, value=10.0)
+        
+        retirement_age = st.slider("Retirement Age", int(age), 62, min(62, age + 30))
+        submit_finance = st.form_submit_button("Analyze My Finances")
 
-        with st.form(key="finance_form"):
-            col1, col2 = st.columns(2)
-            with col1:
-                name = st.text_input("Name", "Amit Sharma")
-                age = st.number_input("Age", min_value=18, max_value=100, value=30)
-                income = st.number_input("Monthly Income (₹)", min_value=0.0, value=50000.0, step=1000.0)
-                dependents = st.number_input("Dependents", min_value=0, value=0)
-                rent = st.number_input("Rent (₹)", min_value=0.0, value=15000.0, step=500.0)
-                loan_repayment = st.number_input("Loan Repayment (₹)", min_value=0.0, value=0.0, step=500.0)
-            with col2:
-                insurance = st.number_input("Insurance (₹)", min_value=0.0, value=2000.0, step=100.0)
-                groceries = st.number_input("Groceries (₹)", min_value=0.0, value=8000.0, step=100.0)
-                transport = st.number_input("Transport (₹)", min_value=0.0, value=3000.0, step=100.0)
-                healthcare = st.number_input("Healthcare (₹)", min_value=0.0, value=1500.0, step=100.0)
-                education = st.number_input("Education (₹)", min_value=0.0, value=0.0, step=100.0)
-                eating_out = st.number_input("Eating Out (₹)", min_value=0.0, value=2000.0, step=100.0)
-                entertainment = st.number_input("Entertainment (₹)", min_value=0.0, value=1500.0, step=100.0)
-                utilities = st.number_input("Utilities (₹)", min_value=0.0, value=4000.0, step=100.0)
-                desired_savings_percentage = st.number_input("Desired Savings %", min_value=0.0, max_value=100.0, value=10.0)
-            
-            retirement_age = st.slider("Retirement Age", int(age), 62, min(62, age + 30))
-            submit_finance = st.form_submit_button("Analyze My Finances")
+    if submit_finance:
+        input_data = {
+            "Income": income, "Age": age, "Dependents": dependents, "Rent": rent, "Loan_Repayment": loan_repayment,
+            "Insurance": insurance, "Groceries": groceries, "Transport": transport, "Healthcare": healthcare,
+            "Education": education, "Eating_Out": eating_out, "Entertainment": entertainment, "Utilities": utilities,
+            "Desired_Savings_Percentage": desired_savings_percentage
+        }
+        
+        total_expenses = rent + loan_repayment + insurance + groceries + transport + healthcare + education + eating_out + entertainment + utilities
+        years_to_retirement = max(0, retirement_age - age)
+        debt = rent + loan_repayment
+        discretionary = eating_out + entertainment + utilities
 
-        if submit_finance:
-            input_data = {
-                "Income": income, "Age": age, "Dependents": dependents, "Rent": rent, "Loan_Repayment": loan_repayment,
-                "Insurance": insurance, "Groceries": groceries, "Transport": transport, "Healthcare": healthcare,
-                "Education": education, "Eating_Out": eating_out, "Entertainment": entertainment, "Utilities": utilities,
-                "Desired_Savings_Percentage": desired_savings_percentage
-            }
-            
-            total_expenses = rent + loan_repayment + insurance + groceries + transport + healthcare + education + eating_out + entertainment + utilities
-            years_to_retirement = max(0, retirement_age - age)
-            debt = rent + loan_repayment
-            discretionary = eating_out + entertainment + utilities
-            savings = income * (desired_savings_percentage / 100)
+        st.sidebar.subheader("Financial Health Score")
+        health_score = calculate_financial_health_score(income, total_expenses, debt, discretionary)
+        st.sidebar.metric("Score", f"{health_score:.1f}/100")
+        st.sidebar.write(f"Status: {'Excellent' if health_score >= 70 else 'Moderate' if health_score >= 40 else 'Low'}")
 
-            # Sidebar Metrics
-            st.sidebar.subheader("Financial Health Score")
-            health_score = calculate_financial_health_score(income, savings, debt, discretionary)
-            st.sidebar.metric("Score", f"{health_score:.1f}/100")
-            st.sidebar.write(f"Status: {'Excellent' if health_score >= 70 else 'Moderate' if health_score >= 40 else 'Low'}")
+        st.sidebar.subheader("Predicted Disposable Income")
+        predicted_disposable = predict_disposable_income(finance_model, input_data)
+        st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
 
-            st.sidebar.subheader("Predicted Disposable Income")
-            predicted_disposable = predict_disposable_income(finance_model, input_data)
-            st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
+        st.subheader("Wealth Management")
+        suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
+        desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=suggested_fund, step=100000.0, key="retirement_fund")
+        savings_rate_filter = st.slider("Savings Rate (%)", 0.0, 100.0, suggested_savings_rate, step=1.0, key="savings_rate")
+        income_growth_rate = st.slider("Income Growth Rate (%)", 0.0, 10.0, suggested_income_growth, step=0.5, key="income_growth")
+        expense_growth_rate = st.slider("Expense Growth Rate (%)", 0.0, 10.0, suggested_expense_growth, step=0.5, key="expense_growth")
 
-            # Wealth Management Section
-            st.subheader("Wealth Management")
-            suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
-            desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=suggested_fund, step=100000.0, key="retirement_fund")
-            savings_rate_filter = st.slider("Savings Rate (%)", 0.0, 100.0, suggested_savings_rate, step=1.0, key="savings_rate")
-            income_growth_rate = st.slider("Income Growth Rate (%)", 0.0, 10.0, suggested_income_growth, step=0.5, key="income_growth")
-            expense_growth_rate = st.slider("Expense Growth Rate (%)", 0.0, 10.0, suggested_expense_growth, step=0.5, key="expense_growth")
+        projected_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
+        st.sidebar.subheader("Projected Savings at Retirement")
+        st.sidebar.metric("Total (₹)", f"₹{projected_savings:,.2f}")
 
-            projected_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
-            st.sidebar.subheader("Projected Savings at Retirement")
-            st.sidebar.metric("Total (₹)", f"₹{projected_savings:,.2f}")
+        required_savings_rate = (desired_retirement_fund / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
+        st.sidebar.subheader("Required Savings Rate")
+        st.sidebar.metric("To Meet Goal (%)", f"{required_savings_rate:.2f}%")
 
-            required_savings_rate = (desired_retirement_fund / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
-            st.sidebar.subheader("Required Savings Rate")
-            st.sidebar.metric("To Meet Goal (%)", f"{required_savings_rate:.2f}%")
+        with st.sidebar.expander("Financial Health Insights"):
+            for insight in generate_financial_health_insights(health_score, debt, discretionary, income, total_expenses):
+                st.write(f"- {insight}")
 
-            # Insights
-            with st.sidebar.expander("Wealth Management Insights"):
-                for insight in generate_wealth_management_insights(income, total_expenses, savings_rate_filter, years_to_retirement, projected_savings, desired_retirement_fund):
-                    st.write(f"- {insight}")
+        st.subheader("Spending Breakdown")
+        spending_data = pd.Series({"Rent": rent, "Loan": loan_repayment, "Insurance": insurance, "Groceries": groceries,
+                                   "Transport": transport, "Healthcare": healthcare, "Education": education,
+                                   "Eating Out": eating_out, "Entertainment": entertainment, "Utilities": utilities})
+        fig, ax = plt.subplots(figsize=(10, 5))
+        spending_data.plot(kind="bar", ax=ax, color="skyblue")
+        ax.set_title("Monthly Spending (INR)")
+        ax.set_ylabel("Amount (₹)")
+        plt.xticks(rotation=45)
+        st.pyplot(fig)
 
-            with st.sidebar.expander("Financial Health Insights"):
-                for insight in generate_financial_health_insights(health_score, debt, discretionary, income):
-                    st.write(f"- {insight}")
-
-            # Visualizations
-            st.subheader("Spending Breakdown")
-            spending_data = pd.Series({"Rent": rent, "Loan": loan_repayment, "Insurance": insurance, "Groceries": groceries,
-                                       "Transport": transport, "Healthcare": healthcare, "Education": education,
-                                       "Eating Out": eating_out, "Entertainment": entertainment, "Utilities": utilities})
-            fig, ax = plt.subplots(figsize=(10, 5))
-            spending_data.plot(kind="bar", ax=ax, color="skyblue")
-            ax.set_title("Monthly Spending (INR)")
-            ax.set_ylabel("Amount (₹)")
-            plt.xticks(rotation=45)
-            st.pyplot(fig)
-
-            st.subheader("Savings Growth Projection")
-            trajectory = get_savings_trajectory(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
-            years = np.arange(years_to_retirement + 1)
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.plot(years, trajectory, marker="o", color="green", label="Projected Savings")
-            ax.axhline(y=desired_retirement_fund, color="red", linestyle="--", label="Retirement Goal")
-            ax.set_title("Savings Growth (INR)")
-            ax.set_xlabel("Years to Retirement")
-            ax.set_ylabel("Savings (₹)")
-            ax.legend()
-            st.pyplot(fig)
-
-    # --- Stock Investment Dashboard ---
-    with tab2:
-        st.header("Stock Investment Dashboard")
-        st.markdown("Analyze NIFTY CONSUMPTION index performance and get investment predictions.")
-
-        # Stock Options
-        horizon = st.sidebar.slider("Investment Horizon (Months)", 1, 60, 12, key="horizon")
-        risk_tolerance = st.sidebar.radio("Risk Level", ["Low", "Medium", "High"], key="risk")
-
-        stock_subset = stock_data  # Single index data
-
-        # Stock Price Trend
-        st.subheader("NIFTY CONSUMPTION Index Performance")
-        fig = px.line(stock_subset, x='Date', y='Close', title="NIFTY CONSUMPTION Index Price Trend", template="plotly_dark")
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Moving Average & Volatility
-        st.subheader("Moving Averages & Volatility")
-        stock_subset['SMA_30'] = stock_subset['Close'].rolling(window=30).mean()
-        stock_subset['Volatility'] = stock_subset['Close'].pct_change().rolling(window=30).std()
-
-        fig_ma = px.line(stock_subset, x='Date', y=['Close', 'SMA_30'], title="30-Day Moving Average", template="plotly_dark")
-        fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="Index Volatility", template="plotly_dark")
-        st.plotly_chart(fig_ma, use_container_width=True)
-        st.plotly_chart(fig_vol, use_container_width=True)
-
-        # AI-Based Stock Price Prediction
-        st.subheader("AI-Based Index Price Prediction")
-        stock_subset['Day'] = stock_subset['Date'].dt.day
-        stock_subset['Month'] = stock_subset['Date'].dt.month
-        stock_subset['Year'] = stock_subset['Date'].dt.year
-
-        X = stock_subset[['Day', 'Month', 'Year']]
-        y = stock_subset['Close']
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-        stock_model = RandomForestRegressor(n_estimators=100, random_state=42)
-        stock_model.fit(X_train, y_train)
-
-        future_days = pd.DataFrame({"Day": [1], "Month": [horizon], "Year": [2025]})
-        predicted_price = stock_model.predict(future_days)[0]
-        st.write(f"📌 **Predicted Price for NIFTY CONSUMPTION in {horizon} months:** ₹{predicted_price:.2f}")
-
-        # Portfolio Recommendation
-        st.subheader("Investment Portfolio Recommendation")
-        portfolio = generate_portfolio_recommendation(risk_tolerance)
-        st.write(f"**Strategy Overview**: {portfolio['Summary']}")
-        st.write("**Detailed Recommendations**:")
-        for rec in portfolio["Recommendations"]:
-            st.write(f"- **{rec['Category']}**: {rec['Details']}")
-
-        # Additional Data
-        st.subheader("Additional Index Data")
-        available_data = [col for col in ['Open', 'High', 'Low', 'Volume'] if col in stock_subset.columns]
-        if available_data:
-            st.dataframe(stock_subset[available_data])
-        else:
-            st.write("No additional data available beyond price and volume.")
-
-        # Save Stock Model
-        if not os.path.exists("models"):
-            os.makedirs("models")
-        joblib.dump(stock_model, "models/stock_price_model.pkl")
+        st.subheader("Savings Growth Projection")
+        trajectory = get_savings_trajectory(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
+        years = np.arange(years_to_retirement + 1)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(years, trajectory, marker="o", color="green", label="Projected Savings")
+        ax.axhline(y=desired_retirement_fund, color="red", linestyle="--", label="Retirement Goal")
+        ax.set_title("Savings Growth (INR)")
+        ax.set_xlabel("Years to Retirement")
+        ax.set_ylabel("Savings (₹)")
+        ax.legend()
+        st.pyplot(fig)
 
     st.markdown("---")
     st.write("Powered by Streamlit")
