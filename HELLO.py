@@ -273,7 +273,7 @@ def main():
                 utilities = st.number_input("💡 Utilities (₹)", min_value=0.0, value=4000.0, step=100.0)
                 savings_rate = st.number_input("🎯 Savings Rate (%)", min_value=0.0, max_value=100.0, value=10.0)
 
-            retirement_age = st.slider("👴 Retirement Age", int(age), 62, min(62, age + 30))
+            retirement_age = st.slider("👴🏻 Retirement Age", int(age), 62, min(62, age + 30))
             submit = st.form_submit_button("🚀 Analyze My Finances")
 
         # Sidebar for Personal Finance
