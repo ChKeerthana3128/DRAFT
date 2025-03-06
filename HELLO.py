@@ -178,8 +178,10 @@ def main():
     # Initialize session state
     if 'active_tab' not in st.session_state:
         st.session_state.active_tab = "Personal Finance"
-    if 'submit' not in st.session_state:
-        st.session_state.submit = False
+    if 'finance_submit' not in st.session_state:
+        st.session_state.finance_submit = False
+    if 'stock_submit' not in st.session_state:
+        st.session_state.stock_submit = False
     if 'input_data' not in st.session_state:
         st.session_state.input_data = None
     if 'total_expenses' not in st.session_state:
@@ -212,7 +214,7 @@ def main():
             st.write("📊 Finance Model R²: N/A (Using form inputs directly)")
 
             st.subheader("🌡️ Financial Health")
-            if st.session_state.submit and st.session_state.input_data:
+            if st.session_state.finance_submit and st.session_state.input_data:
                 health_score = calculate_financial_health_score(
                     st.session_state.input_data["Income"],
                     st.session_state.total_expenses,
@@ -224,7 +226,7 @@ def main():
                 st.metric("Score", "N/A")
 
             st.subheader("💸 Disposable Income")
-            if st.session_state.submit and st.session_state.input_data:
+            if st.session_state.finance_submit and st.session_state.input_data:
                 disposable = predict_disposable_income(
                     st.session_state.input_data["Income"],
                     st.session_state.total_expenses
@@ -234,7 +236,7 @@ def main():
                 st.metric("Monthly (₹)", "N/A")
 
             st.subheader("🏦 Future Wealth")
-            if st.session_state.submit and st.session_state.input_data:
+            if st.session_state.finance_submit and st.session_state.input_data:
                 dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
                     st.session_state.input_data["Income"],
                     st.session_state.total_expenses,
@@ -278,7 +280,7 @@ def main():
 
         # Update session state on form submission
         if submit:
-            st.session_state.submit = True
+            st.session_state.finance_submit = True
             st.session_state.input_data = {
                 "Income": income, "Age": age, "Dependents": dependents, "Rent": rent, "Loan_Repayment": loan_repayment,
                 "Insurance": insurance, "Groceries": groceries, "Transport": transport, "Healthcare": healthcare,
@@ -291,7 +293,7 @@ def main():
             st.session_state.discretionary = eating_out + entertainment + utilities
 
         # Main content after submission
-        if st.session_state.submit:
+        if st.session_state.finance_submit:
             st.subheader("🌍 Wealth Roadmap")
             dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, st.session_state.total_expenses, st.session_state.years_to_retirement)
             desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=dream_fund, step=100000.0)
@@ -341,99 +343,116 @@ def main():
         st.header("📈 Stock Market Quest")
         st.markdown("Conquer the NIFTY CONSUMPTION index! 🌠")
 
-        # Main content
-        horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=45)
-        risk_tolerance = st.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
-
-        # Update session state for stock investments
-        st.session_state.horizon = horizon
-        st.session_state.risk_tolerance = risk_tolerance
-
         # Sidebar for Stock Investments
         with st.sidebar:
             st.subheader("Stock Investments")
             st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
-            if stock_model is not None:
-                future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-                predicted_price = stock_model.predict(future)[0]
-                st.session_state.predicted_price = predicted_price
+            if st.session_state.stock_submit:
+                future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
+                if stock_model is not None:
+                    predicted_price = stock_model.predict(future)[0]
+                    st.session_state.predicted_price = predicted_price
+                else:
+                    predicted_price = 0.0
+                    st.session_state.predicted_price = 0.0
             else:
                 predicted_price = 0.0
                 st.session_state.predicted_price = 0.0
 
             st.subheader("📌 Predicted Price")
-            st.metric(f"In {horizon} Months (₹)", f"₹{predicted_price:,.2f}")
+            st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
 
             st.subheader("💡 Investment Insights")
-            st.write(f"🎯 Risk Level: {risk_tolerance}")
-            st.write(f"📈 Horizon: {horizon} months")
-            if stock_data is not None:
+            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
+            st.write(f"📈 Horizon: {st.session_state.horizon} months")
+            if stock_data is not None and st.session_state.stock_submit:
                 predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
             else:
                 predicted_growth = 0.0
             st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
-        
 
-        # Price Prediction and Investment Playbook (already above NIFTY CONSUMPTION Trend)
-        st.subheader("🔮 Price Prediction")
-        st.write(f"📌 Predicted Price in {horizon} months: **₹{predicted_price:,.2f}**")
+        # Main content with form
+        with st.form(key="stock_form"):
+            horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=45)
+            risk_tolerance = st.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
+            stock_submit = st.form_submit_button("🚀 Analyze Stock Investments")
 
-        st.subheader("💼 Investment Playbook")
-        portfolio = portfolio_advice(risk_tolerance)
-        st.write(f"**Strategy**: {portfolio['Overview']}")
-        for pick in portfolio["Picks"]:
-            st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']}")
+        # Update session state on form submission
+        if stock_submit:
+            st.session_state.stock_submit = True
+            st.session_state.horizon = horizon
+            st.session_state.risk_tolerance = risk_tolerance
 
-        st.subheader("📉 NIFTY CONSUMPTION Trend")
-        if stock_data is not None:
-            fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
-            fig.update_layout(
-                title_font_color="#FFFFFF",
-                xaxis_title_font_color="#FFFFFF",
-                yaxis_title_font_color="#FFFFFF",
-                xaxis_tickfont_color="#FFFFFF",
-                yaxis_tickfont_color="#FFFFFF"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.write("Stock data unavailable. Please ensure 'NIFTY CONSUMPTION_daily_data.csv' is present.")
+        # Display results only after submission
+        if st.session_state.stock_submit:
+            # Price Prediction
+            st.subheader("🔮 Price Prediction")
+            future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
+            if stock_model is not None:
+                predicted_price = stock_model.predict(future)[0]
+            else:
+                predicted_price = 0.0
+            st.write(f"📌 Predicted Price in {st.session_state.horizon} months: **₹{predicted_price:,.2f}**")
 
-        if stock_data is not None:
-            stock_subset = stock_data.copy()
-            stock_subset['SMA_30'] = stock_subset['Close'].rolling(window=30).mean()
-            stock_subset['Volatility'] = stock_subset['Close'].pct_change().rolling(window=30).std()
+            # Investment Playbook
+            st.subheader("💼 Investment Playbook")
+            portfolio = portfolio_advice(st.session_state.risk_tolerance)
+            st.write(f"**Strategy**: {portfolio['Overview']}")
+            for pick in portfolio["Picks"]:
+                st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']}")
 
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("📏 Moving Average")
-                fig_ma = px.line(stock_subset, x='Date', y=['Close', 'SMA_30'], title="30-Day SMA", template="plotly_dark")
-                fig_ma.update_layout(
+            # NIFTY CONSUMPTION Trend
+            st.subheader("📉 NIFTY CONSUMPTION Trend")
+            if stock_data is not None:
+                fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
+                fig.update_layout(
                     title_font_color="#FFFFFF",
                     xaxis_title_font_color="#FFFFFF",
                     yaxis_title_font_color="#FFFFFF",
                     xaxis_tickfont_color="#FFFFFF",
-                    yaxis_tickfont_color="#FFFFFF",
-                    legend_font_color="#FFFFFF"
+                    yaxis_tickfont_color="#FFFFFF"
                 )
-                st.plotly_chart(fig_ma, use_container_width=True)
-            with col2:
-                st.subheader("🌩️ Volatility")
-                fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="30-Day Volatility", template="plotly_dark")
-                fig_vol.update_layout(
-                    title_font_color="#FFFFFF",
-                    xaxis_title_font_color="#FFFFFF",
-                    yaxis_title_font_color="#FFFFFF",
-                    xaxis_tickfont_color="#FFFFFF",
-                    yaxis_tickfont_color="#FFFFFF",
-                    legend_font_color="#FFFFFF"
-                )
-                st.plotly_chart(fig_vol, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.write("Stock data unavailable. Please ensure 'NIFTY CONSUMPTION_daily_data.csv' is present.")
 
-        if stock_model is not None:
-            if not os.path.exists("models"):
-                os.makedirs("models")
-            joblib.dump(stock_model, "models/stock_model.pkl")
+            # Moving Average and Volatility
+            if stock_data is not None:
+                stock_subset = stock_data.copy()
+                stock_subset['SMA_30'] = stock_subset['Close'].rolling(window=30).mean()
+                stock_subset['Volatility'] = stock_subset['Close'].pct_change().rolling(window=30).std()
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.subheader("📏 Moving Average")
+                    fig_ma = px.line(stock_subset, x='Date', y=['Close', 'SMA_30'], title="30-Day SMA", template="plotly_dark")
+                    fig_ma.update_layout(
+                        title_font_color="#FFFFFF",
+                        xaxis_title_font_color="#FFFFFF",
+                        yaxis_title_font_color="#FFFFFF",
+                        xaxis_tickfont_color="#FFFFFF",
+                        yaxis_tickfont_color="#FFFFFF",
+                        legend_font_color="#FFFFFF"
+                    )
+                    st.plotly_chart(fig_ma, use_container_width=True)
+                with col2:
+                    st.subheader("🌩️ Volatility")
+                    fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="30-Day Volatility", template="plotly_dark")
+                    fig_vol.update_layout(
+                        title_font_color="#FFFFFF",
+                        xaxis_title_font_color="#FFFFFF",
+                        yaxis_title_font_color="#FFFFFF",
+                        xaxis_tickfont_color="#FFFFFF",
+                        yaxis_tickfont_color="#FFFFFF",
+                        legend_font_color="#FFFFFF"
+                    )
+                    st.plotly_chart(fig_vol, use_container_width=True)
+
+            if stock_model is not None:
+                if not os.path.exists("models"):
+                    os.makedirs("models")
+                joblib.dump(stock_model, "models/stock_model.pkl")
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
