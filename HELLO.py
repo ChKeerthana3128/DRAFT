@@ -373,7 +373,7 @@ def main():
             else:
                 predicted_growth = 0.0
             st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
-            submit = st.form_submit_button("🚀 Price and Investment")
+        
 
         # Price Prediction and Investment Playbook (already above NIFTY CONSUMPTION Trend)
         st.subheader("🔮 Price Prediction")
