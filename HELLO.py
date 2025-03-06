@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 import joblib
-import warnings
+import -import warnings
 import os
 
 warnings.filterwarnings("ignore")
@@ -24,8 +24,8 @@ st.markdown("""
     .sidebar .sidebar-content {background-color: #e6f3ff;} /* Sidebar light blue */
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
     .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px;}
-    .stMetric label {color: #000000 !important;} /* Metric labels (e.g., "Score", "Monthly (₹)") in black */
-    .stMetric div[data-testid="stMetricValue"] {color: #1A2526 !important;} /* Metric values in dark charcoal gray */
+    .stMetric label {color: #000000 !important; font-weight: bold;} /* Metric labels in black */
+    .stMetric div[data-testid="stMetricValue"] {color: #000000 !important; font-size: 1.2em;} /* Metric values in black */
     .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #1A2526 !important;}
     h1, h2, h3, h4, h5, h6 {color: #FFFFFF !important;} /* White for headings */
     .stMarkdown, .stText, p, div, span, label {color: #FFFFFF !important;} /* White for main content text */
