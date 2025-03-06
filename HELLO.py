@@ -380,25 +380,6 @@ def main():
         st.header("📈 Stock Market Quest")
         st.markdown("Conquer the NIFTY CONSUMPTION index! 🌠")
 
-        # Sidebar for Stock Investments
-        with st.sidebar:
-            st.subheader("Stock Investments")
-            st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
-
-            horizon = st.session_state.horizon
-            future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-            predicted_price = stock_model.predict(future)[0]
-            st.session_state.predicted_price = predicted_price
-
-            st.subheader("📌 Predicted Price")
-            st.metric(f"In {horizon} Months (₹)", f"₹{predicted_price:,.2f}")
-
-            st.subheader("💡 Investment Insights")
-            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
-            st.write(f"📈 Horizon: {horizon} months")
-            predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
-            st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
-
         # Main content
         horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=45)
         risk_tolerance = st.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
@@ -407,6 +388,24 @@ def main():
         st.session_state.horizon = horizon
         st.session_state.risk_tolerance = risk_tolerance
 
+        # Sidebar for Stock Investments
+        with st.sidebar:
+            st.subheader("Stock Investments")
+            st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
+
+            future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
+            predicted_price = stock_model.predict(future)[0]
+            st.session_state.predicted_price = predicted_price
+
+            st.subheader("📌 Predicted Price")
+            st.metric(f"In {horizon} Months (₹)", f"₹{predicted_price:,.2f}")
+
+            st.subheader("💡 Investment Insights")
+            st.write(f"🎯 Risk Level: {risk_tolerance}")
+            st.write(f"📈 Horizon: {horizon} months")
+            predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
+            st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
+
         st.subheader("📉 NIFTY CONSUMPTION Trend")
         fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
         fig.update_layout(
@@ -414,7 +413,7 @@ def main():
             xaxis_title_font_color="#FFFFFF",
             yaxis_title_font_color="#FFFFFF",
             xaxis_tickfont_color="#FFFFFF",
-            yaxis_tickfont_color_color="#FFFFFF"
+            yaxis_tickfont_color="#FFFFFF"  # Fixed typo here
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -431,7 +430,7 @@ def main():
                 xaxis_title_font_color="#FFFFFF",
                 yaxis_title_font_color="#FFFFFF",
                 xaxis_tickfont_color="#FFFFFF",
-                yaxis_tickfont_color="#FFFFFF",
+                yaxis_tickfont_color="#FFFFFF",  # Fixed typo here
                 legend_font_color="#FFFFFF"
             )
             st.plotly_chart(fig_ma, use_container_width=True)
@@ -443,7 +442,7 @@ def main():
                 xaxis_title_font_color="#FFFFFF",
                 yaxis_title_font_color="#FFFFFF",
                 xaxis_tickfont_color="#FFFFFF",
-                yaxis_tickfont_color="#FFFFFF",
+                yaxis_tickfont_color="#FFFFFF",  # Fixed typo here
                 legend_font_color="#FFFFFF"
             )
             st.plotly_chart(fig_vol, use_container_width=True)
