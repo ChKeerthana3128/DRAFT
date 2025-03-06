@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
@@ -47,38 +46,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. Data Loading
-@st.cache_data
-def load_finance_data(csv_path="financial_data.csv"):
-    if not os.path.exists(csv_path):
-        st.error("🚨 Finance CSV not found! Please upload 'financial_data.csv'.")
-        return None
-    try:
-        data = pd.read_csv(csv_path)
-        combined_col = "Miscellaneous (Eating_Out,Entertainmentand Utilities)\n"
-        if combined_col not in data.columns:
-            st.error(f"🚨 Missing '{combined_col}' column. Available: {data.columns.tolist()}")
-            return None
-        data[['Eating_Out', 'Entertainment', 'Utilities']] = data[combined_col].apply(
-            lambda x: [x/3]*3 if pd.notna(x) and x > 0 else [0, 0, 0]
-        ).apply(pd.Series)
-        data = data.drop(columns=[combined_col])
-        if "Education\n" in data.columns:
-            data = data.rename(columns={"Education\n": "Education"})
-        elif "Education" not in data.columns:
-            data["Education"] = 0
-        required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", 
-                         "Insurance", "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", 
-                         "Entertainment", "Utilities", "Desired_Savings_Percentage", "Disposable_Income"]
-        missing = [col for col in required_cols if col in data.columns]
-        if missing:
-            st.error(f"🚨 Missing columns: {missing}")
-            return None
-        return data
-    except Exception as e:
-        st.error(f"🚨 Error loading finance data: {str(e)}")
-        return None
-
+# 3. Data Loading (Only for Stock Investments)
 @st.cache_data
 def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
@@ -98,19 +66,7 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
         st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
 
-# 4. Model Training
-@st.cache_resource
-def train_finance_model(data):
-    features = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
-                "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
-                "Desired_Savings_Percentage"]
-    X = pd.get_dummies(data[features + ["Occupation", "City_Tier"]], columns=["Occupation", "City_Tier"])
-    y = data["Disposable_Income"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    return model, r2_score(y_test, model.predict(X_test))
-
+# 4. Model Training (Only for Stock Investments)
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -123,21 +79,7 @@ def train_stock_model(data):
     model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
-# 5. Predictive Functions
-def prepare_finance_input(input_data, model):
-    features = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", "Groceries", 
-                "Transport", "Healthcare", "Education", "Eating_Out", "Entertainment", "Utilities", 
-                "Desired_Savings_Percentage"]
-    input_dict = {col: input_data.get(col, 0.0 if col != "Desired_Savings_Percentage" else 10.0) for col in features}
-    input_df = pd.DataFrame([input_dict], columns=features)
-    input_df["Occupation"] = "Unknown"
-    input_df["City_Tier"] = "Unknown"
-    input_df = pd.get_dummies(input_df, columns=["Occupation", "City_Tier"])
-    for feature in model.feature_names_in_:
-        if feature not in input_df.columns:
-            input_df[feature] = 0
-    return input_df[model.feature_names_in_]
-
+# 5. Predictive Functions (For Personal Finance, using form inputs directly)
 def calculate_financial_health_score(income, total_expenses, debt, discretionary):
     """🌡️ Gauge your financial strength!"""
     if income <= 0:
@@ -151,8 +93,9 @@ def calculate_financial_health_score(income, total_expenses, debt, discretionary
     discretionary_score = max(0, 25 - (discretionary_ratio * 125))
     return max(0, min(100, savings_score + debt_score + discretionary_score))
 
-def predict_disposable_income(model, input_data):
-    return max(0, model.predict(prepare_finance_input(input_data, model))[0])
+def predict_disposable_income(income, total_expenses):
+    """Simplified calculation: Disposable Income = Income - Total Expenses"""
+    return max(0, income - total_expenses)
 
 def forecast_wealth_growth(income, total_expenses, savings_rate, years, income_growth=0.0, expense_growth=0.0):
     """📈 Project your wealth ascent!"""
@@ -188,7 +131,7 @@ def smart_savings_plan(income, total_expenses, years_to_retirement):
     expense_growth = 2.5
     return dream_fund, savings_rate, income_growth, expense_growth
 
-# 6. Insight Generators (Not displayed in sidebar as per request)
+# 6. Insight Generators (For Stock Investments)
 def portfolio_advice(risk_tolerance):
     """💼 Your investment playbook!"""
     if risk_tolerance == "Low":
@@ -222,15 +165,15 @@ def portfolio_advice(risk_tolerance):
 
 # 7. Main Application
 def main():
-    # Load data
-    finance_data = load_finance_data()
+    # Load stock data (for Stock Investments tab)
     stock_data = load_stock_data()
-    if finance_data is None or stock_data is None:
-        st.stop()
+    if stock_data is None:
+        st.warning("Stock Investments tab will not function without stock data. Proceeding with Personal Finance tab.")
 
-    # Train models
-    finance_model, finance_r2 = train_finance_model(finance_data)
-    stock_model, stock_r2 = train_stock_model(stock_data)
+    # Train stock model if data is available
+    stock_model, stock_r2 = None, 0.0
+    if stock_data is not None:
+        stock_model, stock_r2 = train_stock_model(stock_data)
 
     # Initialize session state
     if 'active_tab' not in st.session_state:
@@ -266,7 +209,7 @@ def main():
         # Sidebar for Personal Finance
         with st.sidebar:
             st.subheader("Personal Finance")
-            st.write(f"📊 Finance Model R²: {finance_r2:.2f}")
+            st.write("📊 Finance Model R²: N/A (Using form inputs directly)")
 
             st.subheader("🌡️ Financial Health")
             if st.session_state.submit and st.session_state.input_data:
@@ -282,7 +225,10 @@ def main():
 
             st.subheader("💸 Disposable Income")
             if st.session_state.submit and st.session_state.input_data:
-                disposable = predict_disposable_income(finance_model, st.session_state.input_data)
+                disposable = predict_disposable_income(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses
+                )
                 st.metric("Monthly (₹)", f"₹{disposable:,.2f}")
             else:
                 st.metric("Monthly (₹)", "N/A")
@@ -310,24 +256,24 @@ def main():
         with st.form(key="finance_form"):
             col1, col2 = st.columns(2)
             with col1:
-                name = st.text_input("👤 Name", "Amit Sharma")
+                name = st.text_input("👤 Name", "")
                 age = st.number_input("🎂 Age", min_value=18, max_value=100, value=30)
-                income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, value=50000.0, step=1000.0)
+                income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, value=0.0, step=1000.0)
                 dependents = st.number_input("👨‍👩‍👧 Dependents", min_value=0, value=0)
-                rent = st.number_input("🏠 Rent (₹)", min_value=0.0, value=15000.0, step=500.0)
+                rent = st.number_input("🏠 Rent (₹)", min_value=0.0, value=0.0, step=500.0)
                 loan_repayment = st.number_input("💳 Loan Repayment (₹)", min_value=0.0, value=0.0, step=500.0)
             with col2:
-                insurance = st.number_input("🛡️ Insurance (₹)", min_value=0.0, value=2000.0, step=100.0)
-                groceries = st.number_input("🛒 Groceries (₹)", min_value=0.0, value=8000.0, step=100.0)
-                transport = st.number_input("🚗 Transport (₹)", min_value=0.0, value=3000.0, step=100.0)
-                healthcare = st.number_input("🏥 Healthcare (₹)", min_value=0.0, value=1500.0, step=100.0)
+                insurance = st.number_input("🛡️ Insurance (₹)", min_value=0.0, value=0.0, step=100.0)
+                groceries = st.number_input("🛒 Groceries (₹)", min_value=0.0, value=0.0, step=100.0)
+                transport = st.number_input("🚗 Transport (₹)", min_value=0.0, value=0.0, step=100.0)
+                healthcare = st.number_input("🏥 Healthcare (₹)", min_value=0.0, value=0.0, step=100.0)
                 education = st.number_input("📚 Education (₹)", min_value=0.0, value=0.0, step=100.0)
-                eating_out = st.number_input("🍽️ Eating Out (₹)", min_value=0.0, value=2000.0, step=100.0)
-                entertainment = st.number_input("🎬 Entertainment (₹)", min_value=0.0, value=1500.0, step=100.0)
-                utilities = st.number_input("💡 Utilities (₹)", min_value=0.0, value=4000.0, step=100.0)
+                eating_out = st.number_input("🍽️ Eating Out (₹)", min_value=0.0, value=0.0, step=100.0)
+                entertainment = st.number_input("🎬 Entertainment (₹)", min_value=0.0, value=0.0, step=100.0)
+                utilities = st.number_input("💡 Utilities (₹)", min_value=0.0, value=0.0, step=100.0)
                 savings_rate = st.number_input("🎯 Savings Rate (%)", min_value=0.0, max_value=100.0, value=10.0)
 
-            retirement_age = st.slider("👴 Retirement Age", int(age), 62, min(62, age + 30))
+            retirement_age = st.slider("👴 Retirement Age", int(age), 100, value=min(62, max(int(age), 62)))
             submit = st.form_submit_button("🚀 Analyze My Finances")
 
         # Update session state on form submission
@@ -344,7 +290,7 @@ def main():
             st.session_state.debt = rent + loan_repayment
             st.session_state.discretionary = eating_out + entertainment + utilities
 
-        # Main content
+        # Main content after submission
         if st.session_state.submit:
             st.subheader("🌍 Wealth Roadmap")
             dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, st.session_state.total_expenses, st.session_state.years_to_retirement)
@@ -408,9 +354,13 @@ def main():
             st.subheader("Stock Investments")
             st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
-            future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-            predicted_price = stock_model.predict(future)[0]
-            st.session_state.predicted_price = predicted_price
+            if stock_model is not None:
+                future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
+                predicted_price = stock_model.predict(future)[0]
+                st.session_state.predicted_price = predicted_price
+            else:
+                predicted_price = 0.0
+                st.session_state.predicted_price = 0.0
 
             st.subheader("📌 Predicted Price")
             st.metric(f"In {horizon} Months (₹)", f"₹{predicted_price:,.2f}")
@@ -418,10 +368,13 @@ def main():
             st.subheader("💡 Investment Insights")
             st.write(f"🎯 Risk Level: {risk_tolerance}")
             st.write(f"📈 Horizon: {horizon} months")
-            predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
+            if stock_data is not None:
+                predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
+            else:
+                predicted_growth = 0.0
             st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
 
-        # Moved "Price Prediction" and "Investment Playbook" above "NIFTY CONSUMPTION Trend"
+        # Price Prediction and Investment Playbook (already above NIFTY CONSUMPTION Trend)
         st.subheader("🔮 Price Prediction")
         st.write(f"📌 Predicted Price in {horizon} months: **₹{predicted_price:,.2f}**")
 
@@ -432,49 +385,54 @@ def main():
             st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']}")
 
         st.subheader("📉 NIFTY CONSUMPTION Trend")
-        fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
-        fig.update_layout(
-            title_font_color="#FFFFFF",
-            xaxis_title_font_color="#FFFFFF",
-            yaxis_title_font_color="#FFFFFF",
-            xaxis_tickfont_color="#FFFFFF",
-            yaxis_tickfont_color="#FFFFFF"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        stock_subset = stock_data.copy()
-        stock_subset['SMA_30'] = stock_subset['Close'].rolling(window=30).mean()
-        stock_subset['Volatility'] = stock_subset['Close'].pct_change().rolling(window=30).std()
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("📏 Moving Average")
-            fig_ma = px.line(stock_subset, x='Date', y=['Close', 'SMA_30'], title="30-Day SMA", template="plotly_dark")
-            fig_ma.update_layout(
+        if stock_data is not None:
+            fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
+            fig.update_layout(
                 title_font_color="#FFFFFF",
                 xaxis_title_font_color="#FFFFFF",
                 yaxis_title_font_color="#FFFFFF",
                 xaxis_tickfont_color="#FFFFFF",
-                yaxis_tickfont_color="#FFFFFF",
-                legend_font_color="#FFFFFF"
+                yaxis_tickfont_color="#FFFFFF"
             )
-            st.plotly_chart(fig_ma, use_container_width=True)
-        with col2:
-            st.subheader("🌩️ Volatility")
-            fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="30-Day Volatility", template="plotly_dark")
-            fig_vol.update_layout(
-                title_font_color="#FFFFFF",
-                xaxis_title_font_color="#FFFFFF",
-                yaxis_title_font_color="#FFFFFF",
-                xaxis_tickfont_color="#FFFFFF",
-                yaxis_tickfont_color="#FFFFFF",
-                legend_font_color="#FFFFFF"
-            )
-            st.plotly_chart(fig_vol, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.write("Stock data unavailable. Please ensure 'NIFTY CONSUMPTION_daily_data.csv' is present.")
 
-        if not os.path.exists("models"):
-            os.makedirs("models")
-        joblib.dump(stock_model, "models/stock_model.pkl")
+        if stock_data is not None:
+            stock_subset = stock_data.copy()
+            stock_subset['SMA_30'] = stock_subset['Close'].rolling(window=30).mean()
+            stock_subset['Volatility'] = stock_subset['Close'].pct_change().rolling(window=30).std()
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("📏 Moving Average")
+                fig_ma = px.line(stock_subset, x='Date', y=['Close', 'SMA_30'], title="30-Day SMA", template="plotly_dark")
+                fig_ma.update_layout(
+                    title_font_color="#FFFFFF",
+                    xaxis_title_font_color="#FFFFFF",
+                    yaxis_title_font_color="#FFFFFF",
+                    xaxis_tickfont_color="#FFFFFF",
+                    yaxis_tickfont_color="#FFFFFF",
+                    legend_font_color="#FFFFFF"
+                )
+                st.plotly_chart(fig_ma, use_container_width=True)
+            with col2:
+                st.subheader("🌩️ Volatility")
+                fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="30-Day Volatility", template="plotly_dark")
+                fig_vol.update_layout(
+                    title_font_color="#FFFFFF",
+                    xaxis_title_font_color="#FFFFFF",
+                    yaxis_title_font_color="#FFFFFF",
+                    xaxis_tickfont_color="#FFFFFF",
+                    yaxis_tickfont_color="#FFFFFF",
+                    legend_font_color="#FFFFFF"
+                )
+                st.plotly_chart(fig_vol, use_container_width=True)
+
+        if stock_model is not None:
+            if not os.path.exists("models"):
+                os.makedirs("models")
+            joblib.dump(stock_model, "models/stock_model.pkl")
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
