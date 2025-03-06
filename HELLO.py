@@ -248,6 +248,22 @@ def main():
     # Initialize session state for sidebar content
     if 'active_tab' not in st.session_state:
         st.session_state.active_tab = "Personal Finance"
+    if 'submit' not in st.session_state:
+        st.session_state.submit = False
+    if 'input_data' not in st.session_state:
+        st.session_state.input_data = None
+    if 'total_expenses' not in st.session_state:
+        st.session_state.total_expenses = None
+    if 'years_to_retirement' not in st.session_state:
+        st.session_state.years_to_retirement = None
+    if 'debt' not in st.session_state:
+        st.session_state.debt = None
+    if 'discretionary' not in st.session_state:
+        st.session_state.discretionary = None
+    if 'horizon' not in st.session_state:
+        st.session_state.horizon = 45
+    if 'risk_tolerance' not in st.session_state:
+        st.session_state.risk_tolerance = "High"
 
     # Update active tab based on user selection
     with tab1:
@@ -283,21 +299,24 @@ def main():
             retirement_age = st.slider("👴 Retirement Age", int(age), 62, min(62, age + 30))
             submit = st.form_submit_button("🚀 Analyze My Finances")
 
-        # Main content
+        # Update session state on form submission
         if submit:
-            input_data = {
+            st.session_state.submit = True
+            st.session_state.input_data = {
                 "Income": income, "Age": age, "Dependents": dependents, "Rent": rent, "Loan_Repayment": loan_repayment,
                 "Insurance": insurance, "Groceries": groceries, "Transport": transport, "Healthcare": healthcare,
                 "Education": education, "Eating_Out": eating_out, "Entertainment": entertainment, "Utilities": utilities,
                 "Desired_Savings_Percentage": savings_rate
             }
-            total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, eating_out, entertainment, utilities])
-            years_to_retirement = max(0, retirement_age - age)
-            debt = rent + loan_repayment
-            discretionary = eating_out + entertainment + utilities
+            st.session_state.total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, eating_out, entertainment, utilities])
+            st.session_state.years_to_retirement = max(0, retirement_age - age)
+            st.session_state.debt = rent + loan_repayment
+            st.session_state.discretionary = eating_out + entertainment + utilities
 
+        # Main content
+        if st.session_state.submit:
             st.subheader("🌍 Wealth Roadmap")
-            dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, total_expenses, years_to_retirement)
+            dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, st.session_state.total_expenses, st.session_state.years_to_retirement)
             desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=dream_fund, step=100000.0)
             savings_rate = st.slider("🎯 Savings Rate (%)", 0.0, 100.0, suggested_rate, step=1.0)
             income_growth = st.slider("📈 Income Growth (%)", 0.0, 10.0, income_growth, step=0.5)
@@ -321,9 +340,9 @@ def main():
                 st.pyplot(fig)
             with col2:
                 st.subheader("🌱 Wealth Growth")
-                trajectory = wealth_trajectory(income, total_expenses, savings_rate, years_to_retirement, income_growth, expense_growth)
+                trajectory = wealth_trajectory(income, st.session_state.total_expenses, savings_rate, st.session_state.years_to_retirement, income_growth, expense_growth)
                 fig, ax = plt.subplots(figsize=(8, 5))
-                ax.plot(range(years_to_retirement + 1), trajectory, marker="o", color="#32CD32", label="Wealth")
+                ax.plot(range(st.session_state.years_to_retirement + 1), trajectory, marker="o", color="#32CD32", label="Wealth")
                 ax.axhline(y=desired_fund, color="red", linestyle="--", label="Goal")
                 ax.set_title("Wealth Growth (₹)")
                 ax.set_xlabel("Years")
@@ -346,6 +365,10 @@ def main():
 
         horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=45)
         risk_tolerance = st.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
+
+        # Update session state for stock investments
+        st.session_state.horizon = horizon
+        st.session_state.risk_tolerance = risk_tolerance
 
         # Main content
         st.subheader("📉 NIFTY CONSUMPTION Trend")
@@ -406,29 +429,44 @@ def main():
 
     # Dynamic Sidebar Rendering Based on Active Tab
     with st.sidebar:
-        st.title("🌟 WealthWise Insights")
-
         if st.session_state.active_tab == "Personal Finance":
             st.subheader("Personal Finance")
             st.write(f"📊 Finance Model R²: {finance_r2:.2f}")
 
             st.subheader("🌡️ Financial Health")
-            if 'submit' in locals() and submit:
-                health_score = calculate_financial_health_score(income, total_expenses, debt, discretionary)
+            if st.session_state.submit and st.session_state.input_data:
+                health_score = calculate_financial_health_score(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    st.session_state.debt,
+                    st.session_state.discretionary
+                )
                 st.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
             else:
                 st.metric("Score", "N/A")
 
             st.subheader("💸 Disposable Income")
-            if 'submit' in locals() and submit:
-                disposable = predict_disposable_income(finance_model, input_data)
+            if st.session_state.submit and st.session_state.input_data:
+                disposable = predict_disposable_income(finance_model, st.session_state.input_data)
                 st.metric("Monthly (₹)", f"₹{disposable:,.2f}")
             else:
                 st.metric("Monthly (₹)", "N/A")
 
             st.subheader("🏦 Future Wealth")
-            if 'submit' in locals() and submit:
-                wealth = forecast_wealth_growth(income, total_expenses, savings_rate, years_to_retirement, income_growth, expense_growth)
+            if st.session_state.submit and st.session_state.input_data:
+                dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    st.session_state.years_to_retirement
+                )
+                wealth = forecast_wealth_growth(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    suggested_rate,
+                    st.session_state.years_to_retirement,
+                    income_growth,
+                    expense_growth
+                )
                 st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
             else:
                 st.metric("At Retirement (₹)", "N/A")
@@ -438,12 +476,13 @@ def main():
             st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
             st.subheader("📌 Predicted Price")
+            future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
             predicted_price = stock_model.predict(future)[0]
-            st.metric(f"In {horizon} Months (₹)", f"₹{predicted_price:,.2f}")
+            st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
 
             st.subheader("💡 Investment Insights")
-            st.write(f"🎯 Risk Level: {risk_tolerance}")
-            st.write(f"📈 Horizon: {horizon} months")
+            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
+            st.write(f"📈 Horizon: {st.session_state.horizon} months")
             predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
             st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
 
