@@ -24,13 +24,26 @@ st.markdown("""
     .sidebar .sidebar-content {background-color: #e6f3ff;} /* Sidebar light blue */
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
     .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px;}
-    .stMetric label {color: #000000 !important; font-weight: bold;} /* Metric labels in black */
-    .stMetric div[data-testid="stMetricValue"] {color: #000000 !important; font-size: 1.2em;} /* Metric values in black */
-    .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #1A2526 !important;}
-    h1, h2, h3, h4, h5, h6 {color: #FFFFFF !important;} /* White for headings */
-    .stMarkdown, .stText, p, div, span, label {color: #FFFFFF !important;} /* White for main content text */
-    .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {color: #1A2526 !important;} /* Dark charcoal gray in sidebar */
-    .css-1d391kg, .css-1v0mbdj {color: #FFFFFF !important;} /* White for Streamlit elements in main content */
+    /* Ensure all sidebar text is black for visibility */
+    .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {
+        color: #000000 !important;
+        font-size: 1em;
+    }
+    /* Sidebar headings */
+    .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4, .sidebar h5, .sidebar h6 {
+        color: #000000 !important;
+        font-weight: bold;
+    }
+    /* Metric labels and values */
+    .stMetric label {color: #000000 !important; font-weight: bold;}
+    .stMetric div[data-testid="stMetricValue"] {color: #000000 !important; font-size: 1.2em;}
+    /* Ensure no white text overrides */
+    .sidebar .stMetric * {color: #000000 !important;}
+    .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #000000 !important;}
+    /* Main content text remains white */
+    h1, h2, h3, h4, h5, h6 {color: #FFFFFF !important;}
+    .stMarkdown, .stText, p, div, span, label {color: #FFFFFF !important;}
+    .css-1d391kg, .css-1v0mbdj {color: #FFFFFF !important;}
     </style>
 """, unsafe_allow_html=True)
 
