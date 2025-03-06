@@ -360,7 +360,7 @@ def main():
                                       "Transport": transport, "Healthcare": healthcare, "Education": education,
                                       "Eating Out": eating_out, "Entertainment": entertainment, "Utilities": utilities})
                 fig, ax = plt.subplots(figsize=(8, 5))
-                spending.plot(kind="bar", ax=ax, color="#87CEEB")
+                spending.plot(kind="bar", ax=ax, color="#000000")
                 ax.set_title("Monthly Spending (₹)")
                 ax.set_ylabel("Amount (₹)")
                 plt.xticks(rotation=45)
