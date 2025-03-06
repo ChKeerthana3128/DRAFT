@@ -24,7 +24,7 @@ st.markdown("""
     .sidebar .sidebar-content {background-color: #e6f3ff;} /* Sidebar light blue */
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
     .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px;}
-    /* Ensure all sidebar text is black for visibility */
+    /* Ensure all sidebar text is black (#000000) for visibility */
     .sidebar .stMarkdown, .sidebar .stText, .sidebar p, .sidebar div, .sidebar span, .sidebar label {
         color: #000000 !important;
         font-size: 1em;
@@ -37,7 +37,7 @@ st.markdown("""
     /* Metric labels and values */
     .stMetric label {color: #000000 !important; font-weight: bold;}
     .stMetric div[data-testid="stMetricValue"] {color: #000000 !important; font-size: 1.2em;}
-    /* Ensure no white text overrides */
+    /* Ensure no overrides */
     .sidebar .stMetric * {color: #000000 !important;}
     .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #000000 !important;}
     /* Main content text remains white */
@@ -360,12 +360,12 @@ def main():
                                       "Transport": transport, "Healthcare": healthcare, "Education": education,
                                       "Eating Out": eating_out, "Entertainment": entertainment, "Utilities": utilities})
                 fig, ax = plt.subplots(figsize=(8, 5))
-                spending.plot(kind="bar", ax=ax, color="#000000")
+                spending.plot(kind="bar", ax=ax, color="#87CEEB")
                 ax.set_title("Monthly Spending (₹)")
                 ax.set_ylabel("Amount (₹)")
                 plt.xticks(rotation=45)
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
-                    label.set_color("#000000")
+                    label.set_color("#FFFFFF")
                 ax.title.set_color("#FFFFFF")
                 ax.yaxis.label.set_color("#FFFFFF")
                 st.pyplot(fig)
