@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 import joblib
-import -import warnings
+import warnings
 import os
 
 warnings.filterwarnings("ignore")
