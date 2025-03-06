@@ -365,7 +365,7 @@ def main():
                 ax.set_ylabel("Amount (₹)")
                 plt.xticks(rotation=45)
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
-                    label.set_color("#FFFFFF")
+                    label.set_color("#000000")
                 ax.title.set_color("#FFFFFF")
                 ax.yaxis.label.set_color("#FFFFFF")
                 st.pyplot(fig)
