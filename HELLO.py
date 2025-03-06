@@ -242,12 +242,7 @@ def main():
     finance_model, finance_r2 = train_finance_model(finance_data)
     stock_model, stock_r2 = train_stock_model(stock_data)
 
-    # Define tabs
-    tab1, tab2 = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
-
-    # Initialize session state for sidebar content
-    if 'active_tab' not in st.session_state:
-        st.session_state.active_tab = "Personal Finance"
+    # Initialize session state for form submission and inputs
     if 'submit' not in st.session_state:
         st.session_state.submit = False
     if 'input_data' not in st.session_state:
@@ -265,14 +260,20 @@ def main():
     if 'risk_tolerance' not in st.session_state:
         st.session_state.risk_tolerance = "High"
 
-    # Update active tab based on user selection
-    with tab1:
-        st.session_state.active_tab = "Personal Finance"
-    with tab2:
-        st.session_state.active_tab = "Stock Investments"
+    # Define tabs
+    tabs = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
+
+    # Use st.session_state to track the active tab
+    if 'active_tab' not in st.session_state:
+        st.session_state.active_tab = 0  # Default to first tab (Personal Finance)
+
+    # Update active tab index based on user selection
+    for idx, tab in enumerate(tabs):
+        with tab:
+            st.session_state.active_tab = idx
 
     # --- Personal Finance Dashboard ---
-    with tab1:
+    with tabs[0]:
         st.header("💵 Your Money Mastery Hub")
         st.markdown("Shape your financial destiny with style! 🌈")
 
@@ -359,7 +360,7 @@ def main():
                 st.pyplot(fig)
 
     # --- Stock Investments Dashboard ---
-    with tab2:
+    with tabs[1]:
         st.header("📈 Stock Market Quest")
         st.markdown("Conquer the NIFTY CONSUMPTION index! 🌠")
 
@@ -429,7 +430,7 @@ def main():
 
     # Dynamic Sidebar Rendering Based on Active Tab
     with st.sidebar:
-        if st.session_state.active_tab == "Personal Finance":
+        if st.session_state.active_tab == 0:  # Personal Finance tab
             st.subheader("Personal Finance")
             st.write(f"📊 Finance Model R²: {finance_r2:.2f}")
 
@@ -471,7 +472,7 @@ def main():
             else:
                 st.metric("At Retirement (₹)", "N/A")
 
-        elif st.session_state.active_tab == "Stock Investments":
+        elif st.session_state.active_tab == 1:  # Stock Investments tab
             st.subheader("Stock Investments")
             st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
