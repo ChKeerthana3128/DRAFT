@@ -259,21 +259,15 @@ def main():
         st.session_state.horizon = 45
     if 'risk_tolerance' not in st.session_state:
         st.session_state.risk_tolerance = "High"
+    if 'active_tab' not in st.session_state:
+        st.session_state.active_tab = "Personal Finance"
 
     # Define tabs
-    tabs = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
-
-    # Use st.session_state to track the active tab
-    if 'active_tab' not in st.session_state:
-        st.session_state.active_tab = 0  # Default to first tab (Personal Finance)
-
-    # Update active tab index based on user selection
-    for idx, tab in enumerate(tabs):
-        with tab:
-            st.session_state.active_tab = idx
+    tab1, tab2 = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
 
     # --- Personal Finance Dashboard ---
-    with tabs[0]:
+    with tab1:
+        st.session_state.active_tab = "Personal Finance"
         st.header("💵 Your Money Mastery Hub")
         st.markdown("Shape your financial destiny with style! 🌈")
 
@@ -360,7 +354,8 @@ def main():
                 st.pyplot(fig)
 
     # --- Stock Investments Dashboard ---
-    with tabs[1]:
+    with tab2:
+        st.session_state.active_tab = "Stock Investments"
         st.header("📈 Stock Market Quest")
         st.markdown("Conquer the NIFTY CONSUMPTION index! 🌠")
 
@@ -430,7 +425,7 @@ def main():
 
     # Dynamic Sidebar Rendering Based on Active Tab
     with st.sidebar:
-        if st.session_state.active_tab == 0:  # Personal Finance tab
+        if st.session_state.active_tab == "Personal Finance":
             st.subheader("Personal Finance")
             st.write(f"📊 Finance Model R²: {finance_r2:.2f}")
 
@@ -472,7 +467,7 @@ def main():
             else:
                 st.metric("At Retirement (₹)", "N/A")
 
-        elif st.session_state.active_tab == 1:  # Stock Investments tab
+        elif st.session_state.active_tab == "Stock Investments":
             st.subheader("Stock Investments")
             st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
