@@ -70,7 +70,7 @@ def load_finance_data(csv_path="financial_data.csv"):
         required_cols = ["Income", "Age", "Dependents", "Occupation", "City_Tier", "Rent", "Loan_Repayment", 
                          "Insurance", "Groceries", "Transport", "Healthcare", "Education", "Eating_Out", 
                          "Entertainment", "Utilities", "Desired_Savings_Percentage", "Disposable_Income"]
-        missing = [col for col in required_cols if col not in data.columns]
+        missing = [col for col in required_cols if col in data.columns]
         if missing:
             st.error(f"🚨 Missing columns: {missing}")
             return None
@@ -421,6 +421,16 @@ def main():
             predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
             st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
 
+        # Moved "Price Prediction" and "Investment Playbook" above "NIFTY CONSUMPTION Trend"
+        st.subheader("🔮 Price Prediction")
+        st.write(f"📌 Predicted Price in {horizon} months: **₹{predicted_price:,.2f}**")
+
+        st.subheader("💼 Investment Playbook")
+        portfolio = portfolio_advice(risk_tolerance)
+        st.write(f"**Strategy**: {portfolio['Overview']}")
+        for pick in portfolio["Picks"]:
+            st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']}")
+
         st.subheader("📉 NIFTY CONSUMPTION Trend")
         fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
         fig.update_layout(
@@ -461,15 +471,6 @@ def main():
                 legend_font_color="#FFFFFF"
             )
             st.plotly_chart(fig_vol, use_container_width=True)
-
-        st.subheader("🔮 Price Prediction")
-        st.write(f"📌 Predicted Price in {horizon} months: **₹{predicted_price:,.2f}**")
-
-        st.subheader("💼 Investment Playbook")
-        portfolio = portfolio_advice(risk_tolerance)
-        st.write(f"**Strategy**: {portfolio['Overview']}")
-        for pick in portfolio["Picks"]:
-            st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']}")
 
         if not os.path.exists("models"):
             os.makedirs("models")
