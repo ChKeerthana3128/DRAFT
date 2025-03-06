@@ -23,7 +23,9 @@ st.markdown("""
     .main {background-color: #000000;} /* Main background set to black */
     .sidebar .sidebar-content {background-color: #e6f3ff;} /* Sidebar light blue */
     .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px;}
-    .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px; color: #1A2526 !important;}
+    .stMetric {background-color: #e6f0ff; border: 1px solid #4682b4; border-radius: 8px; padding: 10px;}
+    .stMetric label {color: #000000 !important;} /* Metric labels (e.g., "Score", "Monthly (₹)") in black */
+    .stMetric div[data-testid="stMetricValue"] {color: #1A2526 !important;} /* Metric values in dark charcoal gray */
     .stExpander {background-color: #f9f9f9; border-radius: 8px; color: #1A2526 !important;}
     h1, h2, h3, h4, h5, h6 {color: #FFFFFF !important;} /* White for headings */
     .stMarkdown, .stText, p, div, span, label {color: #FFFFFF !important;} /* White for main content text */
@@ -413,7 +415,7 @@ def main():
             xaxis_title_font_color="#FFFFFF",
             yaxis_title_font_color="#FFFFFF",
             xaxis_tickfont_color="#FFFFFF",
-            yaxis_tickfont_color="#FFFFFF"  # Fixed typo here
+            yaxis_tickfont_color="#FFFFFF"
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -430,7 +432,7 @@ def main():
                 xaxis_title_font_color="#FFFFFF",
                 yaxis_title_font_color="#FFFFFF",
                 xaxis_tickfont_color="#FFFFFF",
-                yaxis_tickfont_color="#FFFFFF",  # Fixed typo here
+                yaxis_tickfont_color="#FFFFFF",
                 legend_font_color="#FFFFFF"
             )
             st.plotly_chart(fig_ma, use_container_width=True)
@@ -442,7 +444,7 @@ def main():
                 xaxis_title_font_color="#FFFFFF",
                 yaxis_title_font_color="#FFFFFF",
                 xaxis_tickfont_color="#FFFFFF",
-                yaxis_tickfont_color="#FFFFFF",  # Fixed typo here
+                yaxis_tickfont_color="#FFFFFF",
                 legend_font_color="#FFFFFF"
             )
             st.plotly_chart(fig_vol, use_container_width=True)
