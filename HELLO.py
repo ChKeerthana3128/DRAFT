@@ -242,7 +242,9 @@ def main():
     finance_model, finance_r2 = train_finance_model(finance_data)
     stock_model, stock_r2 = train_stock_model(stock_data)
 
-    # Initialize session state for form submission and inputs
+    # Initialize session state
+    if 'active_tab' not in st.session_state:
+        st.session_state.active_tab = "Personal Finance"
     if 'submit' not in st.session_state:
         st.session_state.submit = False
     if 'input_data' not in st.session_state:
@@ -259,8 +261,8 @@ def main():
         st.session_state.horizon = 45
     if 'risk_tolerance' not in st.session_state:
         st.session_state.risk_tolerance = "High"
-    if 'active_tab' not in st.session_state:
-        st.session_state.active_tab = "Personal Finance"
+    if 'predicted_price' not in st.session_state:
+        st.session_state.predicted_price = None
 
     # Define tabs
     tab1, tab2 = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
@@ -271,6 +273,50 @@ def main():
         st.header("💵 Your Money Mastery Hub")
         st.markdown("Shape your financial destiny with style! 🌈")
 
+        # Sidebar for Personal Finance
+        with st.sidebar:
+            st.subheader("Personal Finance")
+            st.write(f"📊 Finance Model R²: {finance_r2:.2f}")
+
+            st.subheader("🌡️ Financial Health")
+            if st.session_state.submit and st.session_state.input_data:
+                health_score = calculate_financial_health_score(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    st.session_state.debt,
+                    st.session_state.discretionary
+                )
+                st.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
+            else:
+                st.metric("Score", "N/A")
+
+            st.subheader("💸 Disposable Income")
+            if st.session_state.submit and st.session_state.input_data:
+                disposable = predict_disposable_income(finance_model, st.session_state.input_data)
+                st.metric("Monthly (₹)", f"₹{disposable:,.2f}")
+            else:
+                st.metric("Monthly (₹)", "N/A")
+
+            st.subheader("🏦 Future Wealth")
+            if st.session_state.submit and st.session_state.input_data:
+                dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    st.session_state.years_to_retirement
+                )
+                wealth = forecast_wealth_growth(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    suggested_rate,
+                    st.session_state.years_to_retirement,
+                    income_growth,
+                    expense_growth
+                )
+                st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
+            else:
+                st.metric("At Retirement (₹)", "N/A")
+
+        # Main content
         with st.form(key="finance_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -359,6 +405,24 @@ def main():
         st.header("📈 Stock Market Quest")
         st.markdown("Conquer the NIFTY CONSUMPTION index! 🌠")
 
+        # Sidebar for Stock Investments
+        with st.sidebar:
+            st.subheader("Stock Investments")
+            st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
+
+            st.subheader("📌 Predicted Price")
+            future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
+            predicted_price = stock_model.predict(future)[0]
+            st.session_state.predicted_price = predicted_price
+            st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
+
+            st.subheader("💡 Investment Insights")
+            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
+            st.write(f"📈 Horizon: {st.session_state.horizon} months")
+            predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
+            st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
+
+        # Main content
         horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=45)
         risk_tolerance = st.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
 
@@ -366,7 +430,6 @@ def main():
         st.session_state.horizon = horizon
         st.session_state.risk_tolerance = risk_tolerance
 
-        # Main content
         st.subheader("📉 NIFTY CONSUMPTION Trend")
         fig = px.line(stock_data, x='Date', y='Close', title="Price Trend", template="plotly_dark")
         fig.update_layout(
@@ -409,8 +472,6 @@ def main():
             st.plotly_chart(fig_vol, use_container_width=True)
 
         st.subheader("🔮 Price Prediction")
-        future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-        predicted_price = stock_model.predict(future)[0]
         st.write(f"📌 Predicted Price in {horizon} months: **₹{predicted_price:,.2f}**")
 
         st.subheader("💼 Investment Playbook")
@@ -422,65 +483,6 @@ def main():
         if not os.path.exists("models"):
             os.makedirs("models")
         joblib.dump(stock_model, "models/stock_model.pkl")
-
-    # Dynamic Sidebar Rendering Based on Active Tab
-    with st.sidebar:
-        if st.session_state.active_tab == "Personal Finance":
-            st.subheader("Personal Finance")
-            st.write(f"📊 Finance Model R²: {finance_r2:.2f}")
-
-            st.subheader("🌡️ Financial Health")
-            if st.session_state.submit and st.session_state.input_data:
-                health_score = calculate_financial_health_score(
-                    st.session_state.input_data["Income"],
-                    st.session_state.total_expenses,
-                    st.session_state.debt,
-                    st.session_state.discretionary
-                )
-                st.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
-            else:
-                st.metric("Score", "N/A")
-
-            st.subheader("💸 Disposable Income")
-            if st.session_state.submit and st.session_state.input_data:
-                disposable = predict_disposable_income(finance_model, st.session_state.input_data)
-                st.metric("Monthly (₹)", f"₹{disposable:,.2f}")
-            else:
-                st.metric("Monthly (₹)", "N/A")
-
-            st.subheader("🏦 Future Wealth")
-            if st.session_state.submit and st.session_state.input_data:
-                dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
-                    st.session_state.input_data["Income"],
-                    st.session_state.total_expenses,
-                    st.session_state.years_to_retirement
-                )
-                wealth = forecast_wealth_growth(
-                    st.session_state.input_data["Income"],
-                    st.session_state.total_expenses,
-                    suggested_rate,
-                    st.session_state.years_to_retirement,
-                    income_growth,
-                    expense_growth
-                )
-                st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
-            else:
-                st.metric("At Retirement (₹)", "N/A")
-
-        elif st.session_state.active_tab == "Stock Investments":
-            st.subheader("Stock Investments")
-            st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
-
-            st.subheader("📌 Predicted Price")
-            future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
-            predicted_price = stock_model.predict(future)[0]
-            st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
-
-            st.subheader("💡 Investment Insights")
-            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
-            st.write(f"📈 Horizon: {st.session_state.horizon} months")
-            predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
-            st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
