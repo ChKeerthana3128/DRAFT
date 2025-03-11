@@ -388,6 +388,42 @@ def main():
                     os.makedirs("models")
                 joblib.dump(stock_model, "models/stock_model.pkl")
 
+    import streamlit as st
+
+# Initialize session state for page control
+if "page" not in st.session_state:
+    st.session_state.page = "Home"
+
+# Sidebar navigation
+def change_page(page_name):
+    st.session_state.page = page_name  # Update page state
+
+with st.sidebar:
+    st.title("Navigation")
+    if st.button("Home"):
+        change_page("Home")
+    if st.button("About"):
+        change_page("About")
+    if st.button("Contact"):
+        change_page("Contact")
+
+# Main content updates based on session state
+if st.session_state.page == "Home":
+    st.title("🏠 Home Page")
+    st.write("Welcome to the Home page! This content changes dynamically.")
+    st.sidebar.write("You're on the Home Page.")
+
+elif st.session_state.page == "About":
+    st.title("ℹ️ About Us")
+    st.write("This is the About page. Learn more about us here.")
+    st.sidebar.write("You're on the About Page.")
+
+elif st.session_state.page == "Contact":
+    st.title("📞 Contact Us")
+    st.write("Reach out to us anytime!")
+    st.sidebar.write("You're on the Contact Page.")
+
+
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
 
