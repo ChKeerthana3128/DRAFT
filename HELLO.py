@@ -94,7 +94,7 @@ def wealth_trajectory(income, total_expenses, savings_rate, years, income_growth
 
 def smart_savings_plan(income, total_expenses, years_to_retirement):
     """🧠 Craft your retirement blueprint!"""
-    dream_fund = total_expenses * 12 * 20
+    dream_fund = max(100000.0, total_expenses * 12 * 20) if total_expenses > 0 else 100000.0
     annual_target = dream_fund / years_to_retirement if years_to_retirement > 0 else dream_fund
     savings_rate = min(max((annual_target / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
     income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
@@ -135,6 +135,9 @@ def portfolio_advice(risk_tolerance):
 
 # 7. Main Application
 def main():
+    # Page title
+    st.title("WealthWise Dashboard")
+
     # Load stock data (for Stock Investments tab)
     stock_data = load_stock_data()
     if stock_data is None:
@@ -266,7 +269,7 @@ def main():
         if st.session_state.finance_submit:
             st.subheader("🌍 Wealth Roadmap")
             dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, st.session_state.total_expenses, st.session_state.years_to_retirement)
-            desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=dream_fund, step=100000.0)
+            desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=max(100000.0, dream_fund), step=100000.0)
             savings_rate = st.slider("🎯 Savings Rate (%)", 0.0, 100.0, suggested_rate, step=1.0)
             income_growth = st.slider("📈 Income Growth (%)", 0.0, 10.0, income_growth, step=0.5)
             expense_growth = st.slider("📉 Expense Growth (%)", 0.0, 10.0, expense_growth, step=0.5)
@@ -306,14 +309,10 @@ def main():
             st.subheader("Stock Investments")
             st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
-            if st.session_state.stock_submit:
+            if st.session_state.stock_submit and stock_model is not None:
                 future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
-                if stock_model is not None:
-                    predicted_price = stock_model.predict(future)[0]
-                    st.session_state.predicted_price = predicted_price
-                else:
-                    predicted_price = 0.0
-                    st.session_state.predicted_price = 0.0
+                predicted_price = stock_model.predict(future)[0]
+                st.session_state.predicted_price = predicted_price
             else:
                 predicted_price = 0.0
                 st.session_state.predicted_price = 0.0
