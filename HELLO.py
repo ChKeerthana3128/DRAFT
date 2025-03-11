@@ -14,7 +14,7 @@ def calculate_financial_health(income, expenses, investments, liabilities):
 # Load stock dataset (Ensure the file is available)
 def load_stock_data():
     try:
-        df = pd.read_csv("stock_data.csv")  # Ensure this CSV exists in the directory
+        df = pd.read_csv("archive (3) 2/NIFTY CONSUMPTION_daily_data.csv")  # Ensure this CSV exists in the directory
         return df
     except Exception as e:
         st.error(f"Error loading stock data: {e}")
