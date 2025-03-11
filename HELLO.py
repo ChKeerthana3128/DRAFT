@@ -400,8 +400,8 @@ def change_page(page_name):
 
 with st.sidebar:
     st.title("Welcome to Artha")
-    if st.button("Persoanl Finance"):
-        change_page("Persoanl Finance")
+    if st.button("Personal Finance"):
+        change_page("Personal Finance")
     if st.button("Stock Investments"):
         change_page("Stock Investments")
     
@@ -412,10 +412,57 @@ if st.session_state.page == "Personal Finance":
     st.write("Welcome to the Home page! This content changes dynamically.")
     st.sidebar.write("You're on the Home Page.")
 
+    with st.sidebar:
+            st.subheader("Personal Finance")
+        st.session_state.active_tab = "Personal Finance"
+        st.header("💵 Your Money Mastery Hub")
+        st.markdown("Shape your financial destiny with style! 🌈")
+
+        # Sidebar for Personal Finance
+            st.subheader("🌡️ Financial Health")
+            if st.session_state.finance_submit and st.session_state.input_data:
+                health_score = calculate_financial_health_score(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    st.session_state.debt,
+                    st.session_state.discretionary
+                )
+                st.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
+            else:
+                st.metric("Score", "N/A")
+
+            st.subheader("💸 Disposable Income")
+            if st.session_state.finance_submit and st.session_state.input_data:
+                disposable = predict_disposable_income(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses
+                )
+                st.metric("Monthly (₹)", f"₹{disposable:,.2f}")
+            else:
+                st.metric("Monthly (₹)", "N/A")
+
+            st.subheader("🏦 Future Wealth")
+            if st.session_state.finance_submit and st.session_state.input_data:
+                dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    st.session_state.years_to_retirement
+                )
+                wealth = forecast_wealth_growth(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    suggested_rate,
+                    st.session_state.years_to_retirement,
+                    income_growth,
+                    expense_growth
+                )
+                st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
+            else:
+                st.metric("At Retirement (₹)", "N/A")
 elif st.session_state.page == "Stock Investments":
-    st.title("ℹ️ About Us")
-    st.write("This is the About page. Learn more about us here.")
-    st.sidebar.write("You're on the About Page.")
+    st.title("Stock investment  ")
+    st.write("🌍 Wealth Roadmap")
+    st.sidebar.write("You're on the stock investments page .")
 
 
 
