@@ -421,8 +421,8 @@ elif tab == "Stock Investments":
 st.write(f"### You are viewing: {tab}")
 
 
-    st.markdown("---")
-    st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
+
+
 
 if __name__ == "__main__":
     main()
