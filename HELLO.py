@@ -388,6 +388,39 @@ def main():
                     os.makedirs("models")
                 joblib.dump(stock_model, "models/stock_model.pkl")
 
+    import streamlit as st
+
+# Sidebar Title
+st.sidebar.title("Dashboard Metrics")
+
+# Create main navigation tabs
+tab = st.sidebar.radio("Select Section:", ["Personal Finance", "Stock Investments"])
+
+# Sidebar Content Based on Selected Tab
+if tab == "Personal Finance":
+    st.sidebar.subheader("Financial Overview")
+    financial_health = 80  # Example value (replace with actual calculation)
+    disposable_income = "$2,500"  # Example value
+    future_wealth = "$500,000"  # Example value
+
+    st.sidebar.metric(label="Financial Health", value=f"{financial_health}%")
+    st.sidebar.metric(label="Disposable Income", value=disposable_income)
+    st.sidebar.metric(label="Future Wealth", value=future_wealth)
+
+elif tab == "Stock Investments":
+    st.sidebar.subheader("Stock Insights")
+    stock_model_r2 = 0.85  # Example value
+    predicted_price = "$150.75"  # Example value
+    investment_insights = "Bullish Trend Expected"  # Example value
+
+    st.sidebar.metric(label="Stock Model R²", value=stock_model_r2)
+    st.sidebar.metric(label="Predicted Price", value=predicted_price)
+    st.sidebar.write(f"📈 **Investment Insights:** {investment_insights}")
+
+# Main content placeholder
+st.write(f"### You are viewing: {tab}")
+
+
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
 
