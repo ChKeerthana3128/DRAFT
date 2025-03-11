@@ -424,5 +424,3 @@ st.write(f"### You are viewing: {tab}")
 
 
 
-if __name__ == "__main__":
-    main()
