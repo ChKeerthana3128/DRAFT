@@ -185,47 +185,46 @@ def main():
             st.subheader("Personal Finance")
             st.write("📊 Finance Model R²: N/A (Using form inputs directly)")
 
-            if st.session_state.active_tab == "Personal Finance":
-                st.subheader("🌡️ Personal Health")
-                if st.session_state.finance_submit and st.session_state.input_data:
-                    health_score = calculate_financial_health_score(
-                        st.session_state.input_data["Income"],
-                        st.session_state.total_expenses,
-                        st.session_state.debt,
-                        st.session_state.discretionary
-                    )
-                    st.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
-                else:
-                    st.metric("Score", "N/A")
+            st.subheader("🌡️ Personal Health")
+            if st.session_state.finance_submit and st.session_state.input_data:
+                health_score = calculate_financial_health_score(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    st.session_state.debt,
+                    st.session_state.discretionary
+                )
+                st.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
+            else:
+                st.metric("Score", "N/A")
 
-                st.subheader("💸 Disposable Income")
-                if st.session_state.finance_submit and st.session_state.input_data:
-                    disposable = predict_disposable_income(
-                        st.session_state.input_data["Income"],
-                        st.session_state.total_expenses
-                    )
-                    st.metric("Monthly (₹)", f"₹{disposable:,.2f}")
-                else:
-                    st.metric("Monthly (₹)", "N/A")
+            st.subheader("💸 Disposable Income")
+            if st.session_state.finance_submit and st.session_state.input_data:
+                disposable = predict_disposable_income(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses
+                )
+                st.metric("Monthly (₹)", f"₹{disposable:,.2f}")
+            else:
+                st.metric("Monthly (₹)", "N/A")
 
-                st.subheader("🏦 Future Wealth")
-                if st.session_state.finance_submit and st.session_state.input_data:
-                    dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
-                        st.session_state.input_data["Income"],
-                        st.session_state.total_expenses,
-                        st.session_state.years_to_retirement
-                    )
-                    wealth = forecast_wealth_growth(
-                        st.session_state.input_data["Income"],
-                        st.session_state.total_expenses,
-                        suggested_rate,
-                        st.session_state.years_to_retirement,
-                        income_growth,
-                        expense_growth
-                    )
-                    st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
-                else:
-                    st.metric("At Retirement (₹)", "N/A")
+            st.subheader("🏦 Future Wealth")
+            if st.session_state.finance_submit and st.session_state.input_data:
+                dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    st.session_state.years_to_retirement
+                )
+                wealth = forecast_wealth_growth(
+                    st.session_state.input_data["Income"],
+                    st.session_state.total_expenses,
+                    suggested_rate,
+                    st.session_state.years_to_retirement,
+                    income_growth,
+                    expense_growth
+                )
+                st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
+            else:
+                st.metric("At Retirement (₹)", "N/A")
 
         # Main content
         with st.form(key="finance_form"):
@@ -309,26 +308,25 @@ def main():
             st.subheader("Stock Investments")
             st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
-            if st.session_state.active_tab == "Stock Investments":
-                if st.session_state.stock_submit and stock_model is not None:
-                    future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
-                    predicted_price = stock_model.predict(future)[0]
-                    st.session_state.predicted_price = predicted_price
-                else:
-                    predicted_price = 0.0
-                    st.session_state.predicted_price = 0.0
+            if st.session_state.stock_submit and stock_model is not None:
+                future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
+                predicted_price = stock_model.predict(future)[0]
+                st.session_state.predicted_price = predicted_price
+            else:
+                predicted_price = 0.0
+                st.session_state.predicted_price = 0.0
 
-                st.subheader("📌 Predicted Price")
-                st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
+            st.subheader("📌 Predicted Price")
+            st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
 
-                st.subheader("💡 Investment Insights")
-                st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
-                st.write(f"📈 Horizon: {st.session_state.horizon} months")
-                if stock_data is not None and st.session_state.stock_submit:
-                    predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
-                else:
-                    predicted_growth = 0.0
-                st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
+            st.subheader("💡 Investment Insights")
+            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
+            st.write(f"📈 Horizon: {st.session_state.horizon} months")
+            if stock_data is not None and st.session_state.stock_submit:
+                predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
+            else:
+                predicted_growth = 0.0
+            st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
 
         # Main content with form
         with st.form(key="stock_form"):
