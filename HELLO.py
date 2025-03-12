@@ -137,7 +137,7 @@ def main():
     # Page title
     st.title("WealthWise Dashboard")
 
-    # Load stock data (for Stock Investments tab)
+    # Load stock data (for Stock Investments)
     stock_data = load_stock_data()
     if stock_data is None:
         st.warning("Stock Investments tab will not function without stock data. Proceeding with Personal Finance tab.")
@@ -154,36 +154,58 @@ def main():
         st.session_state.finance_submit = False
     if 'stock_submit' not in st.session_state:
         st.session_state.stock_submit = False
-    if 'input_data' not in st.session_state:
-        st.session_state.input_data = None
-    if 'total_expenses' not in st.session_state:
-        st.session_state.total_expenses = None
-    if 'years_to_retirement' not in st.session_state:
-        st.session_state.years_to_retirement = None
-    if 'debt' not in st.session_state:
-        st.session_state.debt = None
-    if 'discretionary' not in st.session_state:
-        st.session_state.discretionary = None
+    if 'income' not in st.session_state:
+        st.session_state.income = 0.0
+    if 'expenses' not in st.session_state:
+        st.session_state.expenses = 0.0
+    if 'savings_rate' not in st.session_state:
+        st.session_state.savings_rate = 10.0
     if 'horizon' not in st.session_state:
-        st.session_state.horizon = 45
+        st.session_state.horizon = 12
     if 'risk_tolerance' not in st.session_state:
         st.session_state.risk_tolerance = "High"
     if 'predicted_price' not in st.session_state:
         st.session_state.predicted_price = None
 
+    # Sidebar with conditional content based on active_tab
+    with st.sidebar:
+        if st.session_state.active_tab == "Personal Finance":
+            st.subheader("Personal Finance")
+            st.subheader("🌡️ Personal Health")
+            if st.session_state.finance_submit:
+                disposable = predict_disposable_income(st.session_state.income, st.session_state.expenses)
+                # Assuming some debt and discretionary for health score; adjust as needed
+                health_score = calculate_financial_health_score(st.session_state.income, st.session_state.expenses, st.session_state.expenses * 0.2, st.session_state.expenses * 0.1)
+                st.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
+            else:
+                st.metric("Score", "N/A")
+            st.subheader("🏦 Future Wealth")
+            if st.session_state.finance_submit:
+                wealth = forecast_wealth_growth(st.session_state.income, st.session_state.expenses, st.session_state.savings_rate, 30)  # Assuming 30 years to retirement
+                st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
+            else:
+                st.metric("At Retirement (₹)", "N/A")
+        elif st.session_state.active_tab == "Stock Investments":
+            st.subheader("Stock Investments")
+            st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
+            st.subheader("📌 Predicted Price")
+            if st.session_state.stock_submit and stock_model is not None:
+                future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
+                predicted_price = stock_model.predict(future)[0]
+                st.session_state.predicted_price = predicted_price
+                st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
+            else:
+                st.metric("Predicted Price (₹)", "N/A")
+            st.subheader("💡 Investment Insights")
+            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
+
     # Define tabs
     tab1, tab2 = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
 
-    # --- Personal Finance Dashboard (Your Code) ---
+    # Personal Finance Tab
     with tab1:
+        st.session_state.active_tab = "Personal Finance"
         st.header("💵 Your Money Mastery Hub")
-        
-        with st.sidebar:
-            st.subheader("Personal Finance")
-            st.subheader("🌡️ Personal Health")
-            st.metric("Score", "N/A")
-            st.subheader("🏦 Future Wealth")
-            st.metric("At Retirement (₹)", "N/A")
 
         with st.form(key="finance_form"):
             income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, value=0.0, step=1000.0)
@@ -192,20 +214,17 @@ def main():
             submit = st.form_submit_button("🚀 Analyze Finances")
 
         if submit:
-            disposable_income = max(0, income - expenses)
+            st.session_state.finance_submit = True
+            st.session_state.income = income
+            st.session_state.expenses = expenses
+            st.session_state.savings_rate = savings_rate
+            disposable_income = predict_disposable_income(income, expenses)
             st.write(f"💸 Disposable Income: ₹{disposable_income:,.2f}")
 
-    # --- Stock Investments Dashboard (Your Code) ---
+    # Stock Investments Tab
     with tab2:
+        st.session_state.active_tab = "Stock Investments"
         st.header("📈 Stock Market Quest")
-        
-        with st.sidebar:
-            st.subheader("Stock Investments")
-            st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
-            st.subheader("📌 Predicted Price")
-            st.metric("Predicted Price (₹)", "N/A")
-            st.subheader("💡 Investment Insights")
-            st.write("🎯 Risk Level: High")
 
         with st.form(key="stock_form"):
             horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=12)
@@ -213,6 +232,9 @@ def main():
             stock_submit = st.form_submit_button("🚀 Analyze Stock Investments")
 
         if stock_submit:
+            st.session_state.stock_submit = True
+            st.session_state.horizon = horizon
+            st.session_state.risk_tolerance = risk_tolerance
             st.write(f"📌 Investment Horizon: {horizon} months")
             st.write(f"🎯 Risk Tolerance: {risk_tolerance}")
 
