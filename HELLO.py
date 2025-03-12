@@ -1,3 +1,4 @@
+# 1. Imports
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -12,10 +13,10 @@ import os
 
 warnings.filterwarnings("ignore")
 
-# **Page Configuration**
+# 2. Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# **Data Loading (For Stock Investments)**
+# 3. Data Loading (Only for Stock Investments)
 @st.cache_data
 def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
@@ -35,7 +36,7 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
         st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
 
-# **Model Training (For Stock Investments)**
+# 4. Model Training (Only for Stock Investments)
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -48,7 +49,7 @@ def train_stock_model(data):
     model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
-# **Predictive Functions (For Personal Finance)**
+# 5. Predictive Functions (For Personal Finance, using form inputs directly)
 def calculate_financial_health_score(income, total_expenses, debt, discretionary):
     """🌡️ Gauge your financial strength!"""
     if income <= 0:
@@ -100,7 +101,7 @@ def smart_savings_plan(income, total_expenses, years_to_retirement):
     expense_growth = 2.5
     return dream_fund, savings_rate, income_growth, expense_growth
 
-# **Insight Generators (For Stock Investments)**
+# 6. Insight Generators (For Stock Investments)
 def portfolio_advice(risk_tolerance):
     """💼 Your investment playbook!"""
     if risk_tolerance == "Low":
@@ -132,16 +133,17 @@ def portfolio_advice(risk_tolerance):
             ]
         }
 
-# **Main Application**
+# 7. Main Application
 def main():
+    # Page title
     st.title("WealthWise Dashboard")
 
-    # Load stock data
+    # Load stock data (for Stock Investments tab)
     stock_data = load_stock_data()
     if stock_data is None:
         st.warning("Stock Investments tab will not function without stock data. Proceeding with Personal Finance tab.")
 
-    # Train stock model
+    # Train stock model if data is available
     stock_model, stock_r2 = None, 0.0
     if stock_data is not None:
         stock_model, stock_r2 = train_stock_model(stock_data)
@@ -170,8 +172,16 @@ def main():
     if 'predicted_price' not in st.session_state:
         st.session_state.predicted_price = None
 
-    # **Conditional Sidebar**
-    if st.session_state.active_tab == "Personal Finance":
+    # Define tabs
+    tab1, tab2 = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
+
+    # --- Personal Finance Dashboard ---
+    with tab1:
+        st.session_state.active_tab = "Personal Finance"
+        st.header("💵 Your Money Mastery Hub")
+        st.markdown("Shape your financial destiny with style! 🌈")
+
+        # Sidebar for Personal Finance
         with st.sidebar:
             st.subheader("Personal Finance")
             st.write("📊 Finance Model R²: N/A (Using form inputs directly)")
@@ -216,40 +226,8 @@ def main():
                 st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
             else:
                 st.metric("At Retirement (₹)", "N/A")
-    elif st.session_state.active_tab == "Stock Investments":
-        with st.sidebar:
-            st.subheader("Stock Investments")
-            st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
-            if st.session_state.stock_submit and stock_model is not None:
-                future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
-                predicted_price = stock_model.predict(future)[0]
-                st.session_state.predicted_price = predicted_price
-            else:
-                predicted_price = 0.0
-                st.session_state.predicted_price = 0.0
-
-            st.subheader("📌 Predicted Price")
-            st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
-
-            st.subheader("💡 Investment Insights")
-            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
-            st.write(f"📈 Horizon: {st.session_state.horizon} months")
-            if stock_data is not None and st.session_state.stock_submit:
-                predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
-            else:
-                predicted_growth = 0.0
-            st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
-
-    # **Tabs Definition**
-    tab1, tab2 = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
-
-    # **Personal Finance Tab**
-    with tab1:
-        st.session_state.active_tab = "Personal Finance"
-        st.header("💵 Your Money Mastery Hub")
-        st.markdown("Shape your financial destiny with style! 🌈")
-
+        # Main content
         with st.form(key="finance_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -273,6 +251,7 @@ def main():
             retirement_age = st.slider("👴 Retirement Age", int(age), 100, value=min(62, max(int(age), 62)))
             submit = st.form_submit_button("🚀 Analyze My Finances")
 
+        # Update session state on form submission
         if submit:
             st.session_state.finance_submit = True
             st.session_state.input_data = {
@@ -286,6 +265,7 @@ def main():
             st.session_state.debt = rent + loan_repayment
             st.session_state.discretionary = eating_out + entertainment + utilities
 
+        # Main content after submission
         if st.session_state.finance_submit:
             st.subheader("🌍 Wealth Roadmap")
             dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, st.session_state.total_expenses, st.session_state.years_to_retirement)
@@ -318,23 +298,52 @@ def main():
                 ax.legend()
                 st.pyplot(fig)
 
-    # **Stock Investments Tab**
+    # --- Stock Investments Dashboard ---
     with tab2:
         st.session_state.active_tab = "Stock Investments"
         st.header("📈 Stock Market Quest")
         st.markdown("Conquer the NIFTY CONSUMPTION index! 🌠")
 
+        # Sidebar for Stock Investments
+        with st.sidebar:
+            st.subheader("Stock Investments")
+            st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
+
+            if st.session_state.stock_submit and stock_model is not None:
+                future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
+                predicted_price = stock_model.predict(future)[0]
+                st.session_state.predicted_price = predicted_price
+            else:
+                predicted_price = 0.0
+                st.session_state.predicted_price = 0.0
+
+            st.subheader("📌 Predicted Price")
+            st.metric(f"In {st.session_state.horizon} Months (₹)", f"₹{predicted_price:,.2f}")
+
+            st.subheader("💡 Investment Insights")
+            st.write(f"🎯 Risk Level: {st.session_state.risk_tolerance}")
+            st.write(f"📈 Horizon: {st.session_state.horizon} months")
+            if stock_data is not None and st.session_state.stock_submit:
+                predicted_growth = predicted_price - stock_data['Close'].iloc[-1]
+            else:
+                predicted_growth = 0.0
+            st.write(f"💰 Predicted Growth: ₹{predicted_growth:,.2f}")
+
+        # Main content with form
         with st.form(key="stock_form"):
             horizon = st.number_input("⏳ Investment Horizon (Months)", min_value=1, max_value=60, value=45)
             risk_tolerance = st.radio("🎲 Risk Appetite", ["Low", "Medium", "High"])
             stock_submit = st.form_submit_button("🚀 Analyze Stock Investments")
 
+        # Update session state on form submission
         if stock_submit:
             st.session_state.stock_submit = True
             st.session_state.horizon = horizon
             st.session_state.risk_tolerance = risk_tolerance
 
+        # Display results only after submission
         if st.session_state.stock_submit:
+            # Price Prediction
             st.subheader("🔮 Price Prediction")
             future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
             if stock_model is not None:
@@ -343,12 +352,14 @@ def main():
                 predicted_price = 0.0
             st.write(f"📌 Predicted Price in {st.session_state.horizon} months: **₹{predicted_price:,.2f}**")
 
+            # Investment Playbook
             st.subheader("💼 Investment Playbook")
             portfolio = portfolio_advice(st.session_state.risk_tolerance)
             st.write(f"**Strategy**: {portfolio['Overview']}")
             for pick in portfolio["Picks"]:
                 st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']}")
 
+            # NIFTY CONSUMPTION Trend
             st.subheader("📉 NIFTY CONSUMPTION Trend")
             if stock_data is not None:
                 fig = px.line(stock_data, x='Date', y='Close', title="Price Trend")
@@ -356,6 +367,7 @@ def main():
             else:
                 st.write("Stock data unavailable. Please ensure 'NIFTY CONSUMPTION_daily_data.csv' is present.")
 
+            # Moving Average and Volatility
             if stock_data is not None:
                 stock_subset = stock_data.copy()
                 stock_subset['SMA_30'] = stock_subset['Close'].rolling(window=30).mean()
