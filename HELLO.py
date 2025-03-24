@@ -9,7 +9,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
+from reportlab.lib import colors
+from reportlab.lib.units import inch
 import io
 import os
 import warnings
@@ -694,22 +697,22 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     return buffer
 
             # 7. Budget Optimization Tips
-            st.subheader("💡 Budget Optimization Tips")
-            median_non_essentials = survey_data["Non_Essentials"].median()
-            if non_essentials > median_non_essentials:
-                st.write(f"- Cut ₹{non_essentials - median_non_essentials:,.2f} from non-essentials (peer median: ₹{median_non_essentials:,.2f}).")
-            else:
-                st.write("- Your spending is optimized compared to peers!")
+    st.subheader("💡 Budget Optimization Tips")
+    median_non_essentials = survey_data["Non_Essentials"].median()
+    if non_essentials > median_non_essentials:
+    st.write(f"- Cut ₹{non_essentials - median_non_essentials:,.2f} from non-essentials (peer median: ₹{median_non_essentials:,.2f}).")
+    else:
+    st.write("- Your spending is optimized compared to peers!")
             # 8. Goal-Based Investment Horizon Planner
-            st.subheader("⏳ Horizon-Based Plan")
-            if horizon_years <= 1:
-                st.write("Short-term: Stick to low-risk options like bonds.")
-            elif horizon_years <= 3:
-                st.write("Medium-term: Balance with mid-cap stocks or mutual funds.")
-            else:
-                st.write("Long-term: Diversify into stocks for higher returns.")
-        else:
-            st.write("Please submit the form and ensure survey data is available.")
+    st.subheader("⏳ Horizon-Based Plan")
+    if horizon_years <= 1:
+    st.write("Short-term: Stick to low-risk options like bonds.")
+    elif horizon_years <= 3:
+        st.write("Medium-term: Balance with mid-cap stocks or mutual funds.")
+    else:
+        st.write("Long-term: Diversify into stocks for higher returns.")
+    else:
+        st.write("Please submit the form and ensure survey data is available.")
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
