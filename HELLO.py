@@ -180,7 +180,8 @@ def get_investment_recommendations(income, savings, goal, risk_tolerance, horizo
             {"Company": "Reliance Industries", "Type": "Large Cap", "Min_Invest": 1000, "Goal": "Wealth growth"},
             {"Company": "Bajaj Finance", "Type": "Mid Cap", "Min_Invest": 1500, "Goal": "Future expenses"},
             {"Company": "SBI Bluechip Fund", "Type": "Mutual Fund", "Min_Invest": 500, "Goal": "Emergency fund"}
-        ]else:
+        ]
+    else:
         options = [
             {"Company": "Paytm", "Type": "Small Cap", "Min_Invest": 2000, "Goal": "Wealth growth"},
             {"Company": "Zomato", "Type": "Small Cap", "Min_Invest": 2000, "Goal": "Future expenses"},
