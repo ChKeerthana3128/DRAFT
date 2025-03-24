@@ -390,7 +390,7 @@ def main():
                 for tip in tips:
                     st.write(f"- {tip}")
 
-            st.subheadr("🎲 Risk Tolerance Assessment")
+            st.subheader("🎲 Risk Tolerance Assessment")
             risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
             st.write(f"Your Profile: **{risk_map[risk_tolerance]}**")
             if risk_tolerance == "Low" and horizon_years > 5:
