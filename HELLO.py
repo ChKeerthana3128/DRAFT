@@ -39,6 +39,36 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
         st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
 
+def load_survey_data(csv_path="survey_data.csv"):
+    if not os.path.exists(csv_path):
+        st.error("🚨 Survey CSV not found!")
+        return None
+    try:
+        df = pd.read_csv(csv_path)
+        df.columns = [col.strip() for col in df.columns]
+
+        def parse_range(value):
+            if pd.isna(value) or value in ["I don’t save", ""]:
+                return 0
+            if "Above" in value:
+                return float(value.split("₹")[1].replace(",", "")) + 500
+            if "₹" in value:
+                bounds = value.split("₹")[1].split("-")
+                if len(bounds) == 2:
+                    return (float(bounds[0].replace(",", "")) + float(bounds[1].replace(",", ""))) / 2
+                return float(bounds[0].replace(",", ""))
+            return float(value)
+
+        df["Income"] = df["How much pocket money or income do you receive per month (in ₹)?"].apply(parse_range)
+        df["Essentials"] = df["How much do you spend monthly on essentials (e.g., food, transport, books)?"].apply(parse_range)
+        df["Non_Essentials"] = df["How much do you spend monthly on non-essentials (e.g., entertainment, eating out)?"].apply(parse_range)
+        df["Debt_Payment"] = df["If yes to debt, how much do you pay monthly (in ₹)?"].apply(parse_range)
+        df["Savings"] = df["How much of your pocket money/income do you save each month (in ₹)?"].apply(parse_range)
+        return df
+    except Exception as e:
+        st.error(f"🚨 Error loading survey data: {str(e)}")
+        return None
+
 # 4. Model Training (Only for Stock Investments)
 @st.cache_resource
 def train_stock_model(data):
@@ -51,6 +81,18 @@ def train_stock_model(data):
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
+
+@st.cache_resource
+def train_survey_model(survey_data):
+    features = ["Income", "Essentials", "Non_Essentials", "Debt_Payment"]
+    target = "Savings"
+    X = survey_data[features].fillna(0)
+    y = survey_data[target].fillna(0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    r2 = r2_score(y_test, model.predict(X_test))
+    return model, r2
 
 # 5. Predictive Functions (For Personal Finance, using form inputs directly)
 def calculate_financial_health_score(income, total_expenses, debt, discretionary):
