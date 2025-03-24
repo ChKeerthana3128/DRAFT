@@ -579,146 +579,119 @@ def main():
             risk_count = survey_data["What is your risk tolerance for investing?"].value_counts()
             st.write(f"Your risk tolerance ({risk_tolerance}) matches {risk_count[survey_risk_tolerance]}/{len(survey_data)} peers ({risk_count[survey_risk_tolerance]/len(survey_data)*100:.1f}%).")
 
-            # 6. Downloadable PDF Report
-            from reportlab.lib.pagesizes import letter
-            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, PageBreak
-            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-            from reportlab.lib import colors
-            from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
-            from reportlab.lib.units import inch
+            # 6. from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
+from reportlab.lib.units import inch
+import io
 
-            def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
-                buffer = io.BytesIO()
-                
-                # Custom Document Class for Header and Footer
-                class MyDocTemplate(BaseDocTemplate):
-                    def __init__(self, filename, **kwargs):
-                        BaseDocTemplate.__init__(self, filename, **kwargs)
-                        # Define frame for content
-                        frame = Frame(0.5*inch, 0.5*inch, 7.5*inch, 10*inch, id='normal')
-                        # Define templates with header and footer
-                        self.addPageTemplates([
-                            PageTemplate(id='AllPages', frames=frame, onPage=self.header_footer)
-                        ])
-                    
-                    def header_footer(self, canvas, doc):
-                        canvas.saveState()
-                        # Header
-                        canvas.setFont("Helvetica-Bold", 12)
-                        canvas.setFillColor(colors.darkblue)
-                        canvas.drawString(0.5*inch, 10.5*inch, "💰 WealthWise Investment Plan")
-                        canvas.setFont("Helvetica", 10)
-                        canvas.setFillColor(colors.black)
-                        canvas.drawRightString(8*inch, 10.5*inch, f"For: {name}")
-                        canvas.line(0.5*inch, 10.4*inch, 8*inch, 10.4*inch)
-                        # Footer
-                        canvas.setFont("Helvetica", 8)
-                        canvas.setFillColor(colors.gray)
-                        canvas.drawString(0.5*inch, 0.3*inch, "✨ Powered by WealthWise | Built with ❤️ by xAI")
-                        canvas.drawRightString(8*inch, 0.3*inch, f"Page {doc.page}")
-                        canvas.line(0.5*inch, 0.4*inch, 8*inch, 0.4*inch)
-                        canvas.restoreState()
+def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
+    buffer = io.BytesIO()
+    
+    class MyDocTemplate(BaseDocTemplate):
+        def __init__(self, filename, **kwargs):
+            BaseDocTemplate.__init__(self, filename, **kwargs)
+            frame = Frame(0.5*inch, 0.5*inch, 7.5*inch, 10*inch, id='normal')
+            self.addPageTemplates([PageTemplate(id='AllPages', frames=frame, onPage=self.header_footer)])
+        
+        def header_footer(self, canvas, doc):
+            canvas.saveState()
+            canvas.setFont("Helvetica-Bold", 12)
+            canvas.setFillColor(colors.darkblue)
+            canvas.drawString(0.5*inch, 10.5*inch, "💰 WealthWise Investment Plan")
+            canvas.setFont("Helvetica", 10)
+            canvas.setFillColor(colors.black)
+            canvas.drawRightString(8*inch, 10.5*inch, f"For: {name}")
+            canvas.line(0.5*inch, 10.4*inch, 8*inch, 10.4*inch)
+            canvas.setFont("Helvetica", 8)
+            canvas.setFillColor(colors.gray)
+            canvas.drawString(0.5*inch, 0.3*inch, "✨ Powered by WealthWise | Built with ❤️ by xAI")
+            canvas.drawRightString(8*inch, 0.3*inch, f"Page {doc.page}")
+            canvas.line(0.5*inch, 0.4*inch, 8*inch, 0.4*inch)
+            canvas.restoreState()
 
-                # Create PDF
-                doc = MyDocTemplate(buffer, pagesize=letter)
-                styles = getSampleStyleSheet()
-                
-                # Custom Styles
-                title_style = styles['Title']
-                title_style.fontSize = 16
-                title_style.textColor = colors.darkblue
-                heading_style = ParagraphStyle('Heading2', parent=styles['Heading2'], fontSize=12, textColor=colors.darkgreen)
-                normal_style = styles['Normal']
-                normal_style.fontSize = 10
-                tip_style = ParagraphStyle('Tip', parent=styles['Normal'], fontSize=10, textColor=colors.darkred, leftIndent=20)
+    doc = MyDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    
+    title_style = styles['Title']
+    title_style.fontSize = 16
+    title_style.textColor = colors.darkblue
+    heading_style = ParagraphStyle('Heading2', parent=styles['Heading2'], fontSize=12, textColor=colors.darkgreen)
+    normal_style = styles['Normal']
+    normal_style.fontSize = 10
+    tip_style = ParagraphStyle('Tip', parent=styles['Normal'], fontSize=10, textColor=colors.darkred, leftIndent=20)
 
-                story = []
+    story = []
 
-                # Title
-                story.append(Paragraph(f"Your Personalized Investment Plan, {name}", title_style))
-                story.append(Spacer(1, 0.2*inch))
+    story.append(Paragraph(f"Your Personalized Investment Plan, {name}", title_style))
+    story.append(Spacer(1, 0.2*inch))
 
-                # Financial Summary
-                story.append(Paragraph("Financial Summary", heading_style))
-                summary_data = [
-                    ["Income", f"₹{income:,.2f}"],
-                    ["Predicted Savings", f"₹{predicted_savings:,.2f}"],
-                    ["Goal", goal],
-                    ["Risk Tolerance", risk_tolerance],
-                    ["Investment Horizon", f"{horizon_years} years"]
-                ]
-                summary_table = Table(summary_data, colWidths=[2*inch, 5*inch])
-                summary_table.setStyle([
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                    ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
-                    ('FONTSIZE', (0, 0), (-1, -1), 10),
-                    ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-                ])
-                story.append(summary_table)
-                story.append(Spacer(1, 0.2*inch))
+    story.append(Paragraph("Financial Summary", heading_style))
+    summary_data = [
+        ["Income", f"₹{income:,.2f}"],
+        ["Predicted Savings", f"₹{predicted_savings:,.2f}"],
+        ["Goal", goal],
+        ["Risk Tolerance", risk_tolerance],
+        ["Investment Horizon", f"{horizon_years} years"]
+    ]
+    summary_table = Table(summary_data, colWidths=[2*inch, 5*inch])
+    summary_table.setStyle([
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+    ])
+    story.append(summary_table)
+    story.append(Spacer(1, 0.2*inch))
 
-                # Investment Recommendations
-                story.append(Paragraph("Investment Recommendations", heading_style))
-                rec_data = [["Company", "Type", "Amount (₹)"]] + [[r["Company"], r["Type"], f"₹{r['Amount']:,.2f}"] for r in recommendations]
-                rec_table = Table(rec_data, colWidths=[2*inch, 2*inch, 2*inch])
-                rec_table.setStyle([
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
-                    ('FONTSIZE', (0, 0), (-1, -1), 10),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ])
-                story.append(rec_table)
-                story.append(Spacer(1, 0.2*inch))
+    story.append(Paragraph("Investment Recommendations", heading_style))
+    rec_data = [["Company", "Type", "Amount (₹)"]] + [[r["Company"], r["Type"], f"₹{r['Amount']:,.2f}"] for r in recommendations]
+    rec_table = Table(rec_data, colWidths=[2*inch, 2*inch, 2*inch])
+    rec_table.setStyle([
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+    ])
+    story.append(rec_table)
+    story.append(Spacer(1, 0.2*inch))
 
-                # Budget Tips
-                story.append(Paragraph("Budget Tips", heading_style))
-                if not tips:
-                    story.append(Paragraph("You're already on track! Keep up the good work.", normal_style))
-                for tip in tips:
-                    story.append(Paragraph(f"• {tip}", tip_style))
-                story.append(Spacer(1, 0.2*inch))
+    story.append(Paragraph("Budget Tips", heading_style))
+    if not tips:
+        story.append(Paragraph("You're already on track! Keep up the good work.", normal_style))
+    for tip in tips:
+        story.append(Paragraph(f"• {tip}", tip_style))
+    story.append(Spacer(1, 0.2*inch))
 
-                # Personalized Insights
-                story.append(Paragraph("Personalized Insights", heading_style))
-                insights = []
-                savings_ratio = predicted_savings / income if income > 0 else 0
-                if savings_ratio < 0.1:
-                    insights.append("Your savings rate is below 10%. Consider automating savings to build wealth faster.")
-                elif savings_ratio > 0.3:
-                    insights.append("Excellent savings rate (>30%)! You’re well-positioned for aggressive investments.")
-                if horizon_years > 5 and risk_tolerance == "Low":
-                    insights.append("With a long horizon, you might explore medium-risk options for higher returns.")
-                if income < peer_savings:
-                    insights.append("Your income is below peer average savings. Small side hustles could boost your funds!")
-                for insight in insights:
-                    story.append(Paragraph(f"• {insight}", normal_style))
-                if not insights:
-                    story.append(Paragraph("Your plan is solid—stay the course!", normal_style))
-                story.append(Spacer(1, 0.2*inch))
+    story.append(Paragraph("Personalized Insights", heading_style))
+    insights = []
+    savings_ratio = predicted_savings / income if income > 0 else 0
+    if savings_ratio < 0.1:
+        insights.append("Your savings rate is below 10%. Consider automating savings to build wealth faster.")
+    elif savings_ratio > 0.3:
+        insights.append("Excellent savings rate (>30%)! You’re well-positioned for aggressive investments.")
+    if horizon_years > 5 and risk_tolerance == "Low":
+        insights.append("With a long horizon, you might explore medium-risk options for higher returns.")
+    if income < peer_savings:
+        insights.append("Your income is below peer average savings. Small side hustles could boost your funds!")
+    for insight in insights:
+        story.append(Paragraph(f"• {insight}", normal_style))
+    if not insights:
+        story.append(Paragraph("Your plan is solid—stay the course!", normal_style))
+    story.append(Spacer(1, 0.2*inch))
 
-                # Graph Descriptions (Simulated)
-                story.append(Paragraph("Visual Insights", heading_style))
-                savings_vs_goal = f"Your savings (₹{predicted_savings:,.2f}) vs. Goal (₹{goal_amount:,.2f}): A bar chart shows you’re {(predicted_savings / goal_amount * 100 if goal_amount > 0 else 0):.1f}% toward your goal."
-                peer_comparison = f"Peer Comparison: Your savings (₹{predicted_savings:,.2f}) vs. Peer Average (₹{peer_savings:,.2f})—you’re {'above' if predicted_savings > peer_savings else 'below'} average."
-                story.append(Paragraph(savings_vs_goal, normal_style))
-                story.append(Paragraph(peer_comparison, normal_style))
-                story.append(Spacer(1, 0.2*inch))
+    story.append(Paragraph("Visual Insights", heading_style))
+    savings_vs_goal = f"Your savings (₹{predicted_savings:,.2f}) vs. Goal (₹{goal_amount:,.2f}): A bar chart shows you’re {(predicted_savings / goal_amount * 100 if goal_amount > 0 else 0):.1f}% toward your goal."
+    peer_comparison = f"Peer Comparison: Your savings (₹{predicted_savings:,.2f}) vs. Peer Average (₹{peer_savings:,.2f})—you’re {'above' if predicted_savings > peer_savings else 'below'} average."
+    story.append(Paragraph(savings_vs_goal, normal_style))
+    story.append(Paragraph(peer_comparison, normal_style))
+    story.append(Spacer(1, 0.2*inch))
 
-                # Build the PDF
-                doc.build(story)
-                buffer.seek(0)
-                return buffer
-            
-            st.subheader("📄 Download Your Plan")
-            tips = []
-            if predicted_savings < monthly_savings_needed:
-                tips.append("Reduce non-essential spending to meet your goal.")
-            if debt_payment > peer_avg_savings:
-                tips.append("Pay off debt faster to boost savings.")
-            if predicted_savings > income * 0.2:
-                tips.append("Great savings! Invest surplus in your chosen options.")
-            pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
-            st.download_button("Download PDF", pdf_buffer, f"Investment_Plan_{name}.pdf", "application/pdf")
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
 
             # 7. Budget Optimization Tips
             st.subheader("💡 Budget Optimization Tips")
