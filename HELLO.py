@@ -200,7 +200,7 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
                 break
     
     return recs
-   def main():
+    def main():
     st.title("💰 WealthWise Dashboard")
     # ... (previous code like st.title, data loading, model training)
 
