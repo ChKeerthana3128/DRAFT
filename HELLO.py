@@ -200,18 +200,17 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
                 break
     
     return recs
-    def main():
-    # ... (previous code like st.title, data loading, model training stays here)
+   def main():
+    # ... (previous code like st.title, data loading, model training)
 
-    # Define the tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
-    # Stock Investments Tab (paste this as the new tab1 block)
+    # Stock Investments Tab (keep key="stock_form")
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
 
-        with st.form(key="stock_form"):
+        with st.form(key="stock_form"):  # Line 364, keep this key
             col1, col2 = st.columns(2)
             with col1:
                 horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
@@ -219,34 +218,28 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
             with col2:
                 risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
-            submit = st.form_submit_button("🚀 Explore Market")
-
-        if submit and stock_data is not None and stock_model is not None:
+            submit = st.form_submit_button("🚀 Explore Market")if submit and stock_data is not None and stock_model is not None:
             with st.spinner("Analyzing your investment strategy..."):
                 future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
                 predicted_price = stock_model.predict(future)[0]
                 current_price = stock_data['close'].iloc[-1]
                 growth = predicted_price - current_price
-                horizon_years = horizon // 12 or 1  # Ensure at least 1 year
+                horizon_years = horizon // 12 or 1
                 recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
 
             st.subheader("🔮 Market Forecast")
             col1, col2 = st.columns(2)
             col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
-            col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
-
-            with st.expander("📊 Price Trend", expanded=True):
+            col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")with st.expander("📊 Price Trend", expanded=True):
                 fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
                               hover_data=['open', 'high', 'low', 'volume'])
                 fig.update_traces(line_color='#00ff00')
-                st.plotly_chart(fig, use_container_width=True)
-
-            st.subheader("💡 Your Investment Strategy")
-            progress = min(1.0, invest_amount / 100000)  # Cap at ₹1,00,000 for visualization
+                st.plotly_chart(fig, use_container_width=True)st.subheader("💡 Your Investment Strategy")
+            progress = min(1.0, invest_amount / 100000)
             st.progress(progress)
             for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
                 recs = recommendations.get(category, [])
-                if recs:  # Only display if there’s a recommendation
+                if recs:
                     with st.expander(f"{category} Options"):
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
@@ -407,12 +400,12 @@ def main():
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
 
-    # Personalized Investment Tab
+   # Personalized Investment Tab (ensure key="investment_form")
     with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
 
-        with st.form(key="investment_form"):
+        with st.form(key="investment_form"):  # Unique key, check this
             col1, col2 = st.columns(2)
             with col1:
                 name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
@@ -478,12 +471,12 @@ def main():
             pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
-    # Retirement Planning Tab
+    # Retirement Planning Tab (ensure key="retirement_form")
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
 
-        with st.form(key="retirement_form"):
+        with st.form(key="retirement_form"):  # Unique key, check this
             col1, col2 = st.columns(2)
             with col1:
                 age = st.number_input("🎂 Current Age", min_value=18, max_value=100, value=30)
