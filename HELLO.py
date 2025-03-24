@@ -211,7 +211,7 @@ def main():
     if stock_data is None:
         st.warning("Stock Investments tab will not function without stock data.")
     if survey_data is None:
-        st.warning("Survey data unavailable. Personalized savings predictions and some investment suggestions will be limited.")
+        st.warning("Survey data unavailable. Personalized experience and some investment suggestions will be limited.")
 
     # Train models
     stock_model, stock_r2 = None, 0.0
@@ -325,6 +325,7 @@ def main():
             st.session_state.risk_tolerance = risk_tolerance
 
         if st.session_state.finance_submit:
+            # Wealth Roadmap Section
             st.subheader("🌍 Wealth Roadmap")
             dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, st.session_state.total_expenses, st.session_state.years_to_retirement)
             desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=max(100000.0, dream_fund), step=100000.0)
@@ -356,9 +357,9 @@ def main():
                 ax.legend()
                 st.pyplot(fig)
 
-            # Personalized Insights from Survey
-            st.subheader("📈 Personalized Insights")
-            st.markdown("Based on survey-trained model")
+            # Separate Personalized Experience Section
+            st.subheader("✨ Personalized Experience")
+            st.markdown("Tailored insights based on your survey peers")
             if survey_model is not None and st.session_state.input_data:
                 input_df = pd.DataFrame({
                     "Income": [income],
@@ -369,15 +370,30 @@ def main():
                 predicted_savings = survey_model.predict(input_df)[0]
                 st.write(f"**Predicted Monthly Savings**: ₹{predicted_savings:,.2f}")
                 st.write(f"**Model Accuracy (R²)**: {survey_r2:.2f}")
+                
                 if survey_data is not None:
                     avg_savings = survey_data["Savings"].mean()
                     st.write(f"**Average Savings Among Peers**: ₹{avg_savings:,.2f}")
-                    if predicted_savings > avg_savings:
-                        st.success("You're saving more than the average survey respondent!")
+                    savings_diff = predicted_savings - avg_savings
+                    if savings_diff > 0:
+                        st.success(f"You're saving ₹{savings_diff:,.2f} more than the average peer!")
+                    elif savings_diff < 0:
+                        st.warning(f"You're saving ₹{-savings_diff:,.2f} less than the average peer.")
                     else:
-                        st.warning("Consider increasing savings to match peers.")
+                        st.info("Your savings match the peer average.")
+
+                    # Personalized Financial Tips
+                    st.write("**Your Financial Tips**:")
+                    if predicted_savings < avg_savings:
+                        st.write("- Reduce non-essential spending (e.g., eating out, entertainment) to boost savings.")
+                    if st.session_state.debt > avg_savings:
+                        st.write("- Prioritize paying off debt to free up more income for savings.")
+                    if predicted_savings > income * 0.2:
+                        st.write("- Great job! Consider investing extra savings based on your risk tolerance.")
+                    else:
+                        st.write("- Aim to save at least 20% of your income for a stronger financial future.")
             else:
-                st.write("Survey model unavailable.")
+                st.write("Personalized experience unavailable due to missing survey data.")
 
     # --- Stock Investments Dashboard ---
     with tab2:
