@@ -707,14 +707,16 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     doc.build(story)
     buffer.seek(0)
     return buffer
-            # 7. Budget Optimization Tips
+
+# Streamlit code should be in a separate function or main block
+def display_budget_tips(non_essentials, survey_data, horizon_years):
     st.subheader("💡 Budget Optimization Tips")
     median_non_essentials = survey_data["Non_Essentials"].median()
     if non_essentials > median_non_essentials:
         st.write(f"- Cut ₹{non_essentials - median_non_essentials:,.2f} from non-essentials (peer median: ₹{median_non_essentials:,.2f}).")
     else:
         st.write("- Your spending is optimized compared to peers!")
-            # 8. Goal-Based Investment Horizon Planner
+    
     st.subheader("⏳ Horizon-Based Plan")
     if horizon_years <= 1:
         st.write("Short-term: Stick to low-risk options like bonds.")
@@ -722,9 +724,6 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
         st.write("Medium-term: Balance with mid-cap stocks or mutual funds.")
     else:
         st.write("Long-term: Diversify into stocks for higher returns.")
-    else:
-        st.write("Please submit the form and ensure survey data is available.")
-
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
 
