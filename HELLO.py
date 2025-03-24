@@ -264,7 +264,7 @@ def main():
             for pick in suggestions["Picks"]:
                 st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']} (Invest: {pick['Suggested Amount (₹)']})")
             st.write(f"**Goal**: {suggestions['Goal Alignment']}")
-            st.write(f fillet"Horizon**: {suggestions['Horizon']}")
+            st.write(f"**Horizon**: {suggestions['Horizon']}")
         
         else:
             st.write("Submit your details to see investment suggestions!")
