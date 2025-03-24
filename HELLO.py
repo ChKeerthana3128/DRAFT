@@ -160,8 +160,8 @@ def forecast_retirement_savings(income, savings, years, growth_rate=5.0):
         wealth = wealth * (1 + growth_rate / 1200) + monthly_savings
     return wealth
 
-def get_investment_recommendations(income, savings, goal, risk_tolerance, horizon_years, invest_amount):
-    investable = min(savings * 0.5, invest_amount) if savings > 0 else invest_amount
+# Simplified Investment Recommendations
+def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal):
     recs = {"Large Cap": [], "Medium Cap": [], "Low Cap": [], "Crypto": []}
     options = {
         "Large Cap": [
@@ -181,17 +181,70 @@ def get_investment_recommendations(income, savings, goal, risk_tolerance, horizo
             {"Company": "Ethereum", "Min_Invest": 3000, "Goal": "Wealth growth", "Risk": "High"}
         ]
     }
-    for category, opts in options.items():
-        for opt in opts:
-            if (investable >= opt["Min_Invest"] and 
+    
+    # Allocate at least one recommendation per category (except Crypto unless high risk)
+    portion = invest_amount / 3  # Split evenly across Large, Medium, Low
+    for category in ["Large Cap", "Medium Cap", "Low Cap"]:
+        for opt in options[category]:
+            if (portion >= opt["Min_Invest"] and 
                 (goal == opt["Goal"] or goal == "No specific goal") and 
                 (risk_tolerance == "High" or opt["Risk"] != "High")):
-                amount = min(investable, opt["Min_Invest"] * (horizon_years if horizon_years > 1 else 1))
-                recs[category].append({"Company": opt["Company"], "Amount": amount})
-                investable -= amount
-                if investable <= 0:
-                    break
+                recs[category].append({"Company": opt["Company"], "Amount": portion})
+                break  # Take only one per category
+    
+    # Add Crypto only if risk tolerance is High
+    if risk_tolerance == "High":
+        for opt in options["Crypto"]:
+            if portion >= opt["Min_Invest"] and (goal == opt["Goal"] or goal == "No specific goal"):
+                recs["Crypto"].append({"Company": opt["Company"], "Amount": portion})
+                break
+    
     return recs
+
+# Stock Investments Tab
+with tab1:
+    st.header("📈 Stock Market Adventure")
+    st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
+
+    with st.form(key="stock_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
+            invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, step=500.0, help="How much are you investing?")
+        with col2:
+            risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
+            goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
+        submit = st.form_submit_button("🚀 Explore Market")
+
+    if submit and stock_data is not None and stock_model is not None:
+        with st.spinner("Analyzing your investment strategy..."):
+            future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
+            predicted_price = stock_model.predict(future)[0]
+            current_price = stock_data['close'].iloc[-1]
+            growth = predicted_price - current_price
+            horizon_years = horizon // 12 or 1  # Ensure at least 1 year
+            recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
+
+        st.subheader("🔮 Market Forecast")
+        col1, col2 = st.columns(2)
+        col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
+        col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
+
+        with st.expander("📊 Price Trend", expanded=True):
+            fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
+                         hover_data=['open', 'high', 'low', 'volume'])
+            fig.update_traces(line_color='#00ff00')
+            st.plotly_chart(fig, use_container_width=True)
+
+        st.subheader("💡 Your Investment Strategy")
+        progress = min(1.0, invest_amount / 100000)  # Cap at ₹1,00,000 for visualization
+        st.progress(progress)
+        for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+            recs = recommendations.get(category, [])
+            if recs:  # Only display if there’s a recommendation
+                with st.expander(f"{category} Options"):
+                    for rec in recs:
+                        st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
 
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     buffer = io.BytesIO()
@@ -459,91 +512,7 @@ def main():
                 st.write(f"- Increase monthly savings by ₹{shortfall:,.2f} to meet your goal.")
             st.write("- Assumes a 5% annual growth rate—adjust investments for higher returns if needed.")
 
-# Simplified Investment Recommendations
-def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal):
-    recs = {"Large Cap": [], "Medium Cap": [], "Low Cap": [], "Crypto": []}
-    options = {
-        "Large Cap": [
-            {"Company": "Reliance Industries", "Min_Invest": 1000, "Goal": "Wealth growth", "Risk": "Medium"},
-            {"Company": "HDFC Bank", "Min_Invest": 500, "Goal": "Emergency fund", "Risk": "Low"}
-        ],
-        "Medium Cap": [
-            {"Company": "Bajaj Finance", "Min_Invest": 1500, "Goal": "Future expenses", "Risk": "Medium"},
-            {"Company": "SBI Bluechip Fund", "Min_Invest": 500, "Goal": "Emergency fund", "Risk": "Medium"}
-        ],
-        "Low Cap": [
-            {"Company": "Paytm", "Min_Invest": 2000, "Goal": "Wealth growth", "Risk": "High"},
-            {"Company": "Zomato", "Min_Invest": 2000, "Goal": "Future expenses", "Risk": "High"}
-        ],
-        "Crypto": [
-            {"Company": "Bitcoin", "Min_Invest": 5000, "Goal": "No specific goal", "Risk": "High"},
-            {"Company": "Ethereum", "Min_Invest": 3000, "Goal": "Wealth growth", "Risk": "High"}
-        ]
-    }
-    
-    # Allocate at least one recommendation per category (except Crypto unless high risk)
-    portion = invest_amount / 3  # Split evenly across Large, Medium, Low
-    for category in ["Large Cap", "Medium Cap", "Low Cap"]:
-        for opt in options[category]:
-            if (portion >= opt["Min_Invest"] and 
-                (goal == opt["Goal"] or goal == "No specific goal") and 
-                (risk_tolerance == "High" or opt["Risk"] != "High")):
-                recs[category].append({"Company": opt["Company"], "Amount": portion})
-                break  # Take only one per category
-    
-    # Add Crypto only if risk tolerance is High
-    if risk_tolerance == "High":
-        for opt in options["Crypto"]:
-            if portion >= opt["Min_Invest"] and (goal == opt["Goal"] or goal == "No specific goal"):
-                recs["Crypto"].append({"Company": opt["Company"], "Amount": portion})
-                break
-    
-    return recs
 
-# Stock Investments Tab
-with tab1:
-    st.header("📈 Stock Market Adventure")
-    st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
-
-    with st.form(key="stock_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
-            invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, step=500.0, help="How much are you investing?")
-        with col2:
-            risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
-            goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
-        submit = st.form_submit_button("🚀 Explore Market")
-
-    if submit and stock_data is not None and stock_model is not None:
-        with st.spinner("Analyzing your investment strategy..."):
-            future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-            predicted_price = stock_model.predict(future)[0]
-            current_price = stock_data['close'].iloc[-1]
-            growth = predicted_price - current_price
-            horizon_years = horizon // 12 or 1  # Ensure at least 1 year
-            recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
-
-        st.subheader("🔮 Market Forecast")
-        col1, col2 = st.columns(2)
-        col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
-        col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
-
-        with st.expander("📊 Price Trend", expanded=True):
-            fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
-                         hover_data=['open', 'high', 'low', 'volume'])
-            fig.update_traces(line_color='#00ff00')
-            st.plotly_chart(fig, use_container_width=True)
-
-        st.subheader("💡 Your Investment Strategy")
-        progress = min(1.0, invest_amount / 100000)  # Cap at ₹1,00,000 for visualization
-        st.progress(progress)
-        for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-            recs = recommendations.get(category, [])
-            if recs:  # Only display if there’s a recommendation
-                with st.expander(f"{category} Options"):
-                    for rec in recs:
-                        st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
