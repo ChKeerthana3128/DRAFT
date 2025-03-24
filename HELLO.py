@@ -207,7 +207,8 @@ def generate_pdf(name, income, savings, goal, risk_tolerance, horizon_years, rec
     story.append(Paragraph(f"Goal: {goal}", styles['Normal']))
     story.append(Paragraph(f"Risk Tolerance: {risk_tolerance}", styles['Normal']))
     story.append(Paragraph(f"Investment Horizon: {horizon_years} years", styles['Normal']))
-    story.append(Spacer(1, 12))story.append(Paragraph("Investment Recommendations", styles['Heading2']))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Investment Recommendations", styles['Heading2']))
     data = [["Company", "Type", "Amount (₹)"]] + [[r["Company"], r["Type"], f"₹{r['Amount']:,.2f}"] for r in recommendations]
     story.append(Table(data))
     story.append(Spacer(1, 12))
