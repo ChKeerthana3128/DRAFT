@@ -72,14 +72,32 @@ def load_financial_data(csv_path="financial_data.csv"):
         return None
     try:
         df = pd.read_csv(csv_path)
-        df.columns = [col.strip() for col in df.columns]
-        expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", "Education", 
-                        "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
-        df["Total_Expenses"] = df[expense_cols].sum(axis=1)
-        required_cols = ["income", "Total_Expenses", "Projected_Savings"]
-        if not all(col in df.columns for col in ["income", "Projected_Savings"]):
-            st.error("🚨 'financial_data.csv' must contain 'income' and 'Projected_Savings' columns.")
+        # Strip whitespace and handle potential quoting issues
+        df.columns = [col.strip().replace('"', '') for col in df.columns]
+        
+        # Check for required columns (case-insensitive match)
+        col_map = {col.lower(): col for col in df.columns}
+        required_cols = ["income", "projected_savings"]
+        missing_cols = [col for col in required_cols if col not in col_map]
+        if missing_cols:
+            st.error(f"🚨 'financial_data.csv' is missing required columns: {', '.join(missing_cols)}")
             return None
+        
+        # Rename to standard names for consistency
+        df = df.rename(columns={
+            col_map["income"]: "income",
+            col_map["projected_savings"]: "Projected_Savings"
+        })
+        
+        # Calculate Total_Expenses from individual expense columns
+        expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", 
+                        "Education", "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
+        available_expense_cols = [col for col in expense_cols if col in df.columns]
+        if available_expense_cols:
+            df["Total_Expenses"] = df[available_expense_cols].sum(axis=1)
+        else:
+            df["Total_Expenses"] = 0  # Fallback if no expense columns are found
+        
         return df
     except Exception as e:
         st.error(f"🚨 Error loading financial data: {str(e)}")
