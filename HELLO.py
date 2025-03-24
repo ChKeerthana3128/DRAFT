@@ -26,13 +26,11 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
         return None
     try:
         df = pd.read_csv(csv_path)
-        df = df.rename(columns={"date": "Date", "close": "Close", "open": "Open", "high": "High", "low": "Low", "volume": "Volume"})
-        df['Symbol'] = "NIFTY CONSUMPTION"
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df['Date'] = pd.to_datetime(df['date'], errors='coerce')
         if df['Date'].isnull().all():
             st.error("🚨 Invalid date format in stock data!")
             return None
-        df = df.sort_values(by='Date').dropna()
+        df = df[['Date', 'open', 'high', 'low', 'close', 'volume']].sort_values(by='Date').dropna()
         return df
     except Exception as e:
         st.error(f"🚨 Error loading stock data: {str(e)}")
@@ -74,13 +72,14 @@ def load_financial_data(csv_path="financial_data.csv"):
         return None
     try:
         df = pd.read_csv(csv_path)
-        # Assuming columns: Income, Expenses, Savings, Age (adjust if different)
         df.columns = [col.strip() for col in df.columns]
-        required_columns = ["Income", "Expenses", "Savings"]
-        if not all(col in df.columns for col in required_columns):
-            st.error("🚨 'financial_data.csv' must contain 'Income', 'Expenses', and 'Savings' columns.")
+        expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", "Education", 
+                        "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
+        df["Total_Expenses"] = df[expense_cols].sum(axis=1)
+        required_cols = ["income", "Total_Expenses", "Projected_Savings"]
+        if not all(col in df.columns for col in ["income", "Projected_Savings"]):
+            st.error("🚨 'financial_data.csv' must contain 'income' and 'Projected_Savings' columns.")
             return None
-        df = df.dropna(subset=required_columns)
         return df
     except Exception as e:
         st.error(f"🚨 Error loading financial data: {str(e)}")
@@ -93,7 +92,7 @@ def train_stock_model(data):
     data['Month'] = data['Date'].dt.month
     data['Year'] = data['Date'].dt.year
     X = data[['Day', 'Month', 'Year']]
-    y = data['Close']
+    y = data['close']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training stock prediction model..."):
@@ -114,8 +113,8 @@ def train_survey_model(survey_data):
 
 @st.cache_resource
 def train_retirement_model(financial_data):
-    features = ["Income", "Expenses"]  # Adjust based on your CSV
-    target = "Savings"
+    features = ["income", "Total_Expenses"]
+    target = "Projected_Savings"
     X = financial_data[features].fillna(0)
     y = financial_data[target].fillna(0)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -130,7 +129,7 @@ def predict_savings(model, income, essentials, non_essentials, debt_payment):
     return model.predict(input_df)[0]
 
 def predict_retirement_savings(model, income, expenses):
-    input_df = pd.DataFrame({"Income": [income], "Expenses": [expenses]})
+    input_df = pd.DataFrame({"income": [income], "Total_Expenses": [expenses]})
     return model.predict(input_df)[0]
 
 def calculate_savings_goal(goal_amount, horizon_years):
@@ -144,8 +143,8 @@ def forecast_retirement_savings(income, savings, years, growth_rate=5.0):
     return wealth
 
 def get_investment_recommendations(income, savings, goal, risk_tolerance, horizon_years, invest_amount):
-    investable = min(savings * 0.5, invest_amount)
-    recs = {"Large Cap": [], "Medium Cap": [], "Crypto": [], "Low Cap": []}
+    investable = min(savings * 0.5, invest_amount) if savings > 0 else invest_amount
+    recs = {"Large Cap": [], "Medium Cap": [], "Low Cap": [], "Crypto": []}
     options = {
         "Large Cap": [
             {"Company": "Reliance Industries", "Min_Invest": 1000, "Goal": "Wealth growth", "Risk": "Medium"},
@@ -155,13 +154,13 @@ def get_investment_recommendations(income, savings, goal, risk_tolerance, horizo
             {"Company": "Bajaj Finance", "Min_Invest": 1500, "Goal": "Future expenses", "Risk": "Medium"},
             {"Company": "SBI Bluechip Fund", "Min_Invest": 500, "Goal": "Emergency fund", "Risk": "Medium"}
         ],
-        "Crypto": [
-            {"Company": "Bitcoin", "Min_Invest": 5000, "Goal": "No specific goal", "Risk": "High"},
-            {"Company": "Ethereum", "Min_Invest": 3000, "Goal": "Wealth growth", "Risk": "High"}
-        ],
         "Low Cap": [
             {"Company": "Paytm", "Min_Invest": 2000, "Goal": "Wealth growth", "Risk": "High"},
             {"Company": "Zomato", "Min_Invest": 2000, "Goal": "Future expenses", "Risk": "High"}
+        ],
+        "Crypto": [
+            {"Company": "Bitcoin", "Min_Invest": 5000, "Goal": "No specific goal", "Risk": "High"},
+            {"Company": "Ethereum", "Min_Invest": 3000, "Goal": "Wealth growth", "Risk": "High"}
         ]
     }
     for category, opts in options.items():
@@ -305,9 +304,10 @@ def main():
             with st.spinner("Analyzing your investment strategy..."):
                 future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
                 predicted_price = stock_model.predict(future)[0]
-                current_price = stock_data['Close'].iloc[-1]
+                current_price = stock_data['close'].iloc[-1]
                 growth = predicted_price - current_price
-                recommendations = get_investment_recommendations(0, invest_amount, goal, risk_tolerance, horizon//12, invest_amount)
+                horizon_years = horizon // 12
+                recommendations = get_investment_recommendations(0, invest_amount, goal, risk_tolerance, horizon_years, invest_amount)
 
             st.subheader("🔮 Market Forecast")
             col1, col2 = st.columns(2)
@@ -315,15 +315,16 @@ def main():
             col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
 
             with st.expander("📊 Price Trend", expanded=True):
-                fig = px.line(stock_data, x='Date', y='Close', title="NIFTY CONSUMPTION Trend", 
-                             hover_data=['Open', 'High', 'Low', 'Volume'])
+                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
+                             hover_data=['open', 'high', 'low', 'volume'])
                 fig.update_traces(line_color='#00ff00')
                 st.plotly_chart(fig, use_container_width=True)
 
             st.subheader("💡 Your Investment Strategy")
-            progress = min(1.0, invest_amount / 100000)  # Example cap at ₹1,00,000
+            progress = min(1.0, invest_amount / 100000)  # Cap at ₹1,00,000 for visualization
             st.progress(progress)
-            for category, recs in recommendations.items():
+            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+                recs = recommendations.get(category, [])
                 if recs:
                     with st.expander(f"{category} Options"):
                         for rec in recs:
@@ -357,7 +358,8 @@ def main():
                 peer_avg_savings = survey_data["Savings"].mean()
 
             st.subheader("💼 Your Investment Options")
-            for category, recs in recommendations.items():
+            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+                recs = recommendations.get(category, [])
                 if recs:
                     with st.expander(f"{category} Investments"):
                         for rec in recs:
@@ -388,7 +390,7 @@ def main():
                 for tip in tips:
                     st.write(f"- {tip}")
 
-            st.subheader("🎲 Risk Tolerance Assessment")
+            st.subheadr("🎲 Risk Tolerance Assessment")
             risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
             st.write(f"Your Profile: **{risk_map[risk_tolerance]}**")
             if risk_tolerance == "Low" and horizon_years > 5:
@@ -419,7 +421,7 @@ def main():
             with st.spinner("Projecting your retirement using financial_data.csv..."):
                 years_to_retirement = retirement_age - age
                 predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
-                retirement_wealth = forecast_retirement_savings(income, predicted_savings, years_to_retirement)
+                retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
                 retirement_goal = monthly_expenses * 12 * 20  # 20 years of expenses post-retirement
 
             st.subheader("🌟 Retirement Outlook")
@@ -428,7 +430,7 @@ def main():
             col2.metric("Retirement Goal", f"₹{retirement_goal:,.2f}", f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}")
 
             st.subheader("📈 Savings Trajectory")
-            trajectory = [forecast_retirement_savings(income, predicted_savings, y) for y in range(years_to_retirement + 1)]
+            trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
             fig = px.line(x=range(years_to_retirement + 1), y=trajectory, labels={"x": "Years", "y": "Wealth (₹)"}, title="Retirement Growth")
             fig.add_hline(y=retirement_goal, line_dash="dash", line_color="red", annotation_text="Goal")
             st.plotly_chart(fig, use_container_width=True)
