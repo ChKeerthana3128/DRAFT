@@ -354,7 +354,7 @@ def main():
                 fig.update_traces(line_color='#00ff00')
                 st.plotly_chart(fig, use_container_width=True)
 
-           st.subheader("💡 Your Investment Strategy")
+st.subheader("💡 Your Investment Strategy")
 # Calculate total allocated amount and prepare data for pie chart
 allocations = {"Large Cap": 0, "Medium Cap": 0, "Low Cap": 0, "Crypto": 0}
 for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
