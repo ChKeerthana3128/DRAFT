@@ -354,37 +354,38 @@ def main():
                 fig.update_traces(line_color='#00ff00')
                 st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("💡 Your Investment Strategy")
-# Calculate total allocated amount and prepare data for pie chart
-allocations = {"Large Cap": 0, "Medium Cap": 0, "Low Cap": 0, "Crypto": 0}
-for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-    recs = recommendations.get(category, [])
-    if recs:
-        allocations[category] = sum(rec["Amount"] for rec in recs)
+        st.subheader("💡 Your Investment Strategy")
+        # Calculate total allocated amount and prepare data for pie chart
+        allocations = {"Large Cap": 0, "Medium Cap": 0, "Low Cap": 0, "Crypto": 0}
+        for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+            recs = recommendations.get(category, [])
+            if recs:
+                allocations[category] = sum(rec["Amount"] for rec in recs)
 
-# Filter out categories with zero allocation and prepare data for pie chart
-labels = [category for category, amount in allocations.items() if amount > 0]
-values = [amount for amount, category in zip(allocations.values(), allocations.keys()) if amount > 0]
+        # Filter out categories with zero allocation and prepare data for pie chart
+        labels = [category for category, amount in allocations.items() if amount > 0]
+        values = [amount for amount, category in zip(allocations.values(), allocations.keys()) if amount > 0]
 
-if values:  # Only show pie chart if there are allocations
-    fig = px.pie(
-        names=labels,
-        values=values,
-        title="Investment Allocation Breakdown",
-        color_discrete_sequence=px.colors.sequential.Viridis
-    )
-    fig.update_traces(textinfo='percent+label', hoverinfo='label+value', textfont_size=14)
-    fig.update_layout(showlegend=True, margin=dict(t=50, b=0, l=0, r=0))
-    st.plotly_chart(fig, use_container_width=True)
-else:
-    st.write("No allocations to display. Adjust your investment amount, risk tolerance, or goal to see recommendations.")
+        if values:  # Only show pie chart if there are allocations
+            fig = px.pie(
+                names=labels,
+                values=values,
+                title="Investment Allocation Breakdown",
+                color_discrete_sequence=px.colors.sequential.Viridis
+            )
+            fig.update_traces(textinfo='percent+label', hoverinfo='label+value', textfont_size=14)
+            fig.update_layout(showlegend=True, margin=dict(t=50, b=0, l=0, r=0))
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.write("No allocations to display. Adjust your investment amount, risk tolerance, or goal to see recommendations.")
 
-for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-    recs = recommendations.get(category, [])
-    if recs:
-        with st.expander(f"{category} Options"):
-            for rec in recs:
-                st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
+        for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+            recs = recommendations.get(category, [])
+            if recs:
+                with st.expander(f"{category} Options"):
+                    for rec in recs:
+                        st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
+
     # Personalized Investment Tab
     with tab2:
         st.header("🎯 Your Investment Journey")
