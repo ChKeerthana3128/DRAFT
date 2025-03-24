@@ -16,7 +16,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-# 2. Page Configuration (Moved to the top as the first Streamlit command)
+# 2. Page Configuration (Must be first Streamlit command)
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 # 3. Data Loading Functions
@@ -208,6 +208,14 @@ def main():
             submit = st.form_submit_button("🚀 Get Your Plan")
 
         if submit and survey_data is not None and survey_model is not None:
+            # Map form risk tolerance to survey data format
+            risk_mapping = {
+                "Low": "Low (prefer safe options)",
+                "Medium": "Medium (okay with some risk)",
+                "High": "High (comfortable with big risks)"
+            }
+            survey_risk_tolerance = risk_mapping[risk_tolerance]
+
             # 1. Personalized Investment Recommendations
             predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
             recommendations = get_investment_recommendations(income, predicted_savings, goal, risk_tolerance, horizon_years)
@@ -238,10 +246,10 @@ def main():
             else:
                 st.write("**Experienced?** Explore high-growth options like Small Caps (e.g., Paytm).")
 
-            # 5. Risk Tolerance Assessment
+            # 5. Risk Tolerance Assessment (Fixed)
             st.subheader("🎲 Your Risk Profile")
             risk_count = survey_data["What is your risk tolerance for investing?"].value_counts()
-            st.write(f"Your risk tolerance ({risk_tolerance}) matches {risk_count[risk_tolerance]}/{len(survey_data)} peers ({risk_count[risk_tolerance]/len(survey_data)*100:.1f}%).")
+            st.write(f"Your risk tolerance ({risk_tolerance}) matches {risk_count[survey_risk_tolerance]}/{len(survey_data)} peers ({risk_count[survey_risk_tolerance]/len(survey_data)*100:.1f}%).")
 
             # 6. Downloadable PDF Report
             st.subheader("📄 Download Your Plan")
