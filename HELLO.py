@@ -7,9 +7,12 @@ import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-import joblib
-import warnings
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
+from reportlab.lib.styles import getSampleStyleSheet
+import io
 import os
+import warnings
 
 warnings.filterwarnings("ignore")
 
@@ -387,6 +390,98 @@ def main():
                 if not os.path.exists("models"):
                     os.makedirs("models")
                 joblib.dump(stock_model, "models/stock_model.pkl")
+
+# --- Personalized Investment Tab ---
+    with tab3:
+        st.session_state.active_tab = "Personalized Investment"
+        st.header("🎯 Personalized Investment Planner")
+        st.markdown("Tailor your investment journey with insights from peers!")
+
+        with st.form(key="investment_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("👤 Name", "")
+                income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+                essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0)
+                non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0)
+                debt_payment = st.number_input("💳 Debt Payment (₹)", min_value=0.0, step=100.0)
+            with col2:
+                goal = st.selectbox("🎯 Investment Goal", ["No specific goal", "Emergency fund", "Future expenses (e.g., education, travel)", "Wealth growth"])
+                goal_amount = st.number_input("💎 Goal Amount (₹)", min_value=0.0, step=1000.0, value=50000.0)
+                risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
+                horizon_years = st.slider("⏳ Investment Horizon (Years)", 1, 10, 3)
+            submit = st.form_submit_button("🚀 Get Your Plan")
+
+        if submit and survey_data is not None and survey_model is not None:
+            # Map form risk tolerance to survey data format
+            risk_mapping = {
+                "Low": "Low (prefer safe options)",
+                "Medium": "Medium (okay with some risk)",
+                "High": "High (comfortable with big risks)"
+            }
+            survey_risk_tolerance = risk_mapping[risk_tolerance]
+# 1. Personalized Investment Recommendations
+            predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
+            recommendations = get_investment_recommendations(income, predicted_savings, goal, risk_tolerance, horizon_years)
+            st.subheader("💼 Investment Recommendations")
+            for rec in recommendations:
+                st.write(f"- Invest ₹{rec['Amount']:,.2f} in **{rec['Company']}** ({rec['Type']})")
+
+            # 2. Savings Goal Calculator
+            monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
+            st.subheader("🎯 Savings Goal")
+            st.write(f"To reach ₹{goal_amount:,.2f} in {horizon_years} years, save ₹{monthly_savings_needed:,.2f}/month.")
+
+            # 3. Peer Comparison Dashboard
+            peer_avg_savings = survey_data["Savings"].mean()
+            st.subheader("📊 Peer Comparison")
+            fig, ax = plt.subplots()
+            ax.bar(["Your Savings", "Peer Average"], [predicted_savings, peer_avg_savings], color=["#1f77b4", "#ff7f0e"])
+            ax.set_ylabel("Amount (₹)")
+            st.pyplot(fig)
+
+            # 4. Investment Education Module
+            st.subheader("📚 Investment Basics")
+            familiarity = survey_data["How familiar are you with stock investments?"].mode()[0]
+            if familiarity == "Not at all":
+                st.write("**New to Investing?** Start with safe options like Blue-Chip stocks (e.g., HDFC Bank) which offer stability.")
+            elif familiarity in ["Slightly familiar", "Moderately familiar"]:
+                st.write("**Building Knowledge?** Mutual Funds (e.g., SBI Bluechip) balance risk and reward.")
+            else:
+                st.write("**Experienced?** Explore high-growth options like Small Caps (e.g., Paytm).")# 5. Risk Tolerance Assessment (Fixed)
+            st.subheader("🎲 Your Risk Profile")
+            risk_count = survey_data["What is your risk tolerance for investing?"].value_counts()
+            st.write(f"Your risk tolerance ({risk_tolerance}) matches {risk_count[survey_risk_tolerance]}/{len(survey_data)} peers ({risk_count[survey_risk_tolerance]/len(survey_data)*100:.1f}%).")
+
+            # 6. Downloadable PDF Report
+            st.subheader("📄 Download Your Plan")
+            tips = []
+            if predicted_savings < monthly_savings_needed:
+                tips.append("Reduce non-essential spending to meet your goal.")
+            if debt_payment > peer_avg_savings:
+                tips.append("Pay off debt faster to boost savings.")
+            if predicted_savings > income * 0.2:
+                tips.append("Great savings! Invest surplus in your chosen options.")
+            pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
+            st.download_button("Download PDF", pdf_buffer, f"Investment_Plan_{name}.pdf", "application/pdf")
+
+            # 7. Budget Optimization Tips
+            st.subheader("💡 Budget Optimization Tips")
+            median_non_essentials = survey_data["Non_Essentials"].median()
+            if non_essentials > median_non_essentials:
+                st.write(f"- Cut ₹{non_essentials - median_non_essentials:,.2f} from non-essentials (peer median: ₹{median_non_essentials:,.2f}).")
+            else:
+                st.write("- Your spending is optimized compared to peers!")
+            # 8. Goal-Based Investment Horizon Planner
+            st.subheader("⏳ Horizon-Based Plan")
+            if horizon_years <= 1:
+                st.write("Short-term: Stick to low-risk options like bonds.")
+            elif horizon_years <= 3:
+                st.write("Medium-term: Balance with mid-cap stocks or mutual funds.")
+            else:
+                st.write("Long-term: Diversify into stocks for higher returns.")
+        else:
+            st.write("Please submit the form and ensure survey data is available.")
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
