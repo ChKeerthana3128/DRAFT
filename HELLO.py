@@ -264,6 +264,13 @@ def main():
     if stock_data is None:
         st.warning("Stock Investments tab will not function without stock data. Proceeding with Personal Finance tab.")
 
+    # Load survey data (for Personalized Investment tab)
+    survey_data = load_survey_data()
+    if survey_data is not None:
+        survey_model, survey_r2 = train_survey_model(survey_data)
+    else:
+        survey_model, survey_r2 = None, 0.0
+
     # Train stock model if data is available
     stock_model, stock_r2 = None, 0.0
     if stock_data is not None:
@@ -293,8 +300,8 @@ def main():
     if 'predicted_price' not in st.session_state:
         st.session_state.predicted_price = None
 
-    # Define tabs
-   tab1, tab2, tab3 = st.tabs(["💵 Personal Finance", "📈 Stock Investments", "🎯 Personalized Investment"])
+    # Define tabs (corrected indentation)
+    tab1, tab2, tab3 = st.tabs(["💵 Personal Finance", "📈 Stock Investments", "🎯 Personalized Investment"])
 
     # --- Personal Finance Dashboard ---
     with tab1:
