@@ -201,7 +201,7 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
     
     return recs
     def main():
-    st.title("💰 WealthWise Dashboard")
+        st.title("💰 WealthWise Dashboard")
     # ... (previous code like st.title, data loading, model training)
 
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
