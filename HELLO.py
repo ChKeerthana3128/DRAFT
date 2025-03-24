@@ -13,6 +13,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 import io
 import os
 import warnings
+import joblib
 
 warnings.filterwarnings("ignore")
 
@@ -586,6 +587,7 @@ def main():
             from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
             from reportlab.lib.units import inch
 
+
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     buffer = io.BytesIO()
     
@@ -697,6 +699,8 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
 
     # Graph Descriptions (Simulated)
     story.append(Paragraph("Visual Insights", heading_style))
+    # Assuming goal is a string that needs to be converted to float for calculation
+    goal_amount = float(goal.replace('₹', '').replace(',', '')) if isinstance(goal, str) else goal
     savings_vs_goal = f"Your savings (₹{predicted_savings:,.2f}) vs. Goal (₹{goal_amount:,.2f}): A bar chart shows you’re {(predicted_savings / goal_amount * 100 if goal_amount > 0 else 0):.1f}% toward your goal."
     peer_comparison = f"Peer Comparison: Your savings (₹{predicted_savings:,.2f}) vs. Peer Average (₹{peer_savings:,.2f})—you’re {'above' if predicted_savings > peer_savings else 'below'} average."
     story.append(Paragraph(savings_vs_goal, normal_style))
@@ -708,7 +712,6 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     buffer.seek(0)
     return buffer
 
-# Streamlit code should be in a separate function or main block
 def display_budget_tips(non_essentials, survey_data, horizon_years):
     st.subheader("💡 Budget Optimization Tips")
     median_non_essentials = survey_data["Non_Essentials"].median()
@@ -726,6 +729,45 @@ def display_budget_tips(non_essentials, survey_data, horizon_years):
         st.write("Long-term: Diversify into stocks for higher returns.")
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
+
+def main():
+    # Example usage - you'll need to adjust these parameters based on your actual data
+    name = "John Doe"
+    income = 1000000
+    predicted_savings = 200000
+    goal = "₹500000"  # Assuming goal comes as a formatted string
+    risk_tolerance = "Medium"
+    horizon_years = 5
+    recommendations = [
+        {"Company": "ABC Corp", "Type": "Stock", "Amount": 100000},
+        {"Company": "XYZ Fund", "Type": "Mutual Fund", "Amount": 75000}
+    ]
+    peer_savings = 250000
+    tips = ["Reduce dining out", "Review subscriptions"]
+
+    # Generate PDF
+    pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, 
+                            horizon_years, recommendations, peer_savings, tips)
+    
+    # Example of saving a model (assuming stock_model exists)
+    # You'll need to define stock_model before this line
+    # stock_model = SomeModel()  # Replace with your actual model
+    # joblib.dump(stock_model, "models/stock_model.pkl")
+
+    # Streamlit interface
+    st.title("WealthWise Investment Planner")
+    # Assuming survey_data and non_essentials are available
+    # survey_data = some_dataframe  # Replace with actual data
+    # non_essentials = some_value   # Replace with actual value
+    # display_budget_tips(non_essentials, survey_data, horizon_years)
+
+    # Display PDF download button
+    st.download_button(
+        label="Download Investment Plan PDF",
+        data=pdf_buffer.getvalue(),
+        file_name=f"{name}_investment_plan.pdf",
+        mime="application/pdf"
+    )
 
 if __name__ == "__main__":
     main()
