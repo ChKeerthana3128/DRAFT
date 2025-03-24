@@ -280,7 +280,7 @@ def main():
         st.session_state.predicted_price = None
 
     # Define tabs
-    tab1, tab2 = st.tabs(["💵 Personal Finance", "📈 Stock Investments"])
+   tab1, tab2, tab3 = st.tabs(["💵 Personal Finance", "📈 Stock Investments", "🎯 Personalized Investment"])
 
     # --- Personal Finance Dashboard ---
     with tab1:
