@@ -219,7 +219,7 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
             with col2:
                 risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
-            submit = st.form_submit_button("🚀 Explore Market")if submit and stock_data is not None and stock_model is not None:
+            submit = st.form_submit_button("🚀 Explore Market")if submit and stock_data is not None and stock_model is not None
             with st.spinner("Analyzing your investment strategy..."):
                 future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
                 predicted_price = stock_model.predict(future)[0]
