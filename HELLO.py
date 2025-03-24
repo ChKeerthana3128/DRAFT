@@ -146,6 +146,68 @@ def smart_savings_plan(income, total_expenses, years_to_retirement):
     expense_growth = 2.5
     return dream_fund, savings_rate, income_growth, expense_growth
 
+Predictive and Utility Functions
+def predict_savings(model, income, essentials, non_essentials, debt_payment):
+    input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_Payment": [debt_payment]})
+    return model.predict(input_df)[0]
+
+def calculate_savings_goal(goal_amount, horizon_years):
+    return goal_amount / (horizon_years * 12) if horizon_years > 0 else goal_amount
+
+def get_investment_recommendations(income, savings, goal, risk_tolerance, horizon_years):
+    investable = savings * 0.5
+    recommendations = []
+    if risk_tolerance == "Low":
+        options = [
+            {"Company": "HDFC Bank", "Type": "Blue-Chip", "Min_Invest": 500, "Goal": "Emergency fund"},
+            {"Company": "TCS", "Type": "Blue-Chip", "Min_Invest": 500, "Goal": "Wealth growth"},
+            {"Company": "RBI Bonds", "Type": "Bonds", "Min_Invest": 1000, "Goal": "Future expenses"}
+        ]
+    elif risk_tolerance == "Medium":
+        options = [
+            {"Company": "Reliance Industries", "Type": "Large Cap", "Min_Invest": 1000, "Goal": "Wealth growth"},
+            {"Company": "Bajaj Finance", "Type": "Mid Cap", "Min_Invest": 1500, "Goal": "Future expenses"},
+            {"Company": "SBI Bluechip Fund", "Type": "Mutual Fund", "Min_Invest": 500, "Goal": "Emergency fund"}
+        ]else:
+        options = [
+            {"Company": "Paytm", "Type": "Small Cap", "Min_Invest": 2000, "Goal": "Wealth growth"},
+            {"Company": "Zomato", "Type": "Small Cap", "Min_Invest": 2000, "Goal": "Future expenses"},
+            {"Company": "Bitcoin", "Type": "Crypto", "Min_Invest": 5000, "Goal": "No specific goal"}
+        ]
+    
+    for opt in options:
+        if investable >= opt["Min_Invest"] and (goal == opt["Goal"] or goal == "No specific goal"):
+            amount = min(investable, opt["Min_Invest"] * (horizon_years if horizon_years > 1 else 1))
+            recommendations.append({"Company": opt["Company"], "Type": opt["Type"], "Amount": amount})
+    return recommendations
+
+def generate_pdf(name, income, savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+
+    story.append(Paragraph(f"Investment Plan for {name}", styles['Title']))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph(f"Income: ₹{income:,.2f}", styles['Normal']))
+    story.append(Paragraph(f"Predicted Savings: ₹{savings:,.2f}", styles['Normal']))
+    story.append(Paragraph(f"Goal: {goal}", styles['Normal']))
+    story.append(Paragraph(f"Risk Tolerance: {risk_tolerance}", styles['Normal']))
+    story.append(Paragraph(f"Investment Horizon: {horizon_years} years", styles['Normal']))
+    story.append(Spacer(1, 12))story.append(Paragraph("Investment Recommendations", styles['Heading2']))
+    data = [["Company", "Type", "Amount (₹)"]] + [[r["Company"], r["Type"], f"₹{r['Amount']:,.2f}"] for r in recommendations]
+    story.append(Table(data))
+    story.append(Spacer(1, 12))
+
+    story.append(Paragraph(f"Peer Average Savings: ₹{peer_savings:,.2f}", styles['Normal']))
+    story.append(Paragraph("Budget Tips", styles['Heading2']))
+    for tip in tips:
+        story.append(Paragraph(f"- {tip}", styles['Normal']))
+    
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
 # 6. Insight Generators (For Stock Investments)
 def portfolio_advice(risk_tolerance):
     """💼 Your investment playbook!"""
