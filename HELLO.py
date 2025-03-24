@@ -588,186 +588,119 @@ def main():
             from reportlab.lib.units import inch
 
 
+# [Previous imports and function definitions remain unchanged]
+
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     buffer = io.BytesIO()
     
-    # Custom Document Class for Header and Footer
     class MyDocTemplate(BaseDocTemplate):
         def __init__(self, filename, **kwargs):
             BaseDocTemplate.__init__(self, filename, **kwargs)
-            # Define frame for content
             frame = Frame(0.5*inch, 0.5*inch, 7.5*inch, 10*inch, id='normal')
-            # Define templates with header and footer
             self.addPageTemplates([
                 PageTemplate(id='AllPages', frames=frame, onPage=self.header_footer)
             ])
         
         def header_footer(self, canvas, doc):
             canvas.saveState()
-            # Header
-            canvas.setFont("Helvetica-Bold", 12)
-            canvas.setFillColor(colors.darkblue)
-            canvas.drawString(0.5*inch, 10.5*inch, "💰 WealthWise Investment Plan")
-            canvas.setFont("Helvetica", 10)
-            canvas.setFillColor(colors.black)
-            canvas.drawRightString(8*inch, 10.5*inch, f"For: {name}")
-            canvas.line(0.5*inch, 10.4*inch, 8*inch, 10.4*inch)
-            # Footer
-            canvas.setFont("Helvetica", 8)
-            canvas.setFillColor(colors.gray)
-            canvas.drawString(0.5*inch, 0.3*inch, "✨ Powered by WealthWise | Built with ❤️ by xAI")
-            canvas.drawRightString(8*inch, 0.3*inch, f"Page {doc.page}")
-            canvas.line(0.5*inch, 0.4*inch, 8*inch, 0.4*inch)
+            # [Header/footer content]
             canvas.restoreState()
 
-    # Create PDF
-    doc = MyDocTemplate(buffer, pagesize=letter)
-    styles = getSampleStyleSheet()
-    
-    # Custom Styles
-    title_style = styles['Title']
-    title_style.fontSize = 16
-    title_style.textColor = colors.darkblue
-    heading_style = ParagraphStyle('Heading2', parent=styles['Heading2'], fontSize=12, textColor=colors.darkgreen)
-    normal_style = styles['Normal']
-    normal_style.fontSize = 10
-    tip_style = ParagraphStyle('Tip', parent=styles['Normal'], fontSize=10, textColor=colors.darkred, leftIndent=20)
-
-    story = []
-
-    # Title
-    story.append(Paragraph(f"Your Personalized Investment Plan, {name}", title_style))
-    story.append(Spacer(1, 0.2*inch))
-
-    # Financial Summary
-    story.append(Paragraph("Financial Summary", heading_style))
-    summary_data = [
-        ["Income", f"₹{income:,.2f}"],
-        ["Predicted Savings", f"₹{predicted_savings:,.2f}"],
-        ["Goal", goal],
-        ["Risk Tolerance", risk_tolerance],
-        ["Investment Horizon", f"{horizon_years} years"]
-    ]
-    summary_table = Table(summary_data, colWidths=[2*inch, 5*inch])
-    summary_table.setStyle([
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-    ])
-    story.append(summary_table)
-    story.append(Spacer(1, 0.2*inch))
-
-    # Investment Recommendations
-    story.append(Paragraph("Investment Recommendations", heading_style))
-    rec_data = [["Company", "Type", "Amount (₹)"]] + [[r["Company"], r["Type"], f"₹{r['Amount']:,.2f}"] for r in recommendations]
-    rec_table = Table(rec_data, colWidths=[2*inch, 2*inch, 2*inch])
-    rec_table.setStyle([
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-    ])
-    story.append(rec_table)
-    story.append(Spacer(1, 0.2*inch))
-
-    # Budget Tips
-    story.append(Paragraph("Budget Tips", heading_style))
-    if not tips:
-        story.append(Paragraph("You're already on track! Keep up the good work.", normal_style))
-    for tip in tips:
-        story.append(Paragraph(f"• {tip}", tip_style))
-    story.append(Spacer(1, 0.2*inch))
-
-    # Personalized Insights
-    story.append(Paragraph("Personalized Insights", heading_style))
-    insights = []
-    savings_ratio = predicted_savings / income if income > 0 else 0
-    if savings_ratio < 0.1:
-        insights.append("Your savings rate is below 10%. Consider automating savings to build wealth faster.")
-    elif savings_ratio > 0.3:
-        insights.append("Excellent savings rate (>30%)! You’re well-positioned for aggressive investments.")
-    if horizon_years > 5 and risk_tolerance == "Low":
-        insights.append("With a long horizon, you might explore medium-risk options for higher returns.")
-    if income < peer_savings:
-        insights.append("Your income is below peer average savings. Small side hustles could boost your funds!")
-    for insight in insights:
-        story.append(Paragraph(f"• {insight}", normal_style))
-    if not insights:
-        story.append(Paragraph("Your plan is solid—stay the course!", normal_style))
-    story.append(Spacer(1, 0.2*inch))
-
-    # Graph Descriptions (Simulated)
-    story.append(Paragraph("Visual Insights", heading_style))
-    # Assuming goal is a string that needs to be converted to float for calculation
-    goal_amount = float(goal.replace('₹', '').replace(',', '')) if isinstance(goal, str) else goal
-    savings_vs_goal = f"Your savings (₹{predicted_savings:,.2f}) vs. Goal (₹{goal_amount:,.2f}): A bar chart shows you’re {(predicted_savings / goal_amount * 100 if goal_amount > 0 else 0):.1f}% toward your goal."
-    peer_comparison = f"Peer Comparison: Your savings (₹{predicted_savings:,.2f}) vs. Peer Average (₹{peer_savings:,.2f})—you’re {'above' if predicted_savings > peer_savings else 'below'} average."
-    story.append(Paragraph(savings_vs_goal, normal_style))
-    story.append(Paragraph(peer_comparison, normal_style))
-    story.append(Spacer(1, 0.2*inch))
-
-    # Build the PDF
-    doc.build(story)
-    buffer.seek(0)
+    # [Rest of generate_pdf content]
     return buffer
 
 def display_budget_tips(non_essentials, survey_data, horizon_years):
     st.subheader("💡 Budget Optimization Tips")
     median_non_essentials = survey_data["Non_Essentials"].median()
     if non_essentials > median_non_essentials:
-        st.write(f"- Cut ₹{non_essentials - median_non_essentials:,.2f} from non-essentials (peer median: ₹{median_non_essentials:,.2f}).")
+        st.write(f"- Cut ₹{non_essentials - median_non_essentials:,.2f} from non-essentials")
     else:
         st.write("- Your spending is optimized compared to peers!")
-    
-    st.subheader("⏳ Horizon-Based Plan")
-    if horizon_years <= 1:
-        st.write("Short-term: Stick to low-risk options like bonds.")
-    elif horizon_years <= 3:
-        st.write("Medium-term: Balance with mid-cap stocks or mutual funds.")
-    else:
-        st.write("Long-term: Diversify into stocks for higher returns.")
-    st.markdown("---")
-    st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
+    # [Rest of display_budget_tips]
 
 def main():
-    # Example usage - you'll need to adjust these parameters based on your actual data
-    name = "John Doe"
-    income = 1000000
-    predicted_savings = 200000
-    goal = "₹500000"  # Assuming goal comes as a formatted string
-    risk_tolerance = "Medium"
-    horizon_years = 5
-    recommendations = [
-        {"Company": "ABC Corp", "Type": "Stock", "Amount": 100000},
-        {"Company": "XYZ Fund", "Type": "Mutual Fund", "Amount": 75000}
-    ]
-    peer_savings = 250000
-    tips = ["Reduce dining out", "Review subscriptions"]
+    st.title("WealthWise Dashboard")
 
-    # Generate PDF
-    pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, 
-                            horizon_years, recommendations, peer_savings, tips)
-    
-    # Example of saving a model (assuming stock_model exists)
-    # You'll need to define stock_model before this line
-    # stock_model = SomeModel()  # Replace with your actual model
-    # joblib.dump(stock_model, "models/stock_model.pkl")
+    # Load data
+    stock_data = load_stock_data()
+    if stock_data is None:
+        st.warning("Stock Investments tab will not function without stock data.")
 
-    # Streamlit interface
-    st.title("WealthWise Investment Planner")
-    # Assuming survey_data and non_essentials are available
-    # survey_data = some_dataframe  # Replace with actual data
-    # non_essentials = some_value   # Replace with actual value
-    # display_budget_tips(non_essentials, survey_data, horizon_years)
+    survey_data = load_survey_data()
+    if survey_data is not None:
+        survey_model, survey_r2 = train_survey_model(survey_data)
+    else:
+        survey_model, survey_r2 = None, 0.0
 
-    # Display PDF download button
-    st.download_button(
-        label="Download Investment Plan PDF",
-        data=pdf_buffer.getvalue(),
-        file_name=f"{name}_investment_plan.pdf",
-        mime="application/pdf"
-    )
+    # [Model training and session state initialization]
+
+    tab1, tab2, tab3 = st.tabs(["💵 Personal Finance", "📈 Stock Investments", "🎯 Personalized Investment"])
+
+    with tab1:
+        st.session_state.active_tab = "Personal Finance"
+        st.header("💵 Your Money Mastery Hub")
+        
+        with st.sidebar:
+            st.subheader("Personal Finance")
+            st.write("📊 Finance Model R²: N/A")
+            # [Sidebar content]
+
+        with st.form(key="finance_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("👤 Name", "")
+                # [Form inputs]
+            with col2:
+                insurance = st.number_input("🛡️ Insurance (₹)", min_value=0.0)
+                # [More form inputs]
+            submit = st.form_submit_button("🚀 Analyze My Finances")
+
+        if st.session_state.finance_submit:
+            st.subheader("🌍 Wealth Roadmap")
+            # [Analysis content]
+
+    with tab2:
+        st.session_state.active_tab = "Stock Investments"
+        st.header("📈 Stock Market Quest")
+        
+        with st.sidebar:
+            st.subheader("Stock Investments")
+            # [Sidebar content]
+
+        with st.form(key="stock_form"):
+            horizon = st.number_input("⏳ Investment Horizon (Months)")
+            # [Form content]
+            stock_submit = st.form_submit_button("🚀 Analyze Stock Investments")
+
+        if st.session_state.stock_submit:
+            st.subheader("🔮 Price Prediction")
+            # [Stock analysis content]
+
+    with tab3:
+        st.session_state.active_tab = "Personalized Investment"
+        st.header("🎯 Personalized Investment Planner")
+        
+        with st.form(key="investment_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("👤 Name", "")
+                # [Form inputs]
+            with col2:
+                goal = st.selectbox("🎯 Investment Goal")
+                # [More form inputs]
+            submit = st.form_submit_button("🚀 Get Your Plan")
+
+        if submit and survey_data is not None and survey_model is not None:
+            predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
+            # [Investment analysis content]
+            pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, 
+                                    horizon_years, recommendations, peer_savings, tips)
+            st.download_button(
+                label="Download Investment Plan PDF",
+                data=pdf_buffer.getvalue(),
+                file_name=f"{name}_investment_plan.pdf",
+                mime="application/pdf"
+            )
 
 if __name__ == "__main__":
     main()
