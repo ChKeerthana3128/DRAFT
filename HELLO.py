@@ -201,7 +201,7 @@ def main():
     if stock_data is None:
         st.warning("Stock Investments tab will not function without stock data.")
     if survey_data is None:
-        st.warning("Survey data unavailable. Practical Representation will be limited.")
+        st.warning("Survey data unavailable. Practical Representation and some investment suggestions will be limited.")
 
     # Train models
     stock_model, stock_r2 = None, 0.0
@@ -211,6 +211,8 @@ def main():
     survey_model, survey_r2 = None, 0.0
     if survey_data is not None:
         survey_model, survey_r2 = train_survey_model(survey_data)
+    else:
+        st.info("Survey model training skipped due to missing data.")
 
     # Initialize session state
     if 'active_tab' not in st.session_state:
@@ -367,7 +369,7 @@ def main():
                     else:
                         st.warning("Consider increasing savings to match peers.")
             else:
-                st.write("Survey model unavailable.")
+                st.write("Survey model unavailable due to missing data.")
 
     # Stock Investments Tab
     with tab2:
@@ -443,7 +445,7 @@ def main():
                 for risk, pct in risk_dist.items():
                     st.write(f"- {risk}: {pct:.1f}%")
             else:
-                st.write("Survey model unavailable.")
+                st.write("Survey model unavailable due to missing data.")
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
