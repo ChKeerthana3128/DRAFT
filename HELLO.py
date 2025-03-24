@@ -40,7 +40,6 @@ def load_survey_data(csv_path="survey_data.csv"):
     try:
         df = pd.read_csv(csv_path)
         df.columns = [col.strip() for col in df.columns]
-        # Convert categorical ranges to numeric midpoints for training
         def parse_range(value):
             if pd.isna(value) or value == "I don’t save":
                 return 0
@@ -61,7 +60,19 @@ def load_survey_data(csv_path="survey_data.csv"):
         st.error(f"Error loading survey data: {str(e)}")
         return None
 
-# Model Training for Survey Data
+# Model Training
+@st.cache_resource
+def train_stock_model(data):
+    data['Day'] = data['Date'].dt.day
+    data['Month'] = data['Date'].dt.month
+    data['Year'] = data['Date'].dt.year
+    X = data[['Day', 'Month', 'Year']]
+    y = data['Close']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    return model, r2_score(y_test, model.predict(X_test))
+
 @st.cache_resource
 def train_survey_model(survey_data):
     features = ["Income", "Essentials", "Non_Essentials", "Debt_Payment"]
@@ -74,7 +85,7 @@ def train_survey_model(survey_data):
     r2 = r2_score(y_test, model.predict(X_test))
     return model, r2
 
-# Existing Predictive Functions
+# Predictive Functions
 def calculate_financial_health_score(income, total_expenses, debt, discretionary):
     if income <= 0:
         return 0
@@ -209,15 +220,15 @@ def main():
     if 'stock_submit' not in st.session_state:
         st.session_state.stock_submit = False
     if 'input_data' not in st.session_state:
-        st.session_state.input_data = None
+        st.session_state.input_data = {}
     if 'total_expenses' not in st.session_state:
-        st.session_state.total_expenses = None
+        st.session_state.total_expenses = 0
     if 'years_to_retirement' not in st.session_state:
         st.session_state.years_to_retirement = None
     if 'debt' not in st.session_state:
-        st.session_state.debt = None
+        st.session_state.debt = 0
     if 'discretionary' not in st.session_state:
-        st.session_state.discretionary = None
+        st.session_state.discretionary = 0
     if 'horizon' not in st.session_state:
         st.session_state.horizon = 24
     if 'risk_tolerance' not in st.session_state:
@@ -229,9 +240,14 @@ def main():
     with st.sidebar:
         st.subheader("💡 Needed Investments")
         st.write("Personalized suggestions based on your profile")
-        if st.session_state.active_tab == "Personal Finance" and st.session_state.finance_submit and st.session_state.input_data:
+        
+        # Personal Finance Tab Logic
+        if (st.session_state.active_tab == "Personal Finance" and 
+            st.session_state.finance_submit and 
+            "Income" in st.session_state.input_data and 
+            st.session_state.total_expenses is not None):
             disposable = predict_disposable_income(st.session_state.input_data["Income"], st.session_state.total_expenses)
-            horizon_months = st.session_state.years_to_retirement * 12
+            horizon_months = st.session_state.years_to_retirement * 12 if st.session_state.years_to_retirement else 24
             risk_tolerance = st.session_state.risk_tolerance
             suggestions = get_investment_suggestions(risk_tolerance, horizon_months, disposable, survey_data)
             st.write(f"**Strategy**: {suggestions['Overview']}")
@@ -239,14 +255,17 @@ def main():
                 st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']} (Invest: {pick['Suggested Amount (₹)']})")
             st.write(f"**Goal**: {suggestions['Goal Alignment']}")
             st.write(f"**Horizon**: {suggestions['Horizon']}")
+        
+        # Stock Investments Tab Logic
         elif st.session_state.active_tab == "Stock Investments" and st.session_state.stock_submit:
-            disposable = 750  # Survey-based default (mode of savings)
+            disposable = 750  # Survey-based default
             suggestions = get_investment_suggestions(st.session_state.risk_tolerance, st.session_state.horizon, disposable, survey_data)
             st.write(f"**Strategy**: {suggestions['Overview']}")
             for pick in suggestions["Picks"]:
                 st.write(f"- {pick['Type']}: **{pick['Name']}** - {pick['Why']} (Invest: {pick['Suggested Amount (₹)']})")
             st.write(f"**Goal**: {suggestions['Goal Alignment']}")
-            st.write(f"**Horizon**: {suggestions['Horizon']}")
+            st.write(f fillet"Horizon**: {suggestions['Horizon']}")
+        
         else:
             st.write("Submit your details to see investment suggestions!")
 
@@ -327,7 +346,7 @@ def main():
                 ax.legend()
                 st.pyplot(fig)
 
-            # New Section: Practical Representation
+            # Practical Representation
             st.subheader("📈 Practical Representation")
             st.markdown("Insights from survey-trained model")
             if survey_model is not None and st.session_state.input_data:
@@ -348,7 +367,7 @@ def main():
                     else:
                         st.warning("Consider increasing savings to match peers.")
             else:
-                st.write("Survey model unavailable. Please ensure survey_data.csv is present.")
+                st.write("Survey model unavailable.")
 
     # Stock Investments Tab
     with tab2:
@@ -402,7 +421,7 @@ def main():
                     fig_vol = px.line(stock_subset, x='Date', y='Volatility', title="30-Day Volatility")
                     st.plotly_chart(fig_vol, use_container_width=True)
 
-            # New Section: Practical Representation
+            # Practical Representation
             st.subheader("📈 Practical Representation")
             st.markdown("Insights from survey-trained model")
             if survey_model is not None and survey_data is not None:
@@ -424,7 +443,7 @@ def main():
                 for risk, pct in risk_dist.items():
                     st.write(f"- {risk}: {pct:.1f}%")
             else:
-                st.write("Survey model unavailable. Please ensure survey_data.csv is present.")
+                st.write("Survey model unavailable.")
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
