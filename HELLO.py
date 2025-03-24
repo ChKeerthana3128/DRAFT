@@ -200,7 +200,7 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
                 break
     
     return recs
-
+tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 # Stock Investments Tab
 with tab1:
     st.header("📈 Stock Market Adventure")
