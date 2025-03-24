@@ -91,7 +91,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         
         # Calculate Total_Expenses from individual expense columns
         expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", 
-                        "Education", "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
+                       "Education", "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
         available_expense_cols = [col for col in expense_cols if col in df.columns]
         if available_expense_cols:
             df["Total_Expenses"] = df[available_expense_cols].sum(axis=1)
@@ -200,64 +200,6 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
                 break
     
     return recs
-    def main():
-        st.title("💰 WealthWise Dashboard")
-    # ... (previous code like st.title, data loading, model training)
-
-    tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
-
-    # Stock Investments Tab (keep key="stock_form")
-    with tab1:
-        st.header("📈 Stock Market Adventure")
-        st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
-
-        with st.form(key="stock_form"):  # Line 364, keep this key
-            col1, col2 = st.columns(2)
-            with col1:
-                horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
-                invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, step=500.0, help="How much are you investing?")
-            with col2:
-                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
-                goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
-            submit = st.form_submit_button("🚀 Explore Market")
-                    if submit and stock_data is not None and stock_model is not None:
-                        with tab1:
-    # ... (previous code)
-    with st.form(key="stock_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
-            invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, step=500.0, help="How much are you investing?")
-        with col2:
-            risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
-            goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
-        submit = st.form_submit_button("🚀 Explore Market")  # Fixed line 222
-    if submit and stock_data is not None and stock_model is not None:
-            with st.spinner("Analyzing your investment strategy..."):
-                future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-                predicted_price = stock_model.predict(future)[0]
-                current_price = stock_data['close'].iloc[-1]
-                growth = predicted_price - current_price
-                horizon_years = horizon // 12 or 1
-                recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
-
-            st.subheader("🔮 Market Forecast")
-            col1, col2 = st.columns(2)
-            col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
-            col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")with st.expander("📊 Price Trend", expanded=True):
-                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
-                              hover_data=['open', 'high', 'low', 'volume'])
-                fig.update_traces(line_color='#00ff00')
-                st.plotly_chart(fig, use_container_width=True)st.subheader("💡 Your Investment Strategy")
-            progress = min(1.0, invest_amount / 100000)
-            st.progress(progress)
-            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-                recs = recommendations.get(category, [])
-                if recs:
-                    with st.expander(f"{category} Options"):
-                        for rec in recs:
-                            st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
-
 
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     buffer = io.BytesIO()
@@ -266,6 +208,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
             BaseDocTemplate.__init__(self, filename, **kwargs)
             frame = Frame(0.5*inch, 0.5*inch, 7.5*inch, 10*inch, id='normal')
             self.addPageTemplates([PageTemplate(id='AllPages', frames=frame, onPage=self.header_footer)])
+        
         def header_footer(self, canvas, doc):
             canvas.saveState()
             canvas.setFont("Helvetica-Bold", 12)
@@ -281,6 +224,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
             canvas.drawRightString(8*inch, 0.3*inch, f"Page {doc.page}")
             canvas.line(0.5*inch, 0.4*inch, 8*inch, 0.4*inch)
             canvas.restoreState()
+    
     doc = MyDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
     title_style = styles['Title']
@@ -291,6 +235,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     normal_style.fontSize = 10
     tip_style = ParagraphStyle('Tip', parent=styles['Normal'], fontSize=10, textColor=colors.darkred, leftIndent=20)
     story = []
+    
     story.append(Paragraph(f"Your Personalized Investment Plan, {name}", title_style))
     story.append(Spacer(1, 0.2*inch))
     story.append(Paragraph("Financial Summary", heading_style))
@@ -311,6 +256,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     story.append(summary_table)
     story.append(Spacer(1, 0.2*inch))
     story.append(Paragraph("Investment Recommendations", heading_style))
+    
     for category, recs in recommendations.items():
         if recs:
             story.append(Paragraph(f"{category}", heading_style))
@@ -323,6 +269,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
             ])
             story.append(rec_table)
             story.append(Spacer(1, 0.1*inch))
+    
     story.append(Spacer(1, 0.2*inch))
     story.append(Paragraph("Budget Tips", heading_style))
     for tip in tips:
@@ -390,8 +337,8 @@ def main():
                 predicted_price = stock_model.predict(future)[0]
                 current_price = stock_data['close'].iloc[-1]
                 growth = predicted_price - current_price
-                horizon_years = horizon // 12
-                recommendations = get_investment_recommendations(0, invest_amount, goal, risk_tolerance, horizon_years, invest_amount)
+                horizon_years = horizon // 12 or 1
+                recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
 
             st.subheader("🔮 Market Forecast")
             col1, col2 = st.columns(2)
@@ -414,12 +361,12 @@ def main():
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
 
-   # Personalized Investment Tab (ensure key="investment_form")
+    # Personalized Investment Tab
     with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
 
-        with st.form(key="investment_form"):  # Unique key, check this
+        with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
             with col1:
                 name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
@@ -437,7 +384,7 @@ def main():
         if submit and survey_data is not None and survey_model is not None:
             with st.spinner("Crafting your personalized plan..."):
                 predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
-                recommendations = get_investment_recommendations(income, predicted_savings, goal, risk_tolerance, horizon_years, predicted_savings)
+                recommendations = get_investment_recommendations(risk_tolerance, horizon_years, predicted_savings, goal)
                 monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
 
@@ -485,12 +432,12 @@ def main():
             pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
-    # Retirement Planning Tab (ensure key="retirement_form")
+    # Retirement Planning Tab
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
 
-        with st.form(key="retirement_form"):  # Unique key, check this
+        with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
             with col1:
                 age = st.number_input("🎂 Current Age", min_value=18, max_value=100, value=30)
@@ -524,8 +471,6 @@ def main():
                 shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
                 st.write(f"- Increase monthly savings by ₹{shortfall:,.2f} to meet your goal.")
             st.write("- Assumes a 5% annual growth rate—adjust investments for higher returns if needed.")
-
-
 
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
