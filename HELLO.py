@@ -1,6 +1,3 @@
-Sure, here's a more concise version of your code:
-
-```python
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -76,47 +73,9 @@ def main():
         with st.sidebar:
             st.subheader("Personal Finance")
             st.write("📊 Finance Model R²: N/A (Using form inputs directly)")
-
-            st.subheader("🌡️ Financial Health")
-            if st.session_state.finance_submit and st.session_state.input_data:
-                health_score = calculate_financial_health_score(
-                    st.session_state.input_data["Income"],
-                    st.session_state.total_expenses,
-                    st.session_state.debt,
-                    st.session_state.discretionary
-                )
-                st.metric("Score", f"{health_score:.1f}/100", delta=f"{health_score-50:.1f}")
-            else:
-                st.metric("Score", "N/A")
-
-            st.subheader("💸 Disposable Income")
-            if st.session_state.finance_submit and st.session_state.input_data:
-                disposable = predict_disposable_income(
-                    st.session_state.input_data["Income"],
-                    st.session_state.total_expenses
-                )
-                st.metric("Monthly (₹)", f"₹{disposable:,.2f}")
-            else:
-                st.metric("Monthly (₹)", "N/A")
-
-            st.subheader("🏦 Future Wealth")
-            if st.session_state.finance_submit and st.session_state.input_data:
-                dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
-                    st.session_state.input_data["Income"],
-                    st.session_state.total_expenses,
-                    st.session_state.years_to_retirement
-                )
-                wealth = forecast_wealth_growth(
-                    st.session_state.input_data["Income"],
-                    st.session_state.total_expenses,
-                    suggested_rate,
-                    st.session_state.years_to_retirement,
-                    income_growth,
-                    expense_growth
-                )
-                st.metric("At Retirement (₹)", f"₹{wealth:,.2f}")
-            else:
-                st.metric("At Retirement (₹)", "N/A")
+            st.metric("Score", "N/A")
+            st.metric("Monthly (₹)", "N/A")
+            st.metric("At Retirement (₹)", "N/A")
 
         with st.form(key="finance_form"):
             col1, col2 = st.columns(2)
