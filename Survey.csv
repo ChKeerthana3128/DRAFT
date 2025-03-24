@@ -1,0 +1,68 @@
+ID,Start time,Completion time,Email,Name,Last modified time,NAME ,AGE,What is your Current Status ?,"How much pocket money or income do you receive per month (in ₹)?
+","What is the main source of your pocket money/income?
+","How much do you spend monthly on essentials (e.g., food, transport, books)?
+","How much do you spend monthly on non-essentials (e.g., entertainment, eating out)?
+","Do you have any regular debt payments (e.g., loans, borrowed money)?
+","If yes to debt, how much do you pay monthly (in ₹)?
+","How much of your pocket money/income do you save each month (in ₹)?
+","What is your main goal for saving or investing?
+","How familiar are you with stock investments?
+","What is your risk tolerance for investing?
+","How long would you like to invest money for (investment horizon)?
+","Would you like personalized stock investment suggestions based on your responses?
+","Any additional comments or questions about money or investments?(OPTIONAL)
+",
+1,3/12/25 18:20:53,3/12/25 18:23:40,anonymous,,,Chiranchi Rajeev ,20,Student,₹2001-5000,Parents/Guardians;,Above ₹2000,₹501-1000,No,₹0-500,I don’t save,No specific goal,Not at all,Medium (okay with some risk),1-3 years,Yes,,
+2,3/12/25 19:57:18,3/12/25 19:58:50,anonymous,,,Spurthi Reddy,23,Student,₹5001-10000,Parents/Guardians;Internship;,Above ₹2000,Above ₹1000,No,,Above ₹1000,No specific goal,Not at all,Medium (okay with some risk),1-3 years,Yes,,
+3,3/12/25 20:46:35,3/12/25 21:05:08,anonymous,,,Arunkumar,25,Student,₹1001-2000,Internship;,₹1001-2000,Above ₹1000,Yes,Above ₹2000,₹501-1000,Emergency fund,Slightly familiar,Medium (okay with some risk),More than 5 years,Yes,,
+4,3/12/25 21:53:08,3/12/25 21:55:31,anonymous,,,Maitreyee Chittaluru,19,Student,₹1001-2000,Parents/Guardians;,₹601-1000,₹201-500,No,,Above ₹1000,No specific goal,Slightly familiar,Medium (okay with some risk),1-3 years,Yes,-,
+5,3/12/25 23:19:59,3/12/25 23:21:18,anonymous,,,Gajavelli Shashi Preetham,21,Student,₹5001-10000,Parents/Guardians;,Above ₹2000,₹201-500,No,₹0-500,I don’t save,No specific goal,Not at all,Low (prefer safe options),Less than 1 year,No,,
+6,3/13/25 22:47:29,3/13/25 22:49:03,anonymous,,,Nikhila ,19,Student,₹501-1000,Parents/Guardians;,₹601-1000,₹201-500,No,,I don’t save,Emergency fund,Not at all,Low (prefer safe options),Less than 1 year,No,,
+7,3/18/25 10:36:45,3/18/25 10:38:22,anonymous,,,samhitha ,19,Student,Above ₹10000,Parents/Guardians;,Above ₹2000,₹501-1000,No,,Above ₹1000,Emergency fund,Moderately familiar,Medium (okay with some risk),1-3 years,Yes,,
+8,3/18/25 10:42:54,3/18/25 10:43:58,anonymous,,,Pratham,21,Student,Above ₹10000,Parents/Guardians;Part-time Job;,Above ₹2000,Above ₹1000,Yes,Above ₹2000,Above ₹1000,"Future expenses (e.g., education, travel)",Very familiar,High (comfortable with big risks),Less than 1 year,Yes,,
+9,3/18/25 10:40:30,3/18/25 10:47:16,anonymous,,,Akshaya.K,19,Student,₹2001-5000,Parents/Guardians;,Above ₹2000,₹501-1000,No,₹0-500,Above ₹1000,No specific goal,Moderately familiar,Low (prefer safe options),1-3 years,Yes,,
+10,3/18/25 14:02:02,3/18/25 14:05:16,anonymous,,,Harshitha ,19,Student,₹501-1000,Parents/Guardians;,₹601-1000,₹501-1000,No,₹0-500,₹501-1000,"Future expenses (e.g., education, travel)",Not at all,Medium (okay with some risk),3-5 years,No,,
+11,3/18/25 15:13:51,3/18/25 15:15:22,anonymous,,,Meenal ,19,Student,₹2001-5000,Parents/Guardians;,Above ₹2000,Above ₹1000,No,,I don’t save,No specific goal,Moderately familiar,Medium (okay with some risk),1-3 years,Yes,,
+12,3/18/25 15:22:00,3/18/25 15:23:54,anonymous,,,Spurthi Reddy,23,Student,Above ₹10000,Parents/Guardians;Internship;,Above ₹2000,Above ₹1000,No,,₹501-1000,No specific goal,Slightly familiar,Medium (okay with some risk),1-3 years,Yes,,
+13,3/18/25 15:21:56,3/18/25 15:24:11,anonymous,,,Arunkumar Royyala,25,Student,₹1001-2000,Parents/Guardians;,Above ₹2000,₹501-1000,Yes,Above ₹2000,₹0-200,"Future expenses (e.g., education, travel)",Slightly familiar,High (comfortable with big risks),More than 5 years,Yes,,
+14,3/18/25 15:40:49,3/18/25 15:43:15,anonymous,,,nandini reddy ,19,Student,Above ₹10000,Parents/Guardians;,Above ₹2000,Above ₹1000,No,,Above ₹1000,"Future expenses (e.g., education, travel)",Moderately familiar,Medium (okay with some risk),1-3 years,No,,
+15,3/18/25 17:41:39,3/18/25 17:43:08,anonymous,,,Bhanu Puvvada,24,Student,₹2001-5000,Parents/Guardians;,Above ₹2000,Above ₹1000,No,,I don’t save,No specific goal,Slightly familiar,Medium (okay with some risk),More than 5 years,Yes,,
+16,3/18/25 21:25:56,3/18/25 21:27:33,anonymous,,,Lahari.G ,18,Student,₹1001-2000,Parents/Guardians;,₹1001-2000,Above ₹1000,No,,₹0-200,Emergency fund,Not at all,Low (prefer safe options),Less than 1 year,No,,
+17,3/18/25 21:26:25,3/18/25 21:28:14,anonymous,,,Keerthana ,19,Student,₹0-500,Parents/Guardians;,₹601-1000,Above ₹1000,No,,₹201-500,No specific goal,Not at all,Medium (okay with some risk),Less than 1 year,Yes,,
+18,3/18/25 21:38:05,3/18/25 21:44:56,anonymous,,,A.Varun  Teja,19,Student,₹501-1000,Parents/Guardians;,₹1001-2000,₹501-1000,No,,I don’t save,No specific goal,Slightly familiar,Low (prefer safe options),More than 5 years,Yes,,
+19,3/19/25 9:24:27,3/19/25 9:27:14,anonymous,,,P.Nivriti ,19,Student,₹1001-2000,Parents/Guardians;,₹0-300,₹201-500,No,,₹201-500,Emergency fund,Not at all,Low (prefer safe options),1-3 years,Yes,,
+20,3/20/25 10:02:08,3/20/25 10:05:11,anonymous,,,Atul Raj,23,Student,₹0-500,Scholarship/Grant;,₹301-600,₹501-1000,No,,Above ₹1000,No specific goal,Not at all,Medium (okay with some risk),More than 5 years,Yes,,
+21,3/20/25 10:02:14,3/20/25 10:05:17,anonymous,,,Atul Raj,23,Student,₹0-500,Scholarship/Grant;,₹301-600,₹501-1000,No,,Above ₹1000,No specific goal,Not at all,Medium (okay with some risk),More than 5 years,Yes,,
+22,3/20/25 10:09:25,3/20/25 10:11:21,anonymous,,,Ankan,22,Student,₹2001-5000,Parents/Guardians;,₹301-600,₹501-1000,No,,Above ₹1000,Emergency fund,Slightly familiar,Medium (okay with some risk),More than 5 years,No,,
+23,3/20/25 10:16:06,3/20/25 10:23:56,anonymous,,,Ayush Mishra ,22,Student,₹2001-5000,Parents/Guardians;,₹601-1000,₹0-200,No,,₹201-500,No specific goal,Not at all,Medium (okay with some risk),Less than 1 year,Yes,,
+24,3/20/25 10:27:20,3/20/25 10:29:09,anonymous,,,Abhibhav Om Tyagi ,21,Student,₹501-1000,Parents/Guardians;,₹0-300,₹201-500,No,,₹201-500,No specific goal,Not at all,Medium (okay with some risk),3-5 years,No,,
+25,3/20/25 10:41:23,3/20/25 10:43:14,anonymous,,,Shaista yasmin ,23,Student,₹5001-10000,Parents/Guardians;,Above ₹2000,Above ₹1000,No,,I don’t save,"Future expenses (e.g., education, travel)",Slightly familiar,Low (prefer safe options),1-3 years,Yes,,
+26,3/20/25 10:42:09,3/20/25 10:44:22,anonymous,,,Aman Kumar,23,Student,₹5001-10000,Parents/Guardians;,Above ₹2000,Above ₹1000,No,₹0-500,I don’t save,No specific goal,Not at all,Low (prefer safe options),Less than 1 year,No,No,
+27,3/20/25 12:19:17,3/20/25 12:20:54,anonymous,,,Anjali muthangi ,19,Student,₹501-1000,Parents/Guardians;,₹601-1000,₹0-200,No,₹0-500,₹501-1000,"Future expenses (e.g., education, travel)",Not at all,Low (prefer safe options),Less than 1 year,No,,
+28,3/20/25 16:43:10,3/20/25 16:45:41,anonymous,,,Swati Rani Mund,23,Student,₹2001-5000,Parents/Guardians;,₹601-1000,₹0-200,No,,₹501-1000,Emergency fund,Slightly familiar,Low (prefer safe options),1-3 years,Yes,,
+29,3/20/25 17:39:50,3/20/25 17:41:57,anonymous,,,Parinidhi dongre ,19,Student,₹0-500,Parents/Guardians;,₹601-1000,₹501-1000,No,₹0-500,₹0-200,"Future expenses (e.g., education, travel)",Not at all,Low (prefer safe options),Less than 1 year,No,,
+30,3/20/25 17:42:29,3/20/25 17:48:18,anonymous,,,PRERNA NEGI,21,Student,₹0-500,Parents/Guardians;,₹601-1000,₹201-500,No,,₹201-500,Wealth growth,Not at all,Low (prefer safe options),Less than 1 year,No,,
+31,3/20/25 18:16:07,3/20/25 18:17:29,anonymous,,,Aakanksha Goswam ,23,Student,₹5001-10000,Parents/Guardians;,₹1001-2000,Above ₹1000,No,,I don’t save,Emergency fund,Very familiar,Medium (okay with some risk),Less than 1 year,No,,
+32,3/20/25 18:30:23,3/20/25 18:32:08,anonymous,,,Vardhini Priya ,20,Student,₹1001-2000,Part-time Job;,Above ₹2000,₹501-1000,No,,₹501-1000,Wealth growth,Not at all,Medium (okay with some risk),Less than 1 year,Yes,,
+33,3/20/25 19:11:39,3/20/25 19:13:01,anonymous,,,Hrithika,19,Student,₹0-500,Parents/Guardians;,₹1001-2000,₹501-1000,No,,I don’t save,"Future expenses (e.g., education, travel)",Not at all,Low (prefer safe options),Less than 1 year,No,,
+34,3/20/25 22:29:19,3/20/25 22:31:19,anonymous,,,Santosh Anand ,25,Student,₹2001-5000,Parents/Guardians;,₹1001-2000,₹201-500,Yes,₹501-1000,I don’t save,"Future expenses (e.g., education, travel)",Not at all,Medium (okay with some risk),More than 5 years,Yes,,
+35,3/20/25 22:38:31,3/20/25 22:40:10,anonymous,,,Abhimanyu garg,24,Student,Above ₹10000,Parents/Guardians;,Above ₹2000,Above ₹1000,Yes,Above ₹2000,Above ₹1000,No specific goal,Slightly familiar,Medium (okay with some risk),More than 5 years,Yes,,
+36,3/20/25 22:43:46,3/20/25 22:45:54,anonymous,,,Mihir Raj ,23,Student,₹1001-2000,Part-time Job;,₹301-600,₹0-200,No,,₹0-200,No specific goal,Not at all,Low (prefer safe options),1-3 years,No,,
+37,3/20/25 22:45:10,3/20/25 22:47:30,anonymous,,,Hritik bhadani ,25,Employed ,₹5001-10000,Business ;,₹1001-2000,Above ₹1000,No,,Above ₹1000,Wealth growth,Slightly familiar,Medium (okay with some risk),1-3 years,No,,
+38,3/20/25 22:49:16,3/20/25 22:52:30,anonymous,,,Arjit kumar sinha ,22,Employed ,Above ₹10000,Full time job;,Above ₹2000,Above ₹1000,No,,Above ₹1000,"Future expenses (e.g., education, travel)",Very familiar,Medium (okay with some risk),More than 5 years,Yes,SIP,
+39,3/20/25 22:37:18,3/20/25 22:52:39,anonymous,,,Aayush,22,Employed ,Above ₹10000,Full time job;,Above ₹2000,Above ₹1000,No,,I don’t save,No specific goal,Not at all,Low (prefer safe options),Less than 1 year,No,Do not spam.,
+40,3/21/25 1:46:43,3/21/25 1:47:48,anonymous,,,Sanket D ,25,Student,Above ₹10000,Parents/Guardians;,Above ₹2000,Above ₹1000,No,,I don’t save,No specific goal,Slightly familiar,Medium (okay with some risk),3-5 years,Yes,,
+41,3/21/25 7:55:11,3/21/25 7:58:44,anonymous,,,Priyansh ,23,Student,₹2001-5000,Parents/Guardians;,₹1001-2000,₹501-1000,No,₹0-500,₹501-1000,No specific goal,Moderately familiar,High (comfortable with big risks),More than 5 years,Yes,,
+42,3/22/25 9:28:45,3/22/25 9:30:55,anonymous,,,Sneha,24,Student,₹2001-5000,Parents/Guardians;,Above ₹2000,Above ₹1000,No,₹0-500,₹501-1000,No specific goal,Not at all,Low (prefer safe options),Less than 1 year,No,,
+43,3/22/25 12:20:05,3/22/25 12:24:08,anonymous,,,Veena Pabba,24,Student,₹1001-2000,Parents/Guardians;Internship;,Above ₹2000,Above ₹1000,No,₹0-500,₹501-1000,Emergency fund,Slightly familiar,Low (prefer safe options),Less than 1 year,Yes,,
+44,3/24/25 9:38:55,3/24/25 9:40:22,anonymous,,,Mahrshi Mehta ,18,Student,₹5001-10000,Parents/Guardians;,₹1001-2000,₹501-1000,No,₹0-500,₹201-500,Emergency fund,Very familiar,Medium (okay with some risk),3-5 years,Yes,,
+45,3/24/25 9:40:20,3/24/25 9:42:32,anonymous,,,Sarika Gunda ,19,Student,Above ₹10000,Parents/Guardians;Internship;,Above ₹2000,Above ₹1000,No,,₹501-1000,Wealth growth,Moderately familiar,Medium (okay with some risk),1-3 years,Yes,,
+46,3/24/25 9:52:00,3/24/25 9:53:36,anonymous,,,Sripathi Ananya,19,Student,Above ₹10000,Parents/Guardians;Internship;,₹1001-2000,Above ₹1000,No,,Above ₹1000,"Future expenses (e.g., education, travel)",Moderately familiar,Medium (okay with some risk),1-3 years,Yes,,
+47,3/24/25 9:58:14,3/24/25 10:00:24,anonymous,,,Abhinav ,19,Student,₹1001-2000,Parents/Guardians;,₹601-1000,₹201-500,No,,₹201-500,"Future expenses (e.g., education, travel)",Slightly familiar,Medium (okay with some risk),1-3 years,Yes,,
+48,3/24/25 10:52:52,3/24/25 10:54:01,anonymous,,,Siddarth yerva,19,Student,₹2001-5000,Parents/Guardians;,₹601-1000,Above ₹1000,No,,₹0-200,Wealth growth,Slightly familiar,Medium (okay with some risk),More than 5 years,Yes,,
+49,3/24/25 10:53:58,3/24/25 10:56:12,anonymous,,,Puja,19,Student,₹1001-2000,Parents/Guardians;,₹601-1000,₹501-1000,No,,₹201-500,"Future expenses (e.g., education, travel)",Not at all,High (comfortable with big risks),Less than 1 year,Yes,,
+50,3/24/25 10:54:11,3/24/25 10:57:15,anonymous,,,snehitha reddy ,19,Student,₹2001-5000,Parents/Guardians;,₹1001-2000,Above ₹1000,No,,Above ₹1000,Emergency fund,Slightly familiar,Low (prefer safe options),1-3 years,Yes,,
+51,3/24/25 10:58:15,3/24/25 10:59:45,anonymous,,,Kandagatla Lohitha,19,Student,₹2001-5000,Parents/Guardians;,₹1001-2000,₹501-1000,No,₹0-500,₹201-500,"Future expenses (e.g., education, travel)",Slightly familiar,Low (prefer safe options),3-5 years,Yes,,
+52,3/24/25 11:01:00,3/24/25 11:03:17,anonymous,,,Aishwarya Reddy,18,Student,₹0-500,Parents/Guardians;,₹0-300,₹0-200,No,₹0-500,₹0-200,No specific goal,Not at all,Low (prefer safe options),Less than 1 year,Yes,How to invest less and earn more,
+53,3/24/25 11:51:02,3/24/25 11:55:03,anonymous,,,Sai krupa,19,Student,₹0-500,Parents/Guardians;,₹0-300,₹0-200,No,,I don’t save,No specific goal,Not at all,Low (prefer safe options),Less than 1 year,Yes,,
+54,3/24/25 14:28:18,3/24/25 14:29:37,anonymous,,,Preetham Reddy,23,Student,₹5001-10000,Parents/Guardians;,Above ₹2000,₹501-1000,No,₹0-500,Above ₹1000,Wealth growth,Slightly familiar,Medium (okay with some risk),More than 5 years,No,,
