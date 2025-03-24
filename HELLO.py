@@ -583,12 +583,6 @@ def main():
             st.write(f"Your risk tolerance ({risk_tolerance}) matches {risk_count[survey_risk_tolerance]}/{len(survey_data)} peers ({risk_count[survey_risk_tolerance]/len(survey_data)*100:.1f}%).")
 
             # 6. from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, PageBreak
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
-from reportlab.lib.units import inch
-import io
 
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     buffer = io.BytesIO()
@@ -705,13 +699,13 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
         st.write("- Your spending is optimized compared to peers!")
             # 8. Goal-Based Investment Horizon Planner
     st.subheader("⏳ Horizon-Based Plan")
-    if horizon_years <= 1:
+      if horizon_years <= 1:
         st.write("Short-term: Stick to low-risk options like bonds.")
-    elif horizon_years <= 3:
+      elif horizon_years <= 3:
         st.write("Medium-term: Balance with mid-cap stocks or mutual funds.")
-    else:
+      else:
         st.write("Long-term: Diversify into stocks for higher returns.")
-    else:
+      else:
         st.write("Please submit the form and ensure survey data is available.")
 
     st.markdown("---")
