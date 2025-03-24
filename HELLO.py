@@ -146,7 +146,19 @@ def smart_savings_plan(income, total_expenses, years_to_retirement):
     expense_growth = 2.5
     return dream_fund, savings_rate, income_growth, expense_growth
 
-Predictive and Utility Functions
+# Predictive and Utility Functions
+# ... (previous code remains unchanged up to smart_savings_plan)
+
+def smart_savings_plan(income, total_expenses, years_to_retirement):
+    """🧠 Craft your retirement blueprint!"""
+    dream_fund = max(100000.0, total_expenses * 12 * 20) if total_expenses > 0 else 100000.0
+    annual_target = dream_fund / years_to_retirement if years_to_retirement > 0 else dream_fund
+    savings_rate = min(max((annual_target / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
+    income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
+    expense_growth = 2.5
+    return dream_fund, savings_rate, income_growth, expense_growth
+
+# Predictive and Utility Functions
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_Payment": [debt_payment]})
     return model.predict(input_df)[0]
