@@ -706,7 +706,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
             # 8. Goal-Based Investment Horizon Planner
     st.subheader("⏳ Horizon-Based Plan")
     if horizon_years <= 1:
-    st.write("Short-term: Stick to low-risk options like bonds.")
+        st.write("Short-term: Stick to low-risk options like bonds.")
     elif horizon_years <= 3:
         st.write("Medium-term: Balance with mid-cap stocks or mutual funds.")
     else:
