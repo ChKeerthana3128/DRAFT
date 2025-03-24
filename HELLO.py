@@ -700,9 +700,9 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     st.subheader("💡 Budget Optimization Tips")
     median_non_essentials = survey_data["Non_Essentials"].median()
     if non_essentials > median_non_essentials:
-    st.write(f"- Cut ₹{non_essentials - median_non_essentials:,.2f} from non-essentials (peer median: ₹{median_non_essentials:,.2f}).")
+        st.write(f"- Cut ₹{non_essentials - median_non_essentials:,.2f} from non-essentials (peer median: ₹{median_non_essentials:,.2f}).")
     else:
-    st.write("- Your spending is optimized compared to peers!")
+        st.write("- Your spending is optimized compared to peers!")
             # 8. Goal-Based Investment Horizon Planner
     st.subheader("⏳ Horizon-Based Plan")
     if horizon_years <= 1:
