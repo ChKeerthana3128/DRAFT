@@ -182,21 +182,24 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
         ]
     }
     
-    # Allocate at least one recommendation per category (except Crypto unless high risk)
-    portion = invest_amount / 3  # Split evenly across Large, Medium, Low
+    # Use full invest_amount for each category to ensure recommendations
     for category in ["Large Cap", "Medium Cap", "Low Cap"]:
         for opt in options[category]:
-            if (portion >= opt["Min_Invest"] and 
-                (goal == opt["Goal"] or goal == "No specific goal") and 
-                (risk_tolerance == "High" or opt["Risk"] != "High")):
-                recs[category].append({"Company": opt["Company"], "Amount": portion})
-                break  # Take only one per category
+            # Relax the Min_Invest check for small amounts; suggest affordable options
+            if (invest_amount >= opt["Min_Invest"] or invest_amount >= 500) and \
+               (goal == opt["Goal"] or goal == "No specific goal") and \
+               (risk_tolerance == "High" or opt["Risk"] != "High"):
+                amount = min(invest_amount, opt["Min_Invest"])  # Cap at Min_Invest or use full amount if less
+                recs[category].append({"Company": opt["Company"], "Amount": amount})
+                break  # One per category
     
-    # Add Crypto only if risk tolerance is High
+    # Crypto only for high risk
     if risk_tolerance == "High":
         for opt in options["Crypto"]:
-            if portion >= opt["Min_Invest"] and (goal == opt["Goal"] or goal == "No specific goal"):
-                recs["Crypto"].append({"Company": opt["Company"], "Amount": portion})
+            if (invest_amount >= opt["Min_Invest"] or invest_amount >= 500) and \
+               (goal == opt["Goal"] or goal == "No specific goal"):
+                amount = min(invest_amount, opt["Min_Invest"])
+                recs["Crypto"].append({"Company": opt["Company"], "Amount": amount})
                 break
     
     return recs
