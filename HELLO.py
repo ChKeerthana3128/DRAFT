@@ -19,7 +19,7 @@ st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initia
 
 # Data Loading Functions
 @st.cache_data
-def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):  # Adjusted path
+def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data .csv"):  # Adjusted path
     if not os.path.exists(csv_path):
         st.error(f"🚨 Stock CSV not found at '{csv_path}'! Please upload it to the repo.")
         return None
