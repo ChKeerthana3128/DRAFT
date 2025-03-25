@@ -18,20 +18,14 @@ st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initia
 
 # Simulated Investment Dataset
 investment_data = pd.DataFrame({
-    "Company": [
-        "Reliance Industries", "HDFC Bank", "Bajaj Finance", "SBI Bluechip Fund",
-        "Paytm", "Zomato", "Bitcoin", "Ethereum"
-    ],
-    "Category": [
-        "Large Cap", "Large Cap", "Medium Cap", "Medium Cap",
-        "Low Cap", "Low Cap", "Crypto", "Crypto"
-    ],
+    "Company": ["Reliance Industries", "HDFC Bank", "Bajaj Finance", "SBI Bluechip Fund",
+                "Paytm", "Zomato", "Bitcoin", "Ethereum"],
+    "Category": ["Large Cap", "Large Cap", "Medium Cap", "Medium Cap",
+                 "Low Cap", "Low Cap", "Crypto", "Crypto"],
     "Min_Invest": [1000, 500, 1500, 500, 2000, 2000, 5000, 3000],
     "Risk": ["Medium", "Low", "Medium", "Medium", "High", "High", "High", "High"],
-    "Goal": [
-        "Wealth growth", "Emergency fund", "Future expenses", "Emergency fund",
-        "Wealth growth", "Future expenses", "No specific goal", "Wealth growth"
-    ],
+    "Goal": ["Wealth growth", "Emergency fund", "Future expenses", "Emergency fund",
+             "Wealth growth", "Future expenses", "No specific goal", "Wealth growth"],
     "Expected_Return": [8.5, 6.0, 10.0, 7.5, 15.0, 14.0, 20.0, 18.0],
     "Volatility": [15.0, 10.0, 20.0, 12.0, 30.0, 28.0, 50.0, 45.0]
 })
@@ -40,7 +34,7 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
     "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
 })
 
-# Data Loading Functions
+# Data Loading Functions (unchanged)
 @st.cache_data
 def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
@@ -59,7 +53,7 @@ def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
         return None
 
 @st.cache_data
-def load_survey_data(csv_path="survey_data.csv"):
+def load_survey intercal_data(csv_path="survey_data.csv"):
     if not os.path.exists(csv_path):
         st.error("🚨 Survey CSV not found! Please upload 'survey_data.csv'.")
         return None
@@ -114,7 +108,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training Functions
+# Model Training Functions (unchanged)
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -161,7 +155,7 @@ def train_investment_model(data):
         model.fit(X, y)
     return model
 
-# Predictive and Utility Functions
+# Predictive and Utility Functions (unchanged)
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({
         "Income": [income],
@@ -211,10 +205,9 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
             {"Company": row["Company"], "Amount": invest_amount / len(filtered["Category"].unique())}
             for _, row in category_recs.iterrows()
         ]
-    
     return recommendations
 
-# PDF Generation with FPDF
+# PDF Generation with FPDF (unchanged)
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
@@ -256,6 +249,22 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     buffer.seek(0)
     return buffer
 
+# Fetch Real-Time Stock Data
+def get_stock_data(symbol, api_key):
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={api_key}"
+    try:
+        response = requests.get(url)
+        data = response.json()
+        if "Time Series (5min)" not in data:
+            return None, "Error fetching data. Check symbol or API key."
+        time_series = data["Time Series (5min)"]
+        df = pd.DataFrame.from_dict(time_series, orient="index").astype(float)
+        df.index = pd.to_datetime(df.index)
+        df.columns = ["Open", "High", "Low", "Close", "Volume"]
+        return df, None
+    except Exception as e:
+        return None, f"Error: {str(e)}"
+
 # Main Application
 def main():
     st.title("💰 WealthWise Dashboard")
@@ -288,6 +297,8 @@ def main():
             st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
+        api_key = st.text_input("Enter your Alpha Vantage API Key", value="demo", type="password")
+        st.info("Get your free API key from [Alpha Vantage](https://www.alphavantage.co/).")
 
     # Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
@@ -295,6 +306,8 @@ def main():
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
+        
+        # Existing Stock Market Form
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -304,6 +317,7 @@ def main():
                 risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
             submit = st.form_submit_button("🚀 Explore Market")
+        
         if submit and stock_data is not None and stock_model is not None:
             with st.spinner("Analyzing your investment strategy..."):
                 future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
@@ -334,83 +348,68 @@ def main():
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goal.")
-            st.subheader("Stock Investments Dashboard")
 
-# Sidebar for API Key and User Input
-st.sidebar.header("Settings")
-api_key = st.sidebar.text_input("Enter your Alpha Vantage API Key", value="demo", type="password")
-st.sidebar.info("Get your free API key from [Alpha Vantage](https://www.alphavantage.co/).")
-
-# Stock Investments Section
-st.header("Stock Investments")
-
-# User input for stock portfolio
-st.subheader("Add Stocks to Your Portfolio")
-portfolio_input = st.text_area("Enter stock symbols (one per line, e.g., AAPL, MSFT, TSLA):", "AAPL\nMSFT")
-portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
-
-# Fetch real-time data function
-def get_stock_data(symbol, api_key):
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={api_key}"
-    response = requests.get(url)
-    data = response.json()
-    
-    if "Time Series (5min)" not in data:
-        return None, "Error fetching data. Check symbol or API key."
-    
-    time_series = data["Time Series (5min)"]
-    df = pd.DataFrame.from_dict(time_series, orient="index").astype(float)
-    df.index = pd.to_datetime(df.index)
-    df.columns = ["Open", "High", "Low", "Close", "Volume"]
-    return df, None
-
-# Portfolio tracking
-if st.button("Track Portfolio"):
-    st.subheader("Live Portfolio Tracking")
-    total_value = 0
-    
-    for symbol in portfolio:
-        with st.spinner(f"Fetching data for {symbol}..."):
-            df, error = get_stock_data(symbol, api_key)
-            if error:
-                st.error(f"{symbol}: {error}")
-                continue
+        # Real-Time Stock Portfolio Tracking
+        st.subheader("Live Portfolio Tracking")
+        portfolio_input = st.text_area("Enter stock symbols (one per line, e.g., AAPL, MSFT, TSLA):", "AAPL\nMSFT")
+        portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
+        
+        if st.button("Track Portfolio"):
+            total_value = 0
+            for symbol in portfolio:
+                with st.spinner(f"Fetching data for {symbol}..."):
+                    df, error = get_stock_data(symbol, api_key)
+                    if error or df is None:
+                        st.error(f"{symbol}: {error}")
+                        continue
+                    
+                    # Latest price and performance
+                    latest_price = df["Close"].iloc[0]
+                    previous_price = df["Close"].iloc[-1]
+                    performance = ((latest_price - previous_price) / previous_price) * 100
+                    total_value += latest_price  # Assuming 1 share per stock for simplicity
+                    
+                    # Display current value and performance
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        # Ensure delta is numeric for proper color handling
+                        st.metric(
+                            label=f"{symbol} Current Price",
+                            value=f"${latest_price:.2f}",
+                            delta=f"{performance:.2f}%",
+                            delta_color="normal"  # Use "normal" to avoid color issues; adjust as needed
+                        )
+                    with col2:
+                        # Interactive chart
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
+                        fig.update_layout(
+                            title=f"{symbol} Real-Time Price (Last 100 intervals)",
+                            xaxis_title="Time",
+                            yaxis_title="Price (USD)"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
             
-            # Latest price and performance
-            latest_price = df["Close"].iloc[0]
-            previous_price = df["Close"].iloc[-1]
-            performance = ((latest_price - previous_price) / previous_price) * 100
-            total_value += latest_price  # Assuming 1 share per stock for simplicity
+            # Total portfolio value
+            st.success(f"Total Portfolio Value: ${total_value:.2f}")
             
-            # Display current value and performance
-            col1, col2 = st.columns(2)
-            col1.metric(f"{symbol} Current Price", f"${latest_price:.2f}", f"{performance:.2f}%", 
-                        delta_color="green" if performance > 0 else "red")
-            
-            # Interactive chart
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
-            fig.update_layout(title=f"{symbol} Real-Time Price (Last 100 intervals)", 
-                              xaxis_title="Time", yaxis_title="Price (USD)")
-            col2.plotly_chart(fig, use_container_width=True)
-    
-    # Total portfolio value
-    st.success(f"Total Portfolio Value: ${total_value:.2f}")
-    
-    # Market news (optional, using Alpha Vantage News API if available)
-    if st.checkbox("Show Market News"):
-        news_url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers={'AAPL'}&apikey={api_key}"
-        news_response = requests.get(news_url).json()
-        if "feed" in news_response:
-            for article in news_response["feed"][:5]:  # Show top 5 articles
-                st.write(f"**{article['title']}**")
-                st.write(article["summary"])
-                st.write(f"[Read more]({article['url']})")
-        else:
-            st.warning("News data unavailable with demo key or API limit reached.")
-
+            # Market News
+            if st.checkbox("Show Market News"):
+                news_url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=AAPL&apikey={api_key}"
+                try:
+                    news_response = requests.get(news_url).json()
+                    if "feed" in news_response:
+                        for article in news_response["feed"][:5]:  # Show top 5 articles
+                            st.write(f"**{article['title']}**")
+                            st.write(article["summary"])
+                            st.write(f"[Read more]({article['url']})")
+                    else:
+                        st.warning("News data unavailable with demo key or API limit reached.")
+                except Exception as e:
+                    st.warning(f"Failed to fetch news: {str(e)}")
 
     with tab2:
+        # Unchanged Personalized Investment tab
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.form(key="investment_form"):
@@ -474,6 +473,7 @@ if st.button("Track Portfolio"):
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
     with tab3:
+        # Unchanged Retirement Planning tab
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
         with st.form(key="retirement_form"):
@@ -509,8 +509,6 @@ if st.button("Track Portfolio"):
 
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
-
-
 
 if __name__ == "__main__":
     main()
