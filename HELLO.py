@@ -50,7 +50,7 @@ def load_survey_data(csv_path="survey_data.csv"):
                     return (float(bounds[0].replace(",", "")) + float(bounds[1].replace(",", ""))) / 2
                 return float(bounds[0].replace(",", ""))
             return float(value)
-        df["Income"] = df["How much pocket money or income do you receive per month (in ₹)?"].apply(parse_range)
+        df["Qin"] = df["How much pocket money or income do you receive per month (in ₹)?"].apply(parse_range)
         df["Essentials"] = df["How much do you spend monthly on essentials (e.g., food, transport, books)?"].apply(parse_range)
         df["Non_Essentials"] = df["How much do you spend monthly on non-essentials (e.g., entertainment, eating out)?"].apply(parse_range)
         df["Debt_Payment"] = df["If yes to debt, how much do you pay monthly (in ₹)?"].apply(parse_range)
@@ -131,7 +131,7 @@ def predict_savings(model, income, essentials, non_essentials, debt_payment):
         "Income": [income],
         "Essentials": [essentials],
         "Non_Essentials": [non_essentials],
-        "Debt_Payment": [debt_payment]  # Fixed typo here
+        "Debt_Payment": [debt_payment]
     })
     return model.predict(input_df)[0]
 
@@ -192,7 +192,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.set_font("Arial", "B", 16)
     pdf.cell(0, 10, f"WealthWise Investment Plan for {name}", ln=True, align="C")
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 10, "✨ Powered by WealthWise | Built with ❤️ by xAI", ln=True, align="C")
+    pdf.cell(0, 10, "Powered by WealthWise | Built with love by xAI", ln=True, align="C")
     pdf.ln(10)
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
@@ -400,7 +400,7 @@ def main():
             st.write("- Assumes a 5% annual growth rate—adjust investments for higher returns if needed.")
 
     st.markdown("---")
-    st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
+    st.write("Powered by WealthWise | Built with love by xAI")
 
 if __name__ == "__main__":
     main()
