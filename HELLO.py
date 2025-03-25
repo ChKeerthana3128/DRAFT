@@ -13,6 +13,30 @@ import os
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
+# Simulated Investment Dataset
+investment_data = pd.DataFrame({
+    "Company": [
+        "Reliance Industries", "HDFC Bank", "Bajaj Finance", "SBI Bluechip Fund",
+        "Paytm", "Zomato", "Bitcoin", "Ethereum"
+    ],
+    "Category": [
+        "Large Cap", "Large Cap", "Medium Cap", "Medium Cap",
+        "Low Cap", "Low Cap", "Crypto", "Crypto"
+    ],
+    "Min_Invest": [1000, 500, 1500, 500, 2000, 2000, 5000, 3000],
+    "Risk": ["Medium", "Low", "Medium", "Medium", "High", "High", "High", "High"],
+    "Goal": [
+        "Wealth growth", "Emergency fund", "Future expenses", "Emergency fund",
+        "Wealth growth", "Future expenses", "No specific goal", "Wealth growth"
+    ],
+    "Expected_Return": [8.5, 6.0, 10.0, 7.5, 15.0, 14.0, 20.0, 18.0],
+    "Volatility": [15.0, 10.0, 20.0, 12.0, 30.0, 28.0, 50.0, 45.0]
+})
+investment_data["Risk_Encoded"] = investment_data["Risk"].map({"Low": 0, "Medium": 1, "High": 2})
+investment_data["Goal_Encoded"] = investment_data["Goal"].map({
+    "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
+})
+
 # Data Loading Functions
 @st.cache_data
 def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
@@ -125,6 +149,15 @@ def train_retirement_model(financial_data):
         model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
+@st.cache_resource
+def train_investment_model(data):
+    X = data[["Min_Invest", "Risk_Encoded", "Goal_Encoded", "Expected_Return", "Volatility"]]
+    y = (data["Expected_Return"] / data["Volatility"]) * (1 - data["Risk_Encoded"] * 0.2)
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    with st.spinner("Training investment recommendation model..."):
+        model.fit(X, y)
+    return model
+
 # Predictive and Utility Functions
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({
@@ -149,41 +182,34 @@ def forecast_retirement_savings(income, savings, years, growth_rate=5.0):
         wealth = wealth * (1 + growth_rate / 1200) + monthly_savings
     return wealth
 
-# Simplified Investment Recommendations
-def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal):
-    recs = {"Large Cap": [], "Medium Cap": [], "Low Cap": [], "Crypto": []}
-    options = {
-        "Large Cap": [
-            {"Company": "Reliance Industries", "Min_Invest": 1000, "Goal": "Wealth growth", "Risk": "Medium"},
-            {"Company": "HDFC Bank", "Min_Invest": 500, "Goal": "Emergency fund", "Risk": "Low"}
-        ],
-        "Medium Cap": [
-            {"Company": "Bajaj Finance", "Min_Invest": 1500, "Goal": "Future expenses", "Risk": "Medium"},
-            {"Company": "SBI Bluechip Fund", "Min_Invest": 500, "Goal": "Emergency fund", "Risk": "Medium"}
-        ],
-        "Low Cap": [
-            {"Company": "Paytm", "Min_Invest": 2000, "Goal": "Wealth growth", "Risk": "High"},
-            {"Company": "Zomato", "Min_Invest": 2000, "Goal": "Future expenses", "Risk": "High"}
-        ],
-        "Crypto": [
-            {"Company": "Bitcoin", "Min_Invest": 5000, "Goal": "No specific goal", "Risk": "High"},
-            {"Company": "Ethereum", "Min_Invest": 3000, "Goal": "Wealth growth", "Risk": "High"}
+def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_years, goal):
+    risk_map = {"Low": 0, "Medium": 1, "High": 2}
+    goal_map = {"Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3}
+    risk_encoded = risk_map[risk_tolerance]
+    goal_encoded = goal_map[goal]
+    
+    input_data = investment_data[["Min_Invest", "Risk_Encoded", "Goal_Encoded", "Expected_Return", "Volatility"]].copy()
+    input_data["Expected_Return"] = input_data["Expected_Return"] * (1 + horizon_years * 0.05)
+    input_data["Volatility"] = input_data["Volatility"] * (1 - horizon_years * 0.02)
+    
+    scores = model.predict(input_data)
+    investment_data["Suitability_Score"] = scores
+    
+    filtered = investment_data[
+        (investment_data["Min_Invest"] <= invest_amount) &
+        (investment_data["Risk_Encoded"] <= risk_encoded) &
+        ((investment_data["Goal_Encoded"] == goal_encoded) | (investment_data["Goal"] == "No specific goal"))
+    ]
+    
+    recommendations = {}
+    for category in filtered["Category"].unique():
+        category_recs = filtered[filtered["Category"] == category].sort_values("Suitability_Score", ascending=False).head(1)
+        recommendations[category] = [
+            {"Company": row["Company"], "Amount": invest_amount / len(filtered["Category"].unique())}
+            for _, row in category_recs.iterrows()
         ]
-    }
-    portion = invest_amount / 3
-    for category in ["Large Cap", "Medium Cap", "Low Cap"]:
-        for opt in options[category]:
-            if (portion >= opt["Min_Invest"] and 
-                (goal == opt["Goal"] or goal == "No specific goal") and 
-                (risk_tolerance == "High" or opt["Risk"] != "High")):
-                recs[category].append({"Company": opt["Company"], "Amount": portion})
-                break
-    if risk_tolerance == "High":
-        for opt in options["Crypto"]:
-            if portion >= opt["Min_Invest"] and (goal == opt["Goal"] or goal == "No specific goal"):
-                recs["Crypto"].append({"Company": opt["Company"], "Amount": portion})
-                break
-    return recs
+    
+    return recommendations
 
 # PDF Generation with FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
@@ -247,6 +273,7 @@ def main():
     retirement_model, retirement_r2 = None, 0.0
     if financial_data is not None:
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
+    investment_model = train_investment_model(investment_data)
 
     # Sidebar
     with st.sidebar:
@@ -281,7 +308,7 @@ def main():
                 current_price = stock_data['close'].iloc[-1]
                 growth = predicted_price - current_price
                 horizon_years = horizon // 12 or 1
-                recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
+                recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goal)
             st.subheader("🔮 Market Forecast")
             col1, col2 = st.columns(2)
             col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
@@ -325,7 +352,7 @@ def main():
         if submit and survey_data is not None and survey_model is not None:
             with st.spinner("Crafting your personalized plan..."):
                 predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
-                recommendations = get_investment_recommendations(risk_tolerance, horizon_years, predicted_savings, goal)
+                recommendations = predict_investment_strategy(investment_model, predicted_savings, risk_tolerance, horizon_years, goal)
                 monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
             st.subheader("💼 Your Investment Options")
