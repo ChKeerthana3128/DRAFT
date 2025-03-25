@@ -40,23 +40,18 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
 
 # Data Loading Functions
 @st.cache_data
-@st.cache_data
 def load_stock_data_from_gdrive_folder(folder_url="https://drive.google.com/drive/folders/1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG", output_dir="temp_stock_data"):
     try:
-        # Create a temporary directory if it doesn't exist
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
-        # Download all files from the folder using gdown
         gdown.download_folder(folder_url, output=output_dir, quiet=True, remaining_ok=True)
         
-        # Find all CSV files in the downloaded folder
         csv_files = [f for f in os.listdir(output_dir) if f.endswith('.csv')]
         if not csv_files:
             st.error(f"🚨 No CSV files found in the Google Drive folder!")
             return None
         
-        # Combine all CSVs into a single DataFrame
         combined_df = pd.DataFrame()
         for csv_file in csv_files:
             file_path = os.path.join(output_dir, csv_file)
@@ -71,7 +66,6 @@ def load_stock_data_from_gdrive_folder(folder_url="https://drive.google.com/driv
         st.error(f"🚨 Error loading stock data from Google Drive folder: {str(e)}")
         return None
     finally:
-        # Clean up temporary directory (optional)
         if os.path.exists(output_dir):
             for f in os.listdir(output_dir):
                 os.remove(os.path.join(output_dir, f))
