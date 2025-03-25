@@ -13,7 +13,7 @@ import os
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Data Loading Functions (unchanged)
+# Data Loading Functions
 @st.cache_data
 def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
@@ -87,7 +87,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training Functions (unchanged)
+# Model Training Functions
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -125,7 +125,7 @@ def train_retirement_model(financial_data):
         model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
-# Predictive and Utility Functions (unchanged)
+# Predictive and Utility Functions
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_Payment": [debt_payment]})
     return model.predict(input_df)[0]
@@ -182,80 +182,84 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
     return recs
 
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # Set fonts
-    pdf.set_font("Helvetica", "B", 16)
-    
-    # Header
-    pdf.set_text_color(0, 0, 139)  # Dark blue
-    pdf.cell(0, 10, f"💰 WealthWise Investment Plan for {name}", ln=True, align="C")
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(0, 0, 0)  # Black
-    pdf.cell(0, 10, "Generated on: March 24, 2025", ln=True, align="R")
-    pdf.ln(5)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    
-    # Financial Summary
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(0, 100, 0)  # Dark green
-    pdf.cell(0, 10, "Financial Summary", ln=True)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(0, 0, 0)
-    summary = [
-        f"Income: ₹{income:,.2f}",
-        f"Predicted Savings: ₹{predicted_savings:,.2f}",
-        f"Goal: {goal}",
-        f"Risk Tolerance: {risk_tolerance}",
-        f"Investment Horizon: {horizon_years} years"
-    ]
-    for line in summary:
-        pdf.cell(0, 8, line, ln=True)
-    pdf.ln(5)
-    
-    # Investment Recommendations
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(0, 100, 0)
-    pdf.cell(0, 10, "Investment Recommendations", ln=True)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(0, 0, 0)
-    for category, recs in recommendations.items():
-        if recs:
-            pdf.cell(0, 8, f"{category}:", ln=True)
-            for rec in recs:
-                pdf.cell(0, 8, f"  - {rec['Company']}: ₹{rec['Amount']:,.2f}", ln=True)
-    pdf.ln(5)
-    
-    # Budget Tips
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(139, 0, 0)  # Dark red
-    pdf.cell(0, 10, "Budget Tips", ln=True)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(0, 0, 0)
-    for tip in tips:
-        pdf.multi_cell(0, 8, f"• {tip}")
-    pdf.ln(5)
-    
-    # Peer Comparison
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(0, 100, 0)
-    pdf.cell(0, 10, "Peer Comparison", ln=True)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 8, f"Your Savings: ₹{predicted_savings:,.2f} | Peer Average: ₹{peer_savings:,.2f}", ln=True)
-    
-    # Footer
-    pdf.ln(10)
-    pdf.set_font("Helvetica", "I", 8)
-    pdf.set_text_color(128, 128, 128)  # Gray
-    pdf.cell(0, 10, "✨ Powered by WealthWise | Built with ❤️ by xAI", ln=True, align="C")
-    
-    # Output to BytesIO buffer
-    buffer = io.BytesIO()
-    pdf.output(buffer)  # fpdf2 writes directly to buffer with UTF-8 support
-    buffer.seek(0)
-    return buffer
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # Set fonts
+        pdf.set_font("Helvetica", "B", 16)
+        
+        # Header
+        pdf.set_text_color(0, 0, 139)  # Dark blue
+        pdf.cell(0, 10, f"💰 WealthWise Investment Plan for {name}", ln=True, align="C")
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(0, 0, 0)  # Black
+        pdf.cell(0, 10, "Generated on: March 24, 2025", ln=True, align="R")
+        pdf.ln(5)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        
+        # Financial Summary
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(0, 100, 0)  # Dark green
+        pdf.cell(0, 10, "Financial Summary", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(0, 0, 0)
+        summary = [
+            f"Income: ₹{income:,.2f}",
+            f"Predicted Savings: ₹{predicted_savings:,.2f}",
+            f"Goal: {goal}",
+            f"Risk Tolerance: {risk_tolerance}",
+            f"Investment Horizon: {horizon_years} years"
+        ]
+        for line in summary:
+            pdf.cell(0, 8, line, ln=True)
+        pdf.ln(5)
+        
+        # Investment Recommendations
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(0, 100, 0)
+        pdf.cell(0, 10, "Investment Recommendations", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(0, 0, 0)
+        for category, recs in recommendations.items():
+            if recs:
+                pdf.cell(0, 8, f"{category}:", ln=True)
+                for rec in recs:
+                    pdf.cell(0, 8, f"  - {rec['Company']}: ₹{rec['Amount']:,.2f}", ln=True)
+        pdf.ln(5)
+        
+        # Budget Tips
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(139, 0, 0)  # Dark red
+        pdf.cell(0, 10, "Budget Tips", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(0, 0, 0)
+        for tip in tips:
+            pdf.multi_cell(0, 8, f"• {tip}")
+        pdf.ln(5)
+        
+        # Peer Comparison
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(0, 100, 0)
+        pdf.cell(0, 10, "Peer Comparison", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(0, 0, 0)
+        pdf.cell(0, 8, f"Your Savings: ₹{predicted_savings:,.2f} | Peer Average: ₹{peer_savings:,.2f}", ln=True)
+        
+        # Footer
+        pdf.ln(10)
+        pdf.set_font("Helvetica", "I", 8)
+        pdf.set_text_color(128, 128, 128)  # Gray
+        pdf.cell(0, 10, "✨ Powered by WealthWise | Built with ❤️ by xAI", ln=True, align="C")
+        
+        # Output to BytesIO buffer
+        buffer = io.BytesIO()
+        pdf.output(buffer)  # fpdf2 writes directly to buffer with UTF-8 support
+        buffer.seek(0)
+        return buffer
+    except Exception as e:
+        st.error(f"🚨 Error generating PDF: {str(e)}")
+        return None
 
 # Main Application
 def main():
@@ -405,7 +409,10 @@ def main():
             elif risk_tolerance == "High" and horizon_years < 3:
                 st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
             pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
-            st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
+            if pdf_buffer:
+                st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
+            else:
+                st.error("Failed to generate PDF. Please try again.")
 
     with tab3:
         st.header("🏡 Retirement Planning")
