@@ -13,7 +13,7 @@ import os
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Data Loading Functions
+# Data Loading Functions (adjust paths if needed)
 @st.cache_data
 def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
@@ -30,6 +30,8 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     except Exception as e:
         st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
+
+
 
 @st.cache_data
 def load_survey_data(csv_path="survey_data.csv"):
