@@ -6,9 +6,12 @@ import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
+import requests
 from fpdf import FPDF
 import io
 import os
+import plotly.graph_objects as go
+from datetime import datetime
 
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
@@ -431,6 +434,86 @@ def main():
 
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
+
+# Title of the dashboard
+st.title("Stock Investments Dashboard")
+
+# Sidebar for API Key and User Input
+st.sidebar.header("Settings")
+api_key = st.sidebar.text_input("Enter your Alpha Vantage API Key", value="demo", type="password")
+st.sidebar.info("Get your free API key from [Alpha Vantage](https://www.alphavantage.co/).")
+
+# Stock Investments Section
+st.header("Stock Investments")
+
+# User input for stock portfolio
+st.subheader("Add Stocks to Your Portfolio")
+portfolio_input = st.text_area("Enter stock symbols (one per line, e.g., AAPL, MSFT, TSLA):", "AAPL\nMSFT")
+portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
+
+# Fetch real-time data function
+def get_stock_data(symbol, api_key):
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={api_key}"
+    response = requests.get(url)
+    data = response.json()
+    
+    if "Time Series (5min)" not in data:
+        return None, "Error fetching data. Check symbol or API key."
+    
+    time_series = data["Time Series (5min)"]
+    df = pd.DataFrame.from_dict(time_series, orient="index").astype(float)
+    df.index = pd.to_datetime(df.index)
+    df.columns = ["Open", "High", "Low", "Close", "Volume"]
+    return df, None
+
+# Portfolio tracking
+if st.button("Track Portfolio"):
+    st.subheader("Live Portfolio Tracking")
+    total_value = 0
+    
+    for symbol in portfolio:
+        with st.spinner(f"Fetching data for {symbol}..."):
+            df, error = get_stock_data(symbol, api_key)
+            if error:
+                st.error(f"{symbol}: {error}")
+                continue
+            
+            # Latest price and performance
+            latest_price = df["Close"].iloc[0]
+            previous_price = df["Close"].iloc[-1]
+            performance = ((latest_price - previous_price) / previous_price) * 100
+            total_value += latest_price  # Assuming 1 share per stock for simplicity
+            
+            # Display current value and performance
+            col1, col2 = st.columns(2)
+            col1.metric(f"{symbol} Current Price", f"${latest_price:.2f}", f"{performance:.2f}%", 
+                        delta_color="green" if performance > 0 else "red")
+            
+            # Interactive chart
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
+            fig.update_layout(title=f"{symbol} Real-Time Price (Last 100 intervals)", 
+                              xaxis_title="Time", yaxis_title="Price (USD)")
+            col2.plotly_chart(fig, use_container_width=True)
+    
+    # Total portfolio value
+    st.success(f"Total Portfolio Value: ${total_value:.2f}")
+    
+    # Market news (optional, using Alpha Vantage News API if available)
+    if st.checkbox("Show Market News"):
+        news_url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers={'AAPL'}&apikey={api_key}"
+        news_response = requests.get(news_url).json()
+        if "feed" in news_response:
+            for article in news_response["feed"][:5]:  # Show top 5 articles
+                st.write(f"**{article['title']}**")
+                st.write(article["summary"])
+                st.write(f"[Read more]({article['url']})")
+        else:
+            st.warning("News data unavailable with demo key or API limit reached.")
+
+# Footer
+st.sidebar.write(f"Updated as of {datetime.now().strftime('%Y-%m-%d %H:%M:%S PDT')}")
+st.sidebar.write("Built with ❤️ using Streamlit and Alpha Vantage")
 
 if __name__ == "__main__":
     main()
