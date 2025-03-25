@@ -186,45 +186,47 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
     return recs
 
 # PDF Generation with FPDF
+from fpdf import FPDF  # Replace with `from fpdf2 import FPDF` if using fpdf2
+
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
+    pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)  # Add Unicode font
+    pdf.set_font("DejaVu", "B", 16)
     pdf.cell(0, 10, f"WealthWise Investment Plan for {name}", ln=True, align="C")
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("DejaVu", "", 10)
     pdf.cell(0, 10, "Powered by WealthWise | Built with love by xAI", ln=True, align="C")
     pdf.ln(10)
-    pdf.set_font("Arial", "B", 12)
+    pdf.set_font("DejaVu", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("DejaVu", "", 10)
     pdf.cell(0, 10, f"Income: ₹{income:,.2f}", ln=True)
     pdf.cell(0, 10, f"Predicted Savings: ₹{predicted_savings:,.2f}", ln=True)
     pdf.cell(0, 10, f"Goal: {goal}", ln=True)
     pdf.cell(0, 10, f"Risk Tolerance: {risk_tolerance}", ln=True)
     pdf.cell(0, 10, f"Investment Horizon: {horizon_years} years", ln=True)
     pdf.ln(10)
-    pdf.set_font("Arial", "B", 12)
+    pdf.set_font("DejaVu", "B", 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("DejaVu", "", 10)
     for category, recs in recommendations.items():
         if recs:
             pdf.cell(0, 10, f"{category}:", ln=True)
             for rec in recs:
                 pdf.cell(0, 10, f"  - {rec['Company']}: ₹{rec['Amount']:,.2f}", ln=True)
     pdf.ln(10)
-    pdf.set_font("Arial", "B", 12)
+    pdf.set_font("DejaVu", "B", 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("DejaVu", "", 10)
     for tip in tips:
         pdf.cell(0, 10, f"• {tip}", ln=True)
     pdf.ln(10)
-    pdf.set_font("Arial", "B", 12)
+    pdf.set_font("DejaVu", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("DejaVu", "", 10)
     pdf.cell(0, 10, f"Your Savings: ₹{predicted_savings:,.2f} | Peer Average: ₹{peer_savings:,.2f}", ln=True)
     buffer = io.BytesIO()
-    pdf.output(dest='S').encode('latin-1')
-    buffer.write(pdf.output(dest='S').encode('latin-1'))
+    pdf.output(buffer)  # No need for latin-1 encoding with fpdf2
     buffer.seek(0)
     return buffer
 
