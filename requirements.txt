@@ -4,4 +4,4 @@ numpy==1.26.4
 matplotlib==3.9.0
 plotly==5.22.0
 scikit-learn==1.5.0
-fpdf2==2.7.9
+Collecting fpdf2==2.7.9
