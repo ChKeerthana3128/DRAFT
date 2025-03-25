@@ -6,7 +6,7 @@ import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-from fpdf import FPDF  # Make sure this comes from fpdf2
+from fpdf2 import FPDF  # Explicitly use fpdf2
 import io
 import os
 
@@ -181,8 +181,6 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
                 break
     return recs
 
-from fpdf import FPDF  # Import from fpdf2 (after installing fpdf2)
-
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
@@ -258,7 +256,8 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.output(buffer)  # fpdf2 writes directly to buffer with UTF-8 support
     buffer.seek(0)
     return buffer
-# Main Application (unchanged except for tab indentation fix)
+
+# Main Application
 def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
