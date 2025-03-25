@@ -6,18 +6,22 @@ import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-from fpdf2 import FPDF  # Explicitly use fpdf2
+try:
+    from fpdf2 import FPDF  # Explicitly use fpdf2
+except ModuleNotFoundError:
+    st.error("🚨 The 'fpdf2' package is not installed. Please install it with 'pip install fpdf2==2.7.9'.")
+    st.stop()
 import io
 import os
 
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Data Loading Functions (adjust paths if needed)
+# Data Loading Functions (made paths configurable)
 @st.cache_data
 def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
-        st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'.")
+        st.error(f"🚨 Stock CSV not found at '{csv_path}'! Please upload 'NIFTY CONSUMPTION_daily_data.csv' or adjust the path.")
         return None
     try:
         df = pd.read_csv(csv_path)
@@ -34,7 +38,7 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
 @st.cache_data
 def load_survey_data(csv_path="survey_data.csv"):
     if not os.path.exists(csv_path):
-        st.error("🚨 Survey CSV not found! Please upload 'survey_data.csv'.")
+        st.error(f"🚨 Survey CSV not found at '{csv_path}'! Please upload 'survey_data.csv' or adjust the path.")
         return None
     try:
         df = pd.read_csv(csv_path)
@@ -63,7 +67,7 @@ def load_survey_data(csv_path="survey_data.csv"):
 @st.cache_data
 def load_financial_data(csv_path="financial_data.csv"):
     if not os.path.exists(csv_path):
-        st.error("🚨 Financial CSV not found! Please upload 'financial_data.csv'.")
+        st.error(f"🚨 Financial CSV not found at '{csv_path}'! Please upload 'financial_data.csv' or adjust the path.")
         return None
     try:
         df = pd.read_csv(csv_path)
@@ -87,7 +91,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training Functions
+# Model Training Functions (unchanged)
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -125,7 +129,7 @@ def train_retirement_model(financial_data):
         model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
-# Predictive and Utility Functions
+# Predictive and Utility Functions (unchanged except for generate_pdf)
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_Payment": [debt_payment]})
     return model.predict(input_df)[0]
@@ -254,14 +258,14 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
         
         # Output to BytesIO buffer
         buffer = io.BytesIO()
-        pdf.output(buffer)  # fpdf2 writes directly to buffer with UTF-8 support
+        pdf.output(buffer)
         buffer.seek(0)
         return buffer
     except Exception as e:
         st.error(f"🚨 Error generating PDF: {str(e)}")
         return None
 
-# Main Application
+# Main Application (unchanged except for PDF download handling)
 def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
@@ -412,7 +416,7 @@ def main():
             if pdf_buffer:
                 st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
             else:
-                st.error("Failed to generate PDF. Please try again.")
+                st.error("Failed to generate PDF. Check the error above for details.")
 
     with tab3:
         st.header("🏡 Retirement Planning")
