@@ -71,7 +71,7 @@ def load_survey_data(csv_path="survey_data.csv"):
             if "₹" in value:
                 bounds = value.split("₹")[1].split("-")
                 if len(bounds) == 2:
-                    return (float(bounds[0].replace(",", "")) + float(bounds[1].replace(",",""))) / 2
+                    return (float(bounds[0].replace(",", "")) + float(bounds[1].replace(",", ""))) / 2
                 return float(bounds[0].replace(",", ""))
             return float(value)
         df["Income"] = df["How much pocket money or income do you receive per month (in ₹)?"].apply(parse_range)
@@ -147,7 +147,9 @@ def train_retirement_model(financial_data):
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training retirement savings model..."):
         model.fit(X_train, y_train)
-    return model, r2_score(y_test, model.predict(X_test))@st.cache_resource
+    return model, r2_score(y_test, model.predict(X_test))
+
+@st.cache_resource
 def train_investment_model(data):
     X = data[["Min_Invest", "Risk_Encoded", "Goal_Encoded", "Expected_Return", "Volatility"]]
     y = (data["Expected_Return"] / data["Volatility"]) * (1 - data["Risk_Encoded"] * 0.2)
@@ -205,7 +207,9 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
         recommendations[category] = [
             {"Company": row["Company"], "Amount": invest_amount / len(filtered["Category"].unique())}
             for _, row in category_recs.iterrows()
-        ]return recommendations
+        ]
+    
+    return recommendations
 
 # PDF Generation with FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
@@ -280,7 +284,9 @@ def main():
         if survey_data is not None:
             st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
         if financial_data is not None:
-            st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")# Tabs
+            st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
+
+    # Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
     with tab1:
@@ -324,7 +330,9 @@ def main():
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
             if not any_recommendations:
-                st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goal.")with tab2:
+                st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goal.")
+
+    with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.form(key="investment_form"):
