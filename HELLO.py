@@ -7,9 +7,12 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from fpdf import FPDF
-import gdown
 import io
 import os
+import pickle
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
 
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
@@ -38,24 +41,56 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
     "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
 })
 
-# Data Loading Functions
+# Google Drive API Setup
+SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+FOLDER_ID = "1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG"  # Your Google Drive folder ID
+
 @st.cache_data
-def load_stock_data_from_gdrive_folder(folder_url="https://drive.google.com/drive/folders/1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG", output_dir="temp_stock_data"):
+def authenticate_drive():
+    creds = None
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    if not creds or not creds.valid:
+        try:
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+            with open('token.pickle', 'wb') as token:
+                pickle.dump(creds, token)
+        except FileNotFoundError:
+            st.error("🚨 'credentials.json' not found! Please place it in the script directory and rerun.")
+            return None
+        except Exception as e:
+            st.error(f"🚨 Authentication failed: {str(e)}")
+            return None
+    return build('drive', 'v3', credentials=creds)
+
+@st.cache_data
+def load_stock_data_from_gdrive_folder(folder_id):
     try:
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        service = authenticate_drive()
+        if service is None:
+            return None
+        query = f"'{folder_id}' in parents and mimeType='text/csv'"
+        results = service.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get('files', [])
         
-        gdown.download_folder(folder_url, output=output_dir, quiet=True, remaining_ok=True)
-        
-        csv_files = [f for f in os.listdir(output_dir) if f.endswith('.csv')]
-        if not csv_files:
-            st.error(f"🚨 No CSV files found in the Google Drive folder!")
+        if not files:
+            st.error("🚨 No CSV files found in the Google Drive folder!")
             return None
         
         combined_df = pd.DataFrame()
-        for csv_file in csv_files:
-            file_path = os.path.join(output_dir, csv_file)
-            df = pd.read_csv(file_path)
+        for file in files:
+            file_id = file['id']
+            file_name = file['name']
+            request = service.files().get_media(fileId=file_id)
+            fh = io.BytesIO()
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while not done:
+                status, done = downloader.next_chunk()
+            fh.seek(0)
+            df = pd.read_csv(fh)
             df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
             df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].dropna()
             combined_df = pd.concat([combined_df, df], ignore_index=True)
@@ -65,11 +100,6 @@ def load_stock_data_from_gdrive_folder(folder_url="https://drive.google.com/driv
     except Exception as e:
         st.error(f"🚨 Error loading stock data from Google Drive folder: {str(e)}")
         return None
-    finally:
-        if os.path.exists(output_dir):
-            for f in os.listdir(output_dir):
-                os.remove(os.path.join(output_dir, f))
-            os.rmdir(output_dir)
 
 @st.cache_data
 def load_survey_data(csv_path="survey_data.csv"):
@@ -274,8 +304,8 @@ def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
 
-    # Load data from local folder
-    stock_data = load_stock_data_from_gdrive_folder()
+    # Load data from Google Drive
+    stock_data = load_stock_data_from_gdrive_folder(FOLDER_ID)
     survey_data = load_survey_data()
     financial_data = load_financial_data()
 
@@ -307,7 +337,7 @@ def main():
 
     with tab1:
         st.header("📈 Stock Market Adventure")
-        st.markdown("Navigate the stock market with precision using local datasets! 🌟")
+        st.markdown("Navigate the stock market with precision using Google Drive datasets! 🌟")
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -318,7 +348,7 @@ def main():
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
             submit = st.form_submit_button("🚀 Explore Market")
         if submit and stock_data is not None and stock_model is not None:
-            with st.spinner("Analyzing your investment strategy across local datasets..."):
+            with st.spinner("Analyzing your investment strategy across Google Drive datasets..."):
                 last_date = stock_data['Date'].iloc[-1]
                 future_date = last_date + pd.offsets.MonthEnd(horizon)
                 future = pd.DataFrame({
