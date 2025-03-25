@@ -17,7 +17,7 @@ st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initia
 @st.cache_data
 def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
-        st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'.")
+        st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'")
         return None
     try:
         df = pd.read_csv(csv_path)
