@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from fpdf import FPDF
+import gdown
 import io
 import os
 
@@ -39,20 +40,26 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
 
 # Data Loading Functions
 @st.cache_data
-def load_stock_data_from_local_folder(folder_path="stock_data"):
+@st.cache_data
+def load_stock_data_from_gdrive_folder(folder_url="https://drive.google.com/drive/folders/1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG", output_dir="temp_stock_data"):
     try:
-        if not os.path.exists(folder_path):
-            st.error(f"🚨 Stock data folder '{folder_path}' not found! Please create it and add CSV files.")
-            return None
+        # Create a temporary directory if it doesn't exist
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
         
-        csv_files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
+        # Download all files from the folder using gdown
+        gdown.download_folder(folder_url, output=output_dir, quiet=True, remaining_ok=True)
+        
+        # Find all CSV files in the downloaded folder
+        csv_files = [f for f in os.listdir(output_dir) if f.endswith('.csv')]
         if not csv_files:
-            st.error(f"🚨 No CSV files found in '{folder_path}'!")
+            st.error(f"🚨 No CSV files found in the Google Drive folder!")
             return None
         
+        # Combine all CSVs into a single DataFrame
         combined_df = pd.DataFrame()
         for csv_file in csv_files:
-            file_path = os.path.join(folder_path, csv_file)
+            file_path = os.path.join(output_dir, csv_file)
             df = pd.read_csv(file_path)
             df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
             df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].dropna()
@@ -61,8 +68,14 @@ def load_stock_data_from_local_folder(folder_path="stock_data"):
         combined_df = combined_df.sort_values(by='Date')
         return combined_df
     except Exception as e:
-        st.error(f"🚨 Error loading stock data from local folder: {str(e)}")
+        st.error(f"🚨 Error loading stock data from Google Drive folder: {str(e)}")
         return None
+    finally:
+        # Clean up temporary directory (optional)
+        if os.path.exists(output_dir):
+            for f in os.listdir(output_dir):
+                os.remove(os.path.join(output_dir, f))
+            os.rmdir(output_dir)
 
 @st.cache_data
 def load_survey_data(csv_path="survey_data.csv"):
@@ -268,7 +281,7 @@ def main():
     st.markdown("Your ultimate wealth management companion! 🚀")
 
     # Load data from local folder
-    stock_data = load_stock_data_from_local_folder("stock_data")
+    stock_data = load_stock_data_from_gdrive_folder()
     survey_data = load_survey_data()
     financial_data = load_financial_data()
 
