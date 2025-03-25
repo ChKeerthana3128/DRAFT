@@ -306,10 +306,13 @@ def main():
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
 
     with tab2:
+        # Personalized Investment Tab
+    with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
+
         with st.form(key="investment_form"):
-            col1TAR, col2 = st.columns(2)
+            col1, col2 = st.columns(2)
             with col1:
                 name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
                 income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
@@ -322,19 +325,22 @@ def main():
                 risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
                 horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
             submit = st.form_submit_button("🚀 Get Your Plan")
+
         if submit and survey_data is not None and survey_model is not None:
             with st.spinner("Crafting your personalized plan..."):
                 predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
                 recommendations = get_investment_recommendations(risk_tolerance, horizon_years, predicted_savings, goal)
                 monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
+
             st.subheader("💼 Your Investment Options")
             for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
                 recs = recommendations.get(category, [])
                 if recs:
                     with st.expander(f"{category} Investments"):
                         for rec in recs:
-                            st.write(f"- **{rec['Company']}**: ₹{rec['Amount']:,.2f}")
+                            st.write(f"- *{rec['Company']}*: ₹{rec['Amount']:,.2f}")
+
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("🎯 Savings Progress")
@@ -344,6 +350,7 @@ def main():
             with col2:
                 st.subheader("📊 Peer Benchmark")
                 st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
+
             with st.expander("💡 Budget Tips", expanded=True):
                 tips = []
                 median_non_essentials = survey_data["Non_Essentials"].median()
@@ -358,16 +365,17 @@ def main():
                     tips.append("Great job! Your savings exceed your goal—consider investing more.")
                 for tip in tips:
                     st.write(f"- {tip}")
+
             st.subheader("🎲 Risk Tolerance Assessment")
             risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
-            st.write(f"Your Profile: **{risk_map[risk_tolerance]}**")
+            st.write(f"Your Profile: *{risk_map[risk_tolerance]}*")
             if risk_tolerance == "Low" and horizon_years > 5:
                 st.info("Long horizon with low risk? You could explore medium-risk options for better returns.")
             elif risk_tolerance == "High" and horizon_years < 3:
                 st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
+
             pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
-
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
