@@ -295,7 +295,7 @@ def main():
     st.markdown("Your ultimate wealth management companion! 🚀")
 
     # Load data from Google Drive folder
-    stock_data = load_stock_data_from_gdrive_folder(1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG)
+    stock_data = load_stock_data_from_gdrive_folder("1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG")
     survey_data = load_survey_data()
     financial_data = load_financial_data()
 
