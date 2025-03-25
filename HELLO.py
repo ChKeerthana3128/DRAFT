@@ -41,42 +41,34 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
     "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
 })
 
-# Google Drive API Setup
+# Data Loading Functions
+@st.cache_data
+# Google Drive API Setup (should be at global scope, not inside a function)
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 FOLDER_ID = "1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG"  # Your Google Drive folder ID
 
-@st.cache_data
 def authenticate_drive():
     creds = None
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
     if not creds or not creds.valid:
-        try:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-            with open('token.pickle', 'wb') as token:
-                pickle.dump(creds, token)
-        except FileNotFoundError:
-            st.error("🚨 'credentials.json' not found! Please place it in the script directory and rerun.")
-            return None
-        except Exception as e:
-            st.error(f"🚨 Authentication failed: {str(e)}")
-            return None
+        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+        creds = flow.run_local_server(port=0)
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
     return build('drive', 'v3', credentials=creds)
 
 @st.cache_data
 def load_stock_data_from_gdrive_folder(folder_id):
     try:
         service = authenticate_drive()
-        if service is None:
-            return None
         query = f"'{folder_id}' in parents and mimeType='text/csv'"
         results = service.files().list(q=query, fields="files(id, name)").execute()
         files = results.get('files', [])
         
         if not files:
-            st.error("🚨 No CSV files found in the Google Drive folder!")
+            st.error("🚨 No CSV files found in the folder!")
             return None
         
         combined_df = pd.DataFrame()
@@ -91,16 +83,15 @@ def load_stock_data_from_gdrive_folder(folder_id):
                 status, done = downloader.next_chunk()
             fh.seek(0)
             df = pd.read_csv(fh)
-            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-            df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].dropna()
+            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')  # Adjust column name if needed
+            df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].dropna()  # Adjust columns
             combined_df = pd.concat([combined_df, df], ignore_index=True)
         
         combined_df = combined_df.sort_values(by='Date')
         return combined_df
     except Exception as e:
         st.error(f"🚨 Error loading stock data from Google Drive folder: {str(e)}")
-        return None
-
+        return None 
 @st.cache_data
 def load_survey_data(csv_path="survey_data.csv"):
     if not os.path.exists(csv_path):
@@ -164,7 +155,7 @@ def train_stock_model(data):
     data['Month'] = data['Date'].dt.month
     data['Year'] = data['Date'].dt.year
     X = data[['Day', 'Month', 'Year']]
-    y = data['Close']
+    y = data['close']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training stock prediction model..."):
@@ -304,8 +295,8 @@ def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
 
-    # Load data from Google Drive
-    stock_data = load_stock_data_from_gdrive_folder(FOLDER_ID)
+    # Load data from Google Drive folder
+    stock_data = load_stock_data_from_gdrive_folder("1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG")
     survey_data = load_survey_data()
     financial_data = load_financial_data()
 
@@ -337,7 +328,7 @@ def main():
 
     with tab1:
         st.header("📈 Stock Market Adventure")
-        st.markdown("Navigate the stock market with precision using Google Drive datasets! 🌟")
+        st.markdown("Navigate the stock market with precision using 52 datasets! 🌟")
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -348,7 +339,7 @@ def main():
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
             submit = st.form_submit_button("🚀 Explore Market")
         if submit and stock_data is not None and stock_model is not None:
-            with st.spinner("Analyzing your investment strategy across Google Drive datasets..."):
+            with st.spinner("Analyzing your investment strategy across 52 datasets..."):
                 last_date = stock_data['Date'].iloc[-1]
                 future_date = last_date + pd.offsets.MonthEnd(horizon)
                 future = pd.DataFrame({
@@ -399,7 +390,6 @@ def main():
                             st.write(f"  - Expected Return: {expected_return:.1f}%")
             if not any_recommendations:
                 st.info("No options match your criteria. Adjust amount or risk tolerance.")
-
     with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
