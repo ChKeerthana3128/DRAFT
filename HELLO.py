@@ -14,7 +14,7 @@ st.set_page_config(page_title="WealthWise Dashboard", layout="wide", initial_sid
 
 # Data Loading with File Upload
 @st.cache_data
-def load_stock_data(uploaded_file=None):
+def load_stock_data(uploaded_file=NIFTY CONSUMPTION_daily_data.csv):
     if uploaded_file is None:
         st.error("Please upload 'NIFTY CONSUMPTION_daily_data.csv' in the sidebar.")
         return None
@@ -31,7 +31,7 @@ def load_stock_data(uploaded_file=None):
         return None
 
 @st.cache_data
-def load_survey_data(uploaded_file=None):
+def load_survey_data(uploaded_file=survey_data.csv):
     if uploaded_file is None:
         st.error("Please upload 'survey_data.csv' in the sidebar.")
         return None
@@ -60,7 +60,7 @@ def load_survey_data(uploaded_file=None):
         return None
 
 @st.cache_data
-def load_financial_data(uploaded_file=None):
+def load_financial_data(uploaded_file=financial_data.csv):
     if uploaded_file is None:
         st.error("Please upload 'financial_data.csv' in the sidebar.")
         return None
