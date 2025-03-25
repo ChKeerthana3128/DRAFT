@@ -13,7 +13,7 @@ import os
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Simulated Investment Dataset (unchanged)
+# Simulated Investment Dataset
 investment_data = pd.DataFrame({
     "Company": [
         "Reliance Industries", "HDFC Bank", "Bajaj Finance", "SBI Bluechip Fund",
@@ -120,7 +120,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training Functions (unchanged)
+# Model Training Functions
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -167,7 +167,7 @@ def train_investment_model(data):
         model.fit(X, y)
     return model
 
-# Predictive and Utility Functions (unchanged)
+# Predictive and Utility Functions
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({
         "Income": [income],
@@ -220,7 +220,7 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     
     return recommendations
 
-# PDF Generation with FPDF (unchanged)
+# PDF Generation with FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
@@ -284,7 +284,7 @@ def main():
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
     investment_model = train_investment_model(investment_data)
 
-    # Sidebar (unchanged)
+    # Sidebar
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -295,7 +295,7 @@ def main():
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
 
-    # Tabs (unchanged below this point, just updating the call to load_stock_data_from_local_folder)
+    # Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
     with tab1:
@@ -452,7 +452,7 @@ def main():
             st.subheader("📈 Savings Trajectory")
             trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
             fig = px.line(x=range(years_to_retirement + 1), y=trajectory, labels={"x": "Years", "y": "Wealth (₹)"}, title="Retirement Growth")
-            fig.add_hline(y=retirement_goal, line_dash="dash", line-operativecolor="red", annotation_text="Goal")
+            fig.add_hline(y=retirement_goal, line_dash="dash", line_color="red", annotation_text="Goal")
             st.plotly_chart(fig, use_container_width=True)
             st.subheader("💡 Retirement Tips")
             if retirement_wealth < retirement_goal:
