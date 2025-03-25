@@ -9,10 +9,6 @@ from sklearn.metrics import r2_score
 from fpdf import FPDF
 import io
 import os
-import pickle
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
 
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
@@ -41,56 +37,22 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
     "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
 })
 
-# Google Drive API Setup
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-FOLDER_ID = "1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG"  # Your Google Drive folder ID
-
 # Data Loading Functions
 @st.cache_data
-def authenticate_drive():
-    creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    if not creds or not creds.valid:
-        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-        creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-    return build('drive', 'v3', credentials=creds)
-
-@st.cache_data
-def load_stock_data_from_gdrive_folder(folder_id):
+def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
+    if not os.path.exists(csv_path):
+        st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'")
+        return None
     try:
-        service = authenticate_drive()
-        query = f"'{folder_id}' in parents and mimeType='text/csv'"
-        results = service.files().list(q=query, fields="files(id, name)").execute()
-        files = results.get('files', [])
-        
-        if not files:
-            st.error("🚨 No CSV files found in the folder!")
+        df = pd.read_csv(csv_path)
+        df['Date'] = pd.to_datetime(df['date'], errors='coerce')
+        if df['Date'].isnull().all():
+            st.error("🚨 Invalid date format in stock data!")
             return None
-        
-        combined_df = pd.DataFrame()
-        for file in files:
-            file_id = file['id']
-            file_name = file['name']
-            request = service.files().get_media(fileId=file_id)
-            fh = io.BytesIO()
-            downloader = MediaIoBaseDownload(fh, request)
-            done = False
-            while not done:
-                status, done = downloader.next_chunk()
-            fh.seek(0)
-            df = pd.read_csv(fh)
-            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')  # Adjust column name if needed
-            df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].dropna()  # Adjust columns
-            combined_df = pd.concat([combined_df, df], ignore_index=True)
-        
-        combined_df = combined_df.sort_values(by='Date')
-        return combined_df
+        df = df[['Date', 'open', 'high', 'low', 'close', 'volume']].sort_values(by='Date').dropna()
+        return df
     except Exception as e:
-        st.error(f"🚨 Error loading stock data from Google Drive folder: {str(e)}")
+        st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
 
 @st.cache_data
@@ -109,7 +71,7 @@ def load_survey_data(csv_path="survey_data.csv"):
             if "₹" in value:
                 bounds = value.split("₹")[1].split("-")
                 if len(bounds) == 2:
-                    return (float(bounds[0].replace(",", "")) + float(bounds[1].replace(",", ""))) / 2
+                    return (float(bounds[0].replace(",", "")) + float(bounds[1].replace(",",""))) / 2
                 return float(bounds[0].replace(",", ""))
             return float(value)
         df["Income"] = df["How much pocket money or income do you receive per month (in ₹)?"].apply(parse_range)
@@ -156,7 +118,7 @@ def train_stock_model(data):
     data['Month'] = data['Date'].dt.month
     data['Year'] = data['Date'].dt.year
     X = data[['Day', 'Month', 'Year']]
-    y = data['Close']  # Changed 'close' to 'Close' to match DataFrame column
+    y = data['close']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training stock prediction model..."):
@@ -185,9 +147,7 @@ def train_retirement_model(financial_data):
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training retirement savings model..."):
         model.fit(X_train, y_train)
-    return model, r2_score(y_test, model.predict(X_test))
-
-@st.cache_resource
+    return model, r2_score(y_test, model.predict(X_test))@st.cache_resource
 def train_investment_model(data):
     X = data[["Min_Invest", "Risk_Encoded", "Goal_Encoded", "Expected_Return", "Volatility"]]
     y = (data["Expected_Return"] / data["Volatility"]) * (1 - data["Risk_Encoded"] * 0.2)
@@ -245,9 +205,7 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
         recommendations[category] = [
             {"Company": row["Company"], "Amount": invest_amount / len(filtered["Category"].unique())}
             for _, row in category_recs.iterrows()
-        ]
-    
-    return recommendations
+        ]return recommendations
 
 # PDF Generation with FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
@@ -296,8 +254,8 @@ def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
 
-    # Load data from Google Drive folder
-    stock_data = load_stock_data_from_gdrive_folder(FOLDER_ID)
+    # Load data
+    stock_data = load_stock_data()
     survey_data = load_survey_data()
     financial_data = load_financial_data()
 
@@ -322,14 +280,12 @@ def main():
         if survey_data is not None:
             st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
         if financial_data is not None:
-            st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
-
-    # Tabs
+            st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")# Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
     with tab1:
         st.header("📈 Stock Market Adventure")
-        st.markdown("Navigate the stock market with precision using 52 datasets! 🌟")
+        st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -340,42 +296,22 @@ def main():
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
             submit = st.form_submit_button("🚀 Explore Market")
         if submit and stock_data is not None and stock_model is not None:
-            with st.spinner("Analyzing your investment strategy across 52 datasets..."):
-                last_date = stock_data['Date'].iloc[-1]
-                future_date = last_date + pd.offsets.MonthEnd(horizon)
-                future = pd.DataFrame({
-                    "Day": [future_date.day],
-                    "Month": [future_date.month],
-                    "Year": [future_date.year]
-                })
+            with st.spinner("Analyzing your investment strategy..."):
+                future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
                 predicted_price = stock_model.predict(future)[0]
-                current_price = stock_data['Close'].iloc[-1]
+                current_price = stock_data['close'].iloc[-1]
                 growth = predicted_price - current_price
                 horizon_years = horizon // 12 or 1
                 recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goal)
-
-                rolling_volatility = stock_data['Close'].pct_change().rolling(window=30).std() * np.sqrt(252)
-                avg_volatility = rolling_volatility.mean()
-
-            st.subheader("🔮 Market Forecast (Aggregated Data)")
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Current Price (₹)", f"₹{current_price:,.2f}")
-            col2.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
-            col3.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
-
-            with st.expander("📊 Price Trend & Insights", expanded=True):
-                fig = px.line(stock_data, x='Date', y='Close', title="Combined Stock Price Trend",
-                              hover_data=['Open', 'High', 'Low', 'Volume'])
-                fig.add_scatter(x=[future_date], y=[predicted_price], mode='markers', name='Predicted',
-                                marker=dict(color='red', size=10))
+            st.subheader("🔮 Market Forecast")
+            col1, col2 = st.columns(2)
+            col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
+            col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
+            with st.expander("📊 Price Trend", expanded=True):
+                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
+                             hover_data=['open', 'high', 'low', 'volume'])
                 fig.update_traces(line_color='#00ff00')
                 st.plotly_chart(fig, use_container_width=True)
-
-                vol_fig = px.line(x=stock_data['Date'], y=rolling_volatility, title="30-Day Rolling Volatility (Annualized)",
-                                 labels={"y": "Volatility"})
-                st.plotly_chart(vol_fig, use_container_width=True)
-                st.write(f"Average Volatility: {avg_volatility:.2%}")
-
             st.subheader("💡 Your Investment Strategy")
             progress = min(1.0, invest_amount / 100000)
             st.progress(progress)
@@ -387,12 +323,8 @@ def main():
                     with st.expander(f"{category} Options"):
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
-                            expected_return = investment_data[investment_data['Company'] == rec['Company']]['Expected_Return'].values[0]
-                            st.write(f"  - Expected Return: {expected_return:.1f}%")
             if not any_recommendations:
-                st.info("No options match your criteria. Adjust amount or risk tolerance.")
-
-    with tab2:
+                st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goal.")with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.form(key="investment_form"):
