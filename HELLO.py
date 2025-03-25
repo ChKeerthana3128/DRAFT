@@ -41,12 +41,12 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
     "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
 })
 
-# Data Loading Functions
-@st.cache_data
-# Google Drive API Setup (should be at global scope, not inside a function)
+# Google Drive API Setup
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 FOLDER_ID = "1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG"  # Your Google Drive folder ID
 
+# Data Loading Functions
+@st.cache_data
 def authenticate_drive():
     creds = None
     if os.path.exists('token.pickle'):
@@ -91,7 +91,8 @@ def load_stock_data_from_gdrive_folder(folder_id):
         return combined_df
     except Exception as e:
         st.error(f"🚨 Error loading stock data from Google Drive folder: {str(e)}")
-        return None 
+        return None
+
 @st.cache_data
 def load_survey_data(csv_path="survey_data.csv"):
     if not os.path.exists(csv_path):
@@ -155,7 +156,7 @@ def train_stock_model(data):
     data['Month'] = data['Date'].dt.month
     data['Year'] = data['Date'].dt.year
     X = data[['Day', 'Month', 'Year']]
-    y = data['close']
+    y = data['Close']  # Changed 'close' to 'Close' to match DataFrame column
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training stock prediction model..."):
@@ -296,7 +297,7 @@ def main():
     st.markdown("Your ultimate wealth management companion! 🚀")
 
     # Load data from Google Drive folder
-    stock_data = load_stock_data_from_gdrive_folder("1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG")
+    stock_data = load_stock_data_from_gdrive_folder(FOLDER_ID)
     survey_data = load_survey_data()
     financial_data = load_financial_data()
 
@@ -390,6 +391,7 @@ def main():
                             st.write(f"  - Expected Return: {expected_return:.1f}%")
             if not any_recommendations:
                 st.info("No options match your criteria. Adjust amount or risk tolerance.")
+
     with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
