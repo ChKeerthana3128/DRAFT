@@ -9,15 +9,11 @@ from sklearn.metrics import r2_score
 from fpdf import FPDF
 import io
 import os
-import pickle
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
 
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Simulated Investment Dataset
+# Simulated Investment Dataset (unchanged)
 investment_data = pd.DataFrame({
     "Company": [
         "Reliance Industries", "HDFC Bank", "Bajaj Finance", "SBI Bluechip Fund",
@@ -41,56 +37,31 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
     "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
 })
 
-# Google Drive API Setup
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-FOLDER_ID = "1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG"  # Your Google Drive folder ID
-
 # Data Loading Functions
 @st.cache_data
-def authenticate_drive():
-    creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    if not creds or not creds.valid:
-        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-        creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-    return build('drive', 'v3', credentials=creds)
-
-@st.cache_data
-def load_stock_data_from_gdrive_folder(folder_id):
+def load_stock_data_from_local_folder(folder_path="stock_data"):
     try:
-        service = authenticate_drive()
-        query = f"'{folder_id}' in parents and mimeType='text/csv'"
-        results = service.files().list(q=query, fields="files(id, name)").execute()
-        files = results.get('files', [])
+        if not os.path.exists(folder_path):
+            st.error(f"🚨 Stock data folder '{folder_path}' not found! Please create it and add CSV files.")
+            return None
         
-        if not files:
-            st.error("🚨 No CSV files found in the folder!")
+        csv_files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
+        if not csv_files:
+            st.error(f"🚨 No CSV files found in '{folder_path}'!")
             return None
         
         combined_df = pd.DataFrame()
-        for file in files:
-            file_id = file['id']
-            file_name = file['name']
-            request = service.files().get_media(fileId=file_id)
-            fh = io.BytesIO()
-            downloader = MediaIoBaseDownload(fh, request)
-            done = False
-            while not done:
-                status, done = downloader.next_chunk()
-            fh.seek(0)
-            df = pd.read_csv(fh)
-            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')  # Adjust column name if needed
-            df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].dropna()  # Adjust columns
+        for csv_file in csv_files:
+            file_path = os.path.join(folder_path, csv_file)
+            df = pd.read_csv(file_path)
+            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+            df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].dropna()
             combined_df = pd.concat([combined_df, df], ignore_index=True)
         
         combined_df = combined_df.sort_values(by='Date')
         return combined_df
     except Exception as e:
-        st.error(f"🚨 Error loading stock data from Google Drive folder: {str(e)}")
+        st.error(f"🚨 Error loading stock data from local folder: {str(e)}")
         return None
 
 @st.cache_data
@@ -149,14 +120,14 @@ def load_financial_data(csv_path="financial_data.csv"):
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training Functions
+# Model Training Functions (unchanged)
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
     data['Month'] = data['Date'].dt.month
     data['Year'] = data['Date'].dt.year
     X = data[['Day', 'Month', 'Year']]
-    y = data['Close']  # Changed 'close' to 'Close' to match DataFrame column
+    y = data['Close']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training stock prediction model..."):
@@ -196,7 +167,7 @@ def train_investment_model(data):
         model.fit(X, y)
     return model
 
-# Predictive and Utility Functions
+# Predictive and Utility Functions (unchanged)
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({
         "Income": [income],
@@ -249,7 +220,7 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     
     return recommendations
 
-# PDF Generation with FPDF
+# PDF Generation with FPDF (unchanged)
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
@@ -296,8 +267,8 @@ def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
 
-    # Load data from Google Drive folder
-    stock_data = load_stock_data_from_gdrive_folder(FOLDER_ID)
+    # Load data from local folder
+    stock_data = load_stock_data_from_local_folder("stock_data")
     survey_data = load_survey_data()
     financial_data = load_financial_data()
 
@@ -313,7 +284,7 @@ def main():
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
     investment_model = train_investment_model(investment_data)
 
-    # Sidebar
+    # Sidebar (unchanged)
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -324,12 +295,12 @@ def main():
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
 
-    # Tabs
+    # Tabs (unchanged below this point, just updating the call to load_stock_data_from_local_folder)
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
     with tab1:
         st.header("📈 Stock Market Adventure")
-        st.markdown("Navigate the stock market with precision using 52 datasets! 🌟")
+        st.markdown("Navigate the stock market with precision using local datasets! 🌟")
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -340,7 +311,7 @@ def main():
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
             submit = st.form_submit_button("🚀 Explore Market")
         if submit and stock_data is not None and stock_model is not None:
-            with st.spinner("Analyzing your investment strategy across 52 datasets..."):
+            with st.spinner("Analyzing your investment strategy across local datasets..."):
                 last_date = stock_data['Date'].iloc[-1]
                 future_date = last_date + pd.offsets.MonthEnd(horizon)
                 future = pd.DataFrame({
@@ -481,7 +452,7 @@ def main():
             st.subheader("📈 Savings Trajectory")
             trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
             fig = px.line(x=range(years_to_retirement + 1), y=trajectory, labels={"x": "Years", "y": "Wealth (₹)"}, title="Retirement Growth")
-            fig.add_hline(y=retirement_goal, line_dash="dash", line_color="red", annotation_text="Goal")
+            fig.add_hline(y=retirement_goal, line_dash="dash", line-operativecolor="red", annotation_text="Goal")
             st.plotly_chart(fig, use_container_width=True)
             st.subheader("💡 Retirement Tips")
             if retirement_wealth < retirement_goal:
