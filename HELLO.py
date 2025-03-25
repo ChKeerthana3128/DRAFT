@@ -15,7 +15,7 @@ import time  # For refresh timing
 # ... (Keep your existing imports and initial setup code)
 
 # Alpha Vantage API Key (Replace with your own key)
-API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"  # Get this from alphavantage.co
+API_KEY = "O597WKEOZNCKCLSO"  # Get this from alphavantage.co
 
 # Real-Time Data Fetching Functions
 @st.cache_data(ttl=60)  # Cache for 60 seconds to avoid hitting API limits
