@@ -7,9 +7,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 try:
-    from fpdf2 import FPDF  # Explicitly use fpdf2
+    from fpdf2 import FPDF
 except ModuleNotFoundError:
-    st.error("🚨 The 'fpdf2' package is not installed. Please install it with 'pip install fpdf2==2.7.9'.")
+    st.error("🚨 The 'fpdf2' package is not installed. Ensure 'fpdf2==2.7.9' is in requirements.txt and redeploy.")
     st.stop()
 import io
 import os
@@ -17,11 +17,11 @@ import os
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Data Loading Functions (made paths configurable)
+# Data Loading Functions
 @st.cache_data
-def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
+def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):  # Adjusted path
     if not os.path.exists(csv_path):
-        st.error(f"🚨 Stock CSV not found at '{csv_path}'! Please upload 'NIFTY CONSUMPTION_daily_data.csv' or adjust the path.")
+        st.error(f"🚨 Stock CSV not found at '{csv_path}'! Please upload it to the repo.")
         return None
     try:
         df = pd.read_csv(csv_path)
@@ -38,7 +38,7 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
 @st.cache_data
 def load_survey_data(csv_path="survey_data.csv"):
     if not os.path.exists(csv_path):
-        st.error(f"🚨 Survey CSV not found at '{csv_path}'! Please upload 'survey_data.csv' or adjust the path.")
+        st.error(f"🚨 Survey CSV not found at '{csv_path}'! Please upload it to the repo.")
         return None
     try:
         df = pd.read_csv(csv_path)
@@ -67,7 +67,7 @@ def load_survey_data(csv_path="survey_data.csv"):
 @st.cache_data
 def load_financial_data(csv_path="financial_data.csv"):
     if not os.path.exists(csv_path):
-        st.error(f"🚨 Financial CSV not found at '{csv_path}'! Please upload 'financial_data.csv' or adjust the path.")
+        st.error(f"🚨 Financial CSV not found at '{csv_path}'! Please upload it to the repo.")
         return None
     try:
         df = pd.read_csv(csv_path)
@@ -91,7 +91,8 @@ def load_financial_data(csv_path="financial_data.csv"):
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training Functions (unchanged)
+# Rest of your code (unchanged beyond this point)
+# Model Training Functions
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -129,7 +130,7 @@ def train_retirement_model(financial_data):
         model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
-# Predictive and Utility Functions (unchanged except for generate_pdf)
+# Predictive and Utility Functions
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_Payment": [debt_payment]})
     return model.predict(input_df)[0]
@@ -189,22 +190,16 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     try:
         pdf = FPDF()
         pdf.add_page()
-        
-        # Set fonts
         pdf.set_font("Helvetica", "B", 16)
-        
-        # Header
-        pdf.set_text_color(0, 0, 139)  # Dark blue
+        pdf.set_text_color(0, 0, 139)
         pdf.cell(0, 10, f"💰 WealthWise Investment Plan for {name}", ln=True, align="C")
         pdf.set_font("Helvetica", "", 10)
-        pdf.set_text_color(0, 0, 0)  # Black
+        pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 10, "Generated on: March 24, 2025", ln=True, align="R")
         pdf.ln(5)
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-        
-        # Financial Summary
         pdf.set_font("Helvetica", "B", 12)
-        pdf.set_text_color(0, 100, 0)  # Dark green
+        pdf.set_text_color(0, 100, 0)
         pdf.cell(0, 10, "Financial Summary", ln=True)
         pdf.set_font("Helvetica", "", 10)
         pdf.set_text_color(0, 0, 0)
@@ -218,8 +213,6 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
         for line in summary:
             pdf.cell(0, 8, line, ln=True)
         pdf.ln(5)
-        
-        # Investment Recommendations
         pdf.set_font("Helvetica", "B", 12)
         pdf.set_text_color(0, 100, 0)
         pdf.cell(0, 10, "Investment Recommendations", ln=True)
@@ -231,32 +224,24 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
                 for rec in recs:
                     pdf.cell(0, 8, f"  - {rec['Company']}: ₹{rec['Amount']:,.2f}", ln=True)
         pdf.ln(5)
-        
-        # Budget Tips
         pdf.set_font("Helvetica", "B", 12)
-        pdf.set_text_color(139, 0, 0)  # Dark red
+        pdf.set_text_color(139, 0, 0)
         pdf.cell(0, 10, "Budget Tips", ln=True)
         pdf.set_font("Helvetica", "", 10)
         pdf.set_text_color(0, 0, 0)
         for tip in tips:
             pdf.multi_cell(0, 8, f"• {tip}")
         pdf.ln(5)
-        
-        # Peer Comparison
         pdf.set_font("Helvetica", "B", 12)
         pdf.set_text_color(0, 100, 0)
         pdf.cell(0, 10, "Peer Comparison", ln=True)
         pdf.set_font("Helvetica", "", 10)
         pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 8, f"Your Savings: ₹{predicted_savings:,.2f} | Peer Average: ₹{peer_savings:,.2f}", ln=True)
-        
-        # Footer
         pdf.ln(10)
         pdf.set_font("Helvetica", "I", 8)
-        pdf.set_text_color(128, 128, 128)  # Gray
+        pdf.set_text_color(128, 128, 128)
         pdf.cell(0, 10, "✨ Powered by WealthWise | Built with ❤️ by xAI", ln=True, align="C")
-        
-        # Output to BytesIO buffer
         buffer = io.BytesIO()
         pdf.output(buffer)
         buffer.seek(0)
@@ -265,17 +250,13 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
         st.error(f"🚨 Error generating PDF: {str(e)}")
         return None
 
-# Main Application (unchanged except for PDF download handling)
+# Main Application
 def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
-
-    # Load data
     stock_data = load_stock_data()
     survey_data = load_survey_data()
     financial_data = load_financial_data()
-
-    # Train models
     stock_model, stock_r2 = None, 0.0
     if stock_data is not None:
         stock_model, stock_r2 = train_stock_model(stock_data)
@@ -285,8 +266,6 @@ def main():
     retirement_model, retirement_r2 = None, 0.0
     if financial_data is not None:
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
-
-    # Sidebar
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -296,10 +275,7 @@ def main():
             st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
-
-    # Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
-
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
@@ -351,7 +327,6 @@ def main():
                     with st.expander(f"{category} Options"):
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
-
     with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
@@ -417,7 +392,6 @@ def main():
                 st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
             else:
                 st.error("Failed to generate PDF. Check the error above for details.")
-
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
@@ -451,7 +425,6 @@ def main():
                 shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
                 st.write(f"- Increase monthly savings by ₹{shortfall:,.2f} to meet your goal.")
             st.write("- Assumes a 5% annual growth rate—adjust investments for higher returns if needed.")
-
     st.markdown("---")
     st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
 
