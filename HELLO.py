@@ -216,7 +216,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Arial", "", 10)
     for tip in tips:
-        pdf.cell(0, 10, f"- {tip}", ln=True)  # Changed • to -
+        pdf.cell(0, 10, f"- {tip}", ln=True)
     pdf.ln(10)
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
@@ -340,19 +340,19 @@ def main():
                 st.write(f"₹{predicted_savings:,.2f} / ₹{goal_amount:,.2f}")
             with col2:
                 st.subheader("📊 Peer Benchmark")
-                st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings}
+                st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
             with st.expander("💡 Budget Tips", expanded=True):
                 tips = []
                 median_non_essentials = survey_data["Non_Essentials"].median()
                 if non_essentials > median_non_essentials:
                     tips.append(f"Reduce non-essentials by INR {non_essentials - median_non_essentials:,.2f} (peer median: INR {median_non_essentials:,.2f}).")
                 if debt_payment > income * 0.3:
-                    tips.append("Debt payment exceeds 30% of income - consider refinancing or cutting expenses.")  # Changed — to -
+                    tips.append("Debt payment exceeds 30% of income - consider refinancing or cutting expenses.")
                 if predicted_savings < monthly_savings_needed:
                     shortfall = monthly_savings_needed - predicted_savings
                     tips.append(f"Boost savings by INR {shortfall:,.2f}/month to meet your goal.")
                 else:
-                    tips.append("Great job! Your savings exceed your goal - consider investing more.")  # Changed — to -
+                    tips.append("Great job! Your savings exceed your goal - consider investing more.")
                 for tip in tips:
                     st.write(f"- {tip}")
             st.subheader("🎲 Risk Tolerance Assessment")
