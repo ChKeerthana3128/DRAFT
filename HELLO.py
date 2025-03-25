@@ -31,8 +31,6 @@ def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
         st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
 
-
-
 @st.cache_data
 def load_survey_data(csv_path="survey_data.csv"):
     if not os.path.exists(csv_path):
