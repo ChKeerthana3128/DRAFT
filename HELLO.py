@@ -6,7 +6,7 @@ import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-from fpdf import FPDF  # Replace reportlab with FPDF
+from fpdf import FPDF  # Make sure this comes from fpdf2
 import io
 import os
 
