@@ -71,8 +71,38 @@ def calculate_portfolio_value(portfolio, real_time_prices):
 
 # Main Application (Modified tab1 only)
 def main():
-    # ... (Keep your existing setup code up to the tabs)
+    st.title("💰 WealthWise Dashboard")
+    st.markdown("Your ultimate wealth management companion! 🚀")
 
+    # Load data (ensure this runs before tabs)
+    stock_data = load_stock_data()
+    survey_data = load_survey_data()
+    financial_data = load_financial_data()
+
+    # Train models (ensure this runs before tabs)
+    stock_model, stock_r2 = None, 0.0
+    if stock_data is not None:
+        stock_model, stock_r2 = train_stock_model(stock_data)
+    survey_model, survey_r2 = None, 0.0
+    if survey_data is not None:
+        survey_model, survey_r2 = train_survey_model(survey_data)
+    retirement_model, retirement_r2 = None, 0.0
+    if financial_data is not None:
+        retirement_model, retirement_r2 = train_retirement_model(financial_data)
+    investment_model = train_investment_model(investment_data)
+
+    # Sidebar
+    with st.sidebar:
+        st.header("Dashboard Insights")
+        st.info("Explore your financial future with these tools!")
+        if stock_data is not None:
+            st.metric("Stock Model Accuracy (R²)", f"{stock_r2:.2f}")
+        if survey_data is not None:
+            st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
+        if financial_data is not None:
+            st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
+
+    # Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
     with tab1:
@@ -108,9 +138,8 @@ def main():
                 "Value": "₹{:.2f}",
                 "Gain/Loss": "₹{:.2f}"
             }).highlight_max(subset=["Gain/Loss"], color="green").highlight_min(subset=["Gain/Loss"], color="red"))
-            # Auto-refresh portfolio every 60 seconds
             st.write("*Portfolio updates every 60 seconds.*")
-            time.sleep(1)  # Simulate delay; in production, use st_autorefresh or similar
+            time.sleep(1)  # Simulate delay
 
         # Existing Investment Form with Real-Time Data
         st.subheader("🔮 Plan Your Investment")
@@ -139,7 +168,7 @@ def main():
             col2.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
             col3, col4 = st.columns(2)
             col3.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
-            
+
             with st.expander("📊 Price Trend", expanded=True):
                 fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend (Historical)", 
                              hover_data=['open', 'high', 'low', 'volume'])
@@ -168,7 +197,7 @@ def main():
                     any_recommendations = True
                     with st.expander(f"{category} Options"):
                         for rec in recs:
-                            real_time_price = fetch_real_time_price(rec["Company"] + ".NS") or rec["Amount"] / 10  # Assuming INR pricing
+                            real_time_price = fetch_real_time_price(rec["Company"] + ".NS") or rec["Amount"] / 10
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f} (Current Price: ₹{real_time_price:,.2f})")
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try adjusting your inputs.")
