@@ -50,7 +50,7 @@ def load_survey_data(csv_path="survey_data.csv"):
                     return (float(bounds[0].replace(",", "")) + float(bounds[1].replace(",", ""))) / 2
                 return float(bounds[0].replace(",", ""))
             return float(value)
-        df["Qin"] = df["How much pocket money or income do you receive per month (in ₹)?"].apply(parse_range)
+        df["Income"] = df["How much pocket money or income do you receive per month (in ₹)?"].apply(parse_range)  # Fixed from "Qin" to "Income"
         df["Essentials"] = df["How much do you spend monthly on essentials (e.g., food, transport, books)?"].apply(parse_range)
         df["Non_Essentials"] = df["How much do you spend monthly on non-essentials (e.g., entertainment, eating out)?"].apply(parse_range)
         df["Debt_Payment"] = df["If yes to debt, how much do you pay monthly (in ₹)?"].apply(parse_range)
@@ -390,7 +390,7 @@ def main():
             col2.metric("Retirement Goal", f"₹{retirement_goal:,.2f}", f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}")
             st.subheader("📈 Savings Trajectory")
             trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
-            fig = px.line(x=range(years_to_retirement + 1), y=trajectory, labels={"x": "Years", "y": "Wealth (₹)"}, title="Retirement Growth")
+            fig = px.line(x=range(years_to_retirement + 1), y=trajectory, labelssinstance labels={"x": "Years", "y": "Wealth (₹)"}, title="Retirement Growth")
             fig.add_hline(y=retirement_goal, line_dash="dash", line_color="red", annotation_text="Goal")
             st.plotly_chart(fig, use_container_width=True)
             st.subheader("💡 Retirement Tips")
