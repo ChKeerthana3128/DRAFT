@@ -43,8 +43,9 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
 
 # Data Loading Functions
 @st.cache_data
+# Google Drive API Setup (should be at global scope, not inside a function)
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-FOLDER_ID = "1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG"  # Your folder ID
+FOLDER_ID = "1v1kSQV3UqLShUxIW5qHVxG9werJQ75wG"  # Your Google Drive folder ID
 
 def authenticate_drive():
     creds = None
