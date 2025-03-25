@@ -6,14 +6,14 @@ import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-from fpdf import FPDF  # Use fpdf instead of reportlab
+from fpdf import FPDF
 import io
 import os
 
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Data Loading
+# Data Loading Functions
 @st.cache_data
 def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
@@ -87,7 +87,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training
+# Model Training Functions
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -127,7 +127,7 @@ def train_retirement_model(financial_data):
 
 # Predictive and Utility Functions
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
-    input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_Payment": [debt_payment]})
+    input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_P aquellment": [debt_payment]})
     return model.predict(input_df)[0]
 
 def predict_retirement_savings(model, income, expenses):
@@ -185,14 +185,10 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
-    
-    # Header
     pdf.cell(0, 10, f"WealthWise Investment Plan for {name}", ln=True, align="C")
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, "✨ Powered by WealthWise | Built with ❤️ by xAI", ln=True, align="C")
     pdf.ln(10)
-    
-    # Financial Summary
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
     pdf.set_font("Arial", "", 10)
@@ -202,8 +198,6 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.cell(0, 10, f"Risk Tolerance: {risk_tolerance}", ln=True)
     pdf.cell(0, 10, f"Investment Horizon: {horizon_years} years", ln=True)
     pdf.ln(10)
-    
-    # Investment Recommendations
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
     pdf.set_font("Arial", "", 10)
@@ -213,25 +207,19 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
             for rec in recs:
                 pdf.cell(0, 10, f"  - {rec['Company']}: ₹{rec['Amount']:,.2f}", ln=True)
     pdf.ln(10)
-    
-    # Budget Tips
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Arial", "", 10)
     for tip in tips:
         pdf.cell(0, 10, f"• {tip}", ln=True)
     pdf.ln(10)
-    
-    # Peer Comparison
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, f"Your Savings: ₹{predicted_savings:,.2f} | Peer Average: ₹{peer_savings:,.2f}", ln=True)
-    
-    # Output to BytesIO
     buffer = io.BytesIO()
-    pdf.output(dest='S').encode('latin-1')  # Get string output
-    buffer.write(pdf.output(dest='S').encode('latin-1'))  # Write to buffer
+    pdf.output(dest='S').encode('latin-1')
+    buffer.write(pdf.output(dest='S').encode('latin-1'))
     buffer.seek(0)
     return buffer
 
@@ -240,10 +228,12 @@ def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
 
+    # Load data
     stock_data = load_stock_data()
     survey_data = load_survey_data()
     financial_data = load_financial_data()
 
+    # Train models
     stock_model, stock_r2 = None, 0.0
     if stock_data is not None:
         stock_model, stock_r2 = train_stock_model(stock_data)
@@ -254,6 +244,7 @@ def main():
     if financial_data is not None:
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
 
+    # Sidebar
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -264,6 +255,7 @@ def main():
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
 
+    # Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
     with tab1:
@@ -306,11 +298,8 @@ def main():
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
 
     with tab2:
-        # Personalized Investment Tab
-    with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
-
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -325,14 +314,12 @@ def main():
                 risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
                 horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
             submit = st.form_submit_button("🚀 Get Your Plan")
-
         if submit and survey_data is not None and survey_model is not None:
             with st.spinner("Crafting your personalized plan..."):
                 predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
                 recommendations = get_investment_recommendations(risk_tolerance, horizon_years, predicted_savings, goal)
                 monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
-
             st.subheader("💼 Your Investment Options")
             for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
                 recs = recommendations.get(category, [])
@@ -340,7 +327,6 @@ def main():
                     with st.expander(f"{category} Investments"):
                         for rec in recs:
                             st.write(f"- *{rec['Company']}*: ₹{rec['Amount']:,.2f}")
-
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("🎯 Savings Progress")
@@ -350,7 +336,6 @@ def main():
             with col2:
                 st.subheader("📊 Peer Benchmark")
                 st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
-
             with st.expander("💡 Budget Tips", expanded=True):
                 tips = []
                 median_non_essentials = survey_data["Non_Essentials"].median()
@@ -365,7 +350,6 @@ def main():
                     tips.append("Great job! Your savings exceed your goal—consider investing more.")
                 for tip in tips:
                     st.write(f"- {tip}")
-
             st.subheader("🎲 Risk Tolerance Assessment")
             risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
             st.write(f"Your Profile: *{risk_map[risk_tolerance]}*")
@@ -373,9 +357,9 @@ def main():
                 st.info("Long horizon with low risk? You could explore medium-risk options for better returns.")
             elif risk_tolerance == "High" and horizon_years < 3:
                 st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
-
             pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
+
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
