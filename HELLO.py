@@ -53,7 +53,7 @@ def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
         return None
 
 @st.cache_data
-def load_survey intercal_data(csv_path="survey_data.csv"):
+def load_survey_data(csv_path="survey_data.csv"):
     if not os.path.exists(csv_path):
         st.error("🚨 Survey CSV not found! Please upload 'survey_data.csv'.")
         return None
