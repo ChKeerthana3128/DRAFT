@@ -127,7 +127,12 @@ def train_retirement_model(financial_data):
 
 # Predictive and Utility Functions
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
-    input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_P aquellment": [debt_payment]})
+    input_df = pd.DataFrame({
+        "Income": [income],
+        "Essentials": [essentials],
+        "Non_Essentials": [non_essentials],
+        "Debt_Payment": [debt_payment]  # Fixed typo here
+    })
     return model.predict(input_df)[0]
 
 def predict_retirement_savings(model, income, expenses):
