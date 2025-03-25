@@ -181,7 +181,7 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
                 break
     return recs
 
-from fpdf import FPDF  # Now from fpdf2
+from fpdf import FPDF  # Import from fpdf2 (after installing fpdf2)
 
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
@@ -191,17 +191,17 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.set_font("Helvetica", "B", 16)
     
     # Header
-    pdf.set_text_color(0, 0, 139)
+    pdf.set_text_color(0, 0, 139)  # Dark blue
     pdf.cell(0, 10, f"💰 WealthWise Investment Plan for {name}", ln=True, align="C")
     pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(0, 0, 0)
+    pdf.set_text_color(0, 0, 0)  # Black
     pdf.cell(0, 10, "Generated on: March 24, 2025", ln=True, align="R")
     pdf.ln(5)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     
     # Financial Summary
     pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(0, 100, 0)
+    pdf.set_text_color(0, 100, 0)  # Dark green
     pdf.cell(0, 10, "Financial Summary", ln=True)
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(0, 0, 0)
@@ -231,7 +231,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     
     # Budget Tips
     pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(139, 0, 0)
+    pdf.set_text_color(139, 0, 0)  # Dark red
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(0, 0, 0)
@@ -250,12 +250,12 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     # Footer
     pdf.ln(10)
     pdf.set_font("Helvetica", "I", 8)
-    pdf.set_text_color(128, 128, 128)
+    pdf.set_text_color(128, 128, 128)  # Gray
     pdf.cell(0, 10, "✨ Powered by WealthWise | Built with ❤️ by xAI", ln=True, align="C")
     
     # Output to BytesIO buffer
     buffer = io.BytesIO()
-    pdf.output(buffer)  # fpdf2 writes directly to buffer, no encoding needed
+    pdf.output(buffer)  # fpdf2 writes directly to buffer with UTF-8 support
     buffer.seek(0)
     return buffer
 # Main Application (unchanged except for tab indentation fix)
