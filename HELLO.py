@@ -6,20 +6,21 @@ import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-from fpdf import FPDF
+from fpdf import FPDF  # Use fpdf instead of reportlab
 import io
+import os
 
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Data Loading with File Upload
+# Data Loading
 @st.cache_data
-def load_stock_data(uploaded_file=None):
-    if uploaded_file is None:
-        st.error("🚨 Please upload 'NIFTY CONSUMPTION_daily_data.csv' in the sidebar.")
+def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
+    if not os.path.exists(csv_path):
+        st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'.")
         return None
     try:
-        df = pd.read_csv(uploaded_file)
+        df = pd.read_csv(csv_path)
         df['Date'] = pd.to_datetime(df['date'], errors='coerce')
         if df['Date'].isnull().all():
             st.error("🚨 Invalid date format in stock data!")
@@ -31,12 +32,12 @@ def load_stock_data(uploaded_file=None):
         return None
 
 @st.cache_data
-def load_survey_data(uploaded_file=None):
-    if uploaded_file is None:
-        st.error("🚨 Please upload 'survey_data.csv' in the sidebar.")
+def load_survey_data(csv_path="survey_data.csv"):
+    if not os.path.exists(csv_path):
+        st.error("🚨 Survey CSV not found! Please upload 'survey_data.csv'.")
         return None
     try:
-        df = pd.read_csv(uploaded_file)
+        df = pd.read_csv(csv_path)
         df.columns = [col.strip() for col in df.columns]
         def parse_range(value):
             if pd.isna(value) or value in ["I don’t save", ""]:
@@ -60,12 +61,12 @@ def load_survey_data(uploaded_file=None):
         return None
 
 @st.cache_data
-def load_financial_data(uploaded_file=None):
-    if uploaded_file is None:
-        st.error("🚨 Please upload 'financial_data.csv' in the sidebar.")
+def load_financial_data(csv_path="financial_data.csv"):
+    if not os.path.exists(csv_path):
+        st.error("🚨 Financial CSV not found! Please upload 'financial_data.csv'.")
         return None
     try:
-        df = pd.read_csv(uploaded_file)
+        df = pd.read_csv(csv_path)
         df.columns = [col.strip().replace('"', '') for col in df.columns]
         col_map = {col.lower(): col for col in df.columns}
         required_cols = ["income", "projected_savings"]
@@ -143,7 +144,7 @@ def forecast_retirement_savings(income, savings, years, growth_rate=5.0):
         wealth = wealth * (1 + growth_rate / 1200) + monthly_savings
     return wealth
 
-# Investment Recommendations
+# Simplified Investment Recommendations
 def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal):
     recs = {"Large Cap": [], "Medium Cap": [], "Low Cap": [], "Crypto": []}
     options = {
@@ -184,10 +185,14 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
+    
+    # Header
     pdf.cell(0, 10, f"WealthWise Investment Plan for {name}", ln=True, align="C")
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, "✨ Powered by WealthWise | Built with ❤️ by xAI", ln=True, align="C")
     pdf.ln(10)
+    
+    # Financial Summary
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
     pdf.set_font("Arial", "", 10)
@@ -197,6 +202,8 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.cell(0, 10, f"Risk Tolerance: {risk_tolerance}", ln=True)
     pdf.cell(0, 10, f"Investment Horizon: {horizon_years} years", ln=True)
     pdf.ln(10)
+    
+    # Investment Recommendations
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
     pdf.set_font("Arial", "", 10)
@@ -206,19 +213,25 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
             for rec in recs:
                 pdf.cell(0, 10, f"  - {rec['Company']}: ₹{rec['Amount']:,.2f}", ln=True)
     pdf.ln(10)
+    
+    # Budget Tips
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Arial", "", 10)
     for tip in tips:
         pdf.cell(0, 10, f"• {tip}", ln=True)
     pdf.ln(10)
+    
+    # Peer Comparison
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, f"Your Savings: ₹{predicted_savings:,.2f} | Peer Average: ₹{peer_savings:,.2f}", ln=True)
+    
+    # Output to BytesIO
     buffer = io.BytesIO()
-    pdf.output(dest='S').encode('latin-1')
-    buffer.write(pdf.output(dest='S').encode('latin-1'))
+    pdf.output(dest='S').encode('latin-1')  # Get string output
+    buffer.write(pdf.output(dest='S').encode('latin-1'))  # Write to buffer
     buffer.seek(0)
     return buffer
 
@@ -227,18 +240,9 @@ def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
 
-    # Sidebar for File Uploads
-    with st.sidebar:
-        st.header("Upload Your Data")
-        stock_file = st.file_uploader("📈 NIFTY CONSUMPTION Data (CSV)", type="csv")
-        survey_file = st.file_uploader("📊 Survey Data (CSV)", type="csv")
-        financial_file = st.file_uploader("💰 Financial Data (CSV)", type="csv")
-        st.info("Upload all required CSV files to proceed!")
-
-    # Load data with uploaded files
-    stock_data = load_stock_data(stock_file)
-    survey_data = load_survey_data(survey_file)
-    financial_data = load_financial_data(financial_file)
+    stock_data = load_stock_data()
+    survey_data = load_survey_data()
+    financial_data = load_financial_data()
 
     stock_model, stock_r2 = None, 0.0
     if stock_data is not None:
@@ -252,6 +256,7 @@ def main():
 
     with st.sidebar:
         st.header("Dashboard Insights")
+        st.info("Explore your financial future with these tools!")
         if stock_data is not None:
             st.metric("Stock Model Accuracy (R²)", f"{stock_r2:.2f}")
         if survey_data is not None:
@@ -304,7 +309,7 @@ def main():
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.form(key="investment_form"):
-            col1, col2 = st.columns(2)
+            col1TAR, col2 = st.columns(2)
             with col1:
                 name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
                 income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
@@ -377,7 +382,7 @@ def main():
                 monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
             submit = st.form_submit_button("🚀 Plan My Retirement")
         if submit and financial_data is not None and retirement_model is not None:
-            with st.spinner("Projecting your retirement..."):
+            with st.spinner("Projecting your retirement using financial_data.csv..."):
                 years_to_retirement = retirement_age - age
                 predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
                 retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
