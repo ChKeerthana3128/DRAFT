@@ -223,7 +223,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}", ln=True)
     buffer = io.BytesIO()
-    buffer.write(pdf.output(dest='S'))  # Write bytes directly to buffer
+    buffer.write(pdf.output(dest='S'))
     buffer.seek(0)
     return buffer
 
@@ -269,7 +269,7 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
-                invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, step=500.0, help="How much are you investing?")
+                invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0, help="How much are you investing?")
             with col2:
                 risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
@@ -294,12 +294,16 @@ def main():
             st.subheader("💡 Your Investment Strategy")
             progress = min(1.0, invest_amount / 100000)
             st.progress(progress)
+            any_recommendations = False
             for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
                 recs = recommendations.get(category, [])
                 if recs:
+                    any_recommendations = True
                     with st.expander(f"{category} Options"):
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
+            if not any_recommendations:
+                st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goal.")
 
     with tab2:
         st.header("🎯 Your Investment Journey")
