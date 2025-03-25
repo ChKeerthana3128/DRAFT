@@ -6,19 +6,14 @@ import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
-from reportlab.lib import colors
-from reportlab.lib.units import inch
+from fpdf import FPDF  # Replace reportlab with FPDF
 import io
 import os
 
 # Page Configuration
 st.set_page_config(page_title="💰 WealthWise Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# Data Loading
+# Data Loading Functions (unchanged)
 @st.cache_data
 def load_stock_data(csv_path="archive (3) 2/NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
@@ -72,38 +67,27 @@ def load_financial_data(csv_path="financial_data.csv"):
         return None
     try:
         df = pd.read_csv(csv_path)
-        # Strip whitespace and handle potential quoting issues
         df.columns = [col.strip().replace('"', '') for col in df.columns]
-        
-        # Check for required columns (case-insensitive match)
         col_map = {col.lower(): col for col in df.columns}
         required_cols = ["income", "projected_savings"]
         missing_cols = [col for col in required_cols if col not in col_map]
         if missing_cols:
             st.error(f"🚨 'financial_data.csv' is missing required columns: {', '.join(missing_cols)}")
             return None
-        
-        # Rename to standard names for consistency
-        df = df.rename(columns={
-            col_map["income"]: "income",
-            col_map["projected_savings"]: "Projected_Savings"
-        })
-        
-        # Calculate Total_Expenses from individual expense columns
+        df = df.rename(columns={col_map["income"]: "income", col_map["projected_savings"]: "Projected_Savings"})
         expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", 
                        "Education", "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
         available_expense_cols = [col for col in expense_cols if col in df.columns]
         if available_expense_cols:
             df["Total_Expenses"] = df[available_expense_cols].sum(axis=1)
         else:
-            df["Total_Expenses"] = 0  # Fallback if no expense columns are found
-        
+            df["Total_Expenses"] = 0
         return df
     except Exception as e:
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training
+# Model Training Functions (unchanged)
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -141,7 +125,7 @@ def train_retirement_model(financial_data):
         model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
-# Predictive and Utility Functions
+# Predictive and Utility Functions (unchanged)
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({"Income": [income], "Essentials": [essentials], "Non_Essentials": [non_essentials], "Debt_Payment": [debt_payment]})
     return model.predict(input_df)[0]
@@ -160,7 +144,6 @@ def forecast_retirement_savings(income, savings, years, growth_rate=5.0):
         wealth = wealth * (1 + growth_rate / 1200) + monthly_savings
     return wealth
 
-# Simplified Investment Recommendations
 def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal):
     recs = {"Large Cap": [], "Medium Cap": [], "Low Cap": [], "Crypto": []}
     options = {
@@ -181,19 +164,14 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
             {"Company": "Ethereum", "Min_Invest": 3000, "Goal": "Wealth growth", "Risk": "High"}
         ]
     }
-    
-    # Use full invest_amount for each category to ensure recommendations
     for category in ["Large Cap", "Medium Cap", "Low Cap"]:
         for opt in options[category]:
-            # Relax the Min_Invest check for small amounts; suggest affordable options
             if (invest_amount >= opt["Min_Invest"] or invest_amount >= 500) and \
                (goal == opt["Goal"] or goal == "No specific goal") and \
                (risk_tolerance == "High" or opt["Risk"] != "High"):
-                amount = min(invest_amount, opt["Min_Invest"])  # Cap at Min_Invest or use full amount if less
+                amount = min(invest_amount, opt["Min_Invest"])
                 recs[category].append({"Company": opt["Company"], "Amount": amount})
-                break  # One per category
-    
-    # Crypto only for high risk
+                break
     if risk_tolerance == "High":
         for opt in options["Crypto"]:
             if (invest_amount >= opt["Min_Invest"] or invest_amount >= 500) and \
@@ -201,90 +179,87 @@ def get_investment_recommendations(risk_tolerance, horizon_years, invest_amount,
                 amount = min(invest_amount, opt["Min_Invest"])
                 recs["Crypto"].append({"Company": opt["Company"], "Amount": amount})
                 break
-    
     return recs
 
+# New PDF Generation Function using FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
-    buffer = io.BytesIO()
-    class MyDocTemplate(BaseDocTemplate):
-        def __init__(self, filename, **kwargs):
-            BaseDocTemplate.__init__(self, filename, **kwargs)
-            frame = Frame(0.5*inch, 0.5*inch, 7.5*inch, 10*inch, id='normal')
-            self.addPageTemplates([PageTemplate(id='AllPages', frames=frame, onPage=self.header_footer)])
-        
-        def header_footer(self, canvas, doc):
-            canvas.saveState()
-            canvas.setFont("Helvetica-Bold", 12)
-            canvas.setFillColor(colors.darkblue)
-            canvas.drawString(0.5*inch, 10.5*inch, "💰 WealthWise Investment Plan")
-            canvas.setFont("Helvetica", 10)
-            canvas.setFillColor(colors.black)
-            canvas.drawRightString(8*inch, 10.5*inch, f"For: {name}")
-            canvas.line(0.5*inch, 10.4*inch, 8*inch, 10.4*inch)
-            canvas.setFont("Helvetica", 8)
-            canvas.setFillColor(colors.gray)
-            canvas.drawString(0.5*inch, 0.3*inch, "✨ Powered by WealthWise | Built with ❤️ by xAI")
-            canvas.drawRightString(8*inch, 0.3*inch, f"Page {doc.page}")
-            canvas.line(0.5*inch, 0.4*inch, 8*inch, 0.4*inch)
-            canvas.restoreState()
+    pdf = FPDF()
+    pdf.add_page()
     
-    doc = MyDocTemplate(buffer, pagesize=letter)
-    styles = getSampleStyleSheet()
-    title_style = styles['Title']
-    title_style.fontSize = 16
-    title_style.textColor = colors.darkblue
-    heading_style = ParagraphStyle('Heading2', parent=styles['Heading2'], fontSize=12, textColor=colors.darkgreen)
-    normal_style = styles['Normal']
-    normal_style.fontSize = 10
-    tip_style = ParagraphStyle('Tip', parent=styles['Normal'], fontSize=10, textColor=colors.darkred, leftIndent=20)
-    story = []
+    # Set fonts (FPDF uses built-in fonts like Helvetica, Times)
+    pdf.set_font("Helvetica", "B", 16)
     
-    story.append(Paragraph(f"Your Personalized Investment Plan, {name}", title_style))
-    story.append(Spacer(1, 0.2*inch))
-    story.append(Paragraph("Financial Summary", heading_style))
-    summary_data = [
-        ["Income", f"₹{income:,.2f}"],
-        ["Predicted Savings", f"₹{predicted_savings:,.2f}"],
-        ["Goal", goal],
-        ["Risk Tolerance", risk_tolerance],
-        ["Investment Horizon", f"{horizon_years} years"]
+    # Header
+    pdf.set_text_color(0, 0, 139)  # Dark blue
+    pdf.cell(0, 10, f"💰 WealthWise Investment Plan for {name}", ln=True, align="C")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(0, 0, 0)  # Black
+    pdf.cell(0, 10, f"Generated on: March 24, 2025", ln=True, align="R")
+    pdf.ln(5)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())  # Horizontal line
+    
+    # Financial Summary
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(0, 100, 0)  # Dark green
+    pdf.cell(0, 10, "Financial Summary", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(0, 0, 0)
+    summary = [
+        f"Income: ₹{income:,.2f}",
+        f"Predicted Savings: ₹{predicted_savings:,.2f}",
+        f"Goal: {goal}",
+        f"Risk Tolerance: {risk_tolerance}",
+        f"Investment Horizon: {horizon_years} years"
     ]
-    summary_table = Table(summary_data, colWidths=[2*inch, 5*inch])
-    summary_table.setStyle([
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-    ])
-    story.append(summary_table)
-    story.append(Spacer(1, 0.2*inch))
-    story.append(Paragraph("Investment Recommendations", heading_style))
+    for line in summary:
+        pdf.cell(0, 8, line, ln=True)
+    pdf.ln(5)
     
+    # Investment Recommendations
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(0, 100, 0)
+    pdf.cell(0, 10, "Investment Recommendations", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(0, 0, 0)
     for category, recs in recommendations.items():
         if recs:
-            story.append(Paragraph(f"{category}", heading_style))
-            rec_data = [["Company", "Amount (₹)"]] + [[r["Company"], f"₹{r['Amount']:,.2f}"] for r in recs]
-            rec_table = Table(rec_data, colWidths=[3*inch, 2*inch])
-            rec_table.setStyle([
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
-                ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ])
-            story.append(rec_table)
-            story.append(Spacer(1, 0.1*inch))
+            pdf.cell(0, 8, f"{category}:", ln=True)
+            for rec in recs:
+                pdf.cell(0, 8, f"  - {rec['Company']}: ₹{rec['Amount']:,.2f}", ln=True)
+    pdf.ln(5)
     
-    story.append(Spacer(1, 0.2*inch))
-    story.append(Paragraph("Budget Tips", heading_style))
+    # Budget Tips
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(139, 0, 0)  # Dark red
+    pdf.cell(0, 10, "Budget Tips", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(0, 0, 0)
     for tip in tips:
-        story.append(Paragraph(f"• {tip}", tip_style))
-    story.append(Spacer(1, 0.2*inch))
-    story.append(Paragraph("Peer Comparison", heading_style))
-    story.append(Paragraph(f"Your Savings: ₹{predicted_savings:,.2f} | Peer Average: ₹{peer_savings:,.2f}", normal_style))
-    doc.build(story)
+        pdf.multi_cell(0, 8, f"• {tip}")
+    pdf.ln(5)
+    
+    # Peer Comparison
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(0, 100, 0)
+    pdf.cell(0, 10, "Peer Comparison", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 8, f"Your Savings: ₹{predicted_savings:,.2f} | Peer Average: ₹{peer_savings:,.2f}", ln=True)
+    
+    # Footer
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(128, 128, 128)  # Gray
+    pdf.cell(0, 10, "✨ Powered by WealthWise | Built with ❤️ by xAI", ln=True, align="C")
+    
+    # Output to BytesIO buffer for Streamlit download
+    buffer = io.BytesIO()
+    pdf_output = pdf.output(dest='S').encode('latin1')  # Get PDF as string and encode
+    buffer.write(pdf_output)
     buffer.seek(0)
     return buffer
 
-# Main Application
+# Main Application (unchanged except for tab indentation fix)
 def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Your ultimate wealth management companion! 🚀")
@@ -319,11 +294,9 @@ def main():
     # Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
-    # Stock Investments Tab
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
-
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -333,7 +306,6 @@ def main():
                 risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
                 goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
             submit = st.form_submit_button("🚀 Explore Market")
-
         if submit and stock_data is not None and stock_model is not None:
             with st.spinner("Analyzing your investment strategy..."):
                 future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
@@ -342,43 +314,31 @@ def main():
                 growth = predicted_price - current_price
                 horizon_years = horizon // 12 or 1
                 recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
-
             st.subheader("🔮 Market Forecast")
             col1, col2 = st.columns(2)
             col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
             col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
-
             with st.expander("📊 Price Trend", expanded=True):
                 fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
                              hover_data=['open', 'high', 'low', 'volume'])
                 fig.update_traces(line_color='#00ff00')
                 st.plotly_chart(fig, use_container_width=True)
-
             st.subheader("💡 Your Investment Strategy")
-            # Calculate total allocated amount and prepare data for pie chart
             allocations = {"Large Cap": 0, "Medium Cap": 0, "Low Cap": 0, "Crypto": 0}
             for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
                 recs = recommendations.get(category, [])
                 if recs:
                     allocations[category] = sum(rec["Amount"] for rec in recs)
-
-            # Filter out categories with zero allocation and prepare data for pie chart
             labels = [category for category, amount in allocations.items() if amount > 0]
             values = [amount for amount, category in zip(allocations.values(), allocations.keys()) if amount > 0]
-
-            if values:  # Only show pie chart if there are allocations
-                fig = px.pie(
-                    names=labels,
-                    values=values,
-                    title="Investment Allocation Breakdown",
-                    color_discrete_sequence=px.colors.sequential.Viridis
-                )
+            if values:
+                fig = px.pie(names=labels, values=values, title="Investment Allocation Breakdown", 
+                            color_discrete_sequence=px.colors.sequential.Viridis)
                 fig.update_traces(textinfo='percent+label', hoverinfo='label+value', textfont_size=14)
                 fig.update_layout(showlegend=True, margin=dict(t=50, b=0, l=0, r=0))
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.write("No allocations to display. Adjust your investment amount, risk tolerance, or goal to see recommendations.")
-
             for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
                 recs = recommendations.get(category, [])
                 if recs:
@@ -386,11 +346,9 @@ def main():
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
 
-    # Personalized Investment Tab
     with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
-
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -405,14 +363,12 @@ def main():
                 risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
                 horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
             submit = st.form_submit_button("🚀 Get Your Plan")
-
         if submit and survey_data is not None and survey_model is not None:
             with st.spinner("Crafting your personalized plan..."):
                 predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
                 recommendations = get_investment_recommendations(risk_tolerance, horizon_years, predicted_savings, goal)
                 monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
-
             st.subheader("💼 Your Investment Options")
             for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
                 recs = recommendations.get(category, [])
@@ -420,7 +376,6 @@ def main():
                     with st.expander(f"{category} Investments"):
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: ₹{rec['Amount']:,.2f}")
-
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("🎯 Savings Progress")
@@ -430,7 +385,6 @@ def main():
             with col2:
                 st.subheader("📊 Peer Benchmark")
                 st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
-
             with st.expander("💡 Budget Tips", expanded=True):
                 tips = []
                 median_non_essentials = survey_data["Non_Essentials"].median()
@@ -445,7 +399,6 @@ def main():
                     tips.append("Great job! Your savings exceed your goal—consider investing more.")
                 for tip in tips:
                     st.write(f"- {tip}")
-
             st.subheader("🎲 Risk Tolerance Assessment")
             risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
             st.write(f"Your Profile: **{risk_map[risk_tolerance]}**")
@@ -453,15 +406,12 @@ def main():
                 st.info("Long horizon with low risk? You could explore medium-risk options for better returns.")
             elif risk_tolerance == "High" and horizon_years < 3:
                 st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
-
             pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
-    # Retirement Planning Tab
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
-
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -472,25 +422,21 @@ def main():
                 retirement_age = st.slider("👴 Retirement Age", age, 100, 65)
                 monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
             submit = st.form_submit_button("🚀 Plan My Retirement")
-
         if submit and financial_data is not None and retirement_model is not None:
             with st.spinner("Projecting your retirement using financial_data.csv..."):
                 years_to_retirement = retirement_age - age
                 predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
                 retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
-                retirement_goal = monthly_expenses * 12 * 20  # 20 years of expenses post-retirement
-
+                retirement_goal = monthly_expenses * 12 * 20
             st.subheader("🌟 Retirement Outlook")
             col1, col2 = st.columns(2)
             col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
             col2.metric("Retirement Goal", f"₹{retirement_goal:,.2f}", f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}")
-
             st.subheader("📈 Savings Trajectory")
             trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
             fig = px.line(x=range(years_to_retirement + 1), y=trajectory, labels={"x": "Years", "y": "Wealth (₹)"}, title="Retirement Growth")
             fig.add_hline(y=retirement_goal, line_dash="dash", line_color="red", annotation_text="Goal")
             st.plotly_chart(fig, use_container_width=True)
-
             st.subheader("💡 Retirement Tips")
             if retirement_wealth < retirement_goal:
                 shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
