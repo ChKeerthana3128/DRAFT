@@ -320,72 +320,71 @@ def main():
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
 
     # Stock Investments Tab
-with tab1:
-    st.header("📈 Stock Market Adventure")
-    st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
+    with tab1:
+        st.header("📈 Stock Market Adventure")
+        st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
 
-    with st.form(key="stock_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
-            invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, step=500.0, help="How much are you investing?")
-        with col2:
-            risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
-            goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
-        submit = st.form_submit_button("🚀 Explore Market")
+        with st.form(key="stock_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
+                invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, step=500.0, help="How much are you investing?")
+            with col2:
+                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
+                goal = st.selectbox("🎯 Goal", ["Wealth growth", "Emergency fund", "Future expenses"], help="What’s your aim?")
+            submit = st.form_submit_button("🚀 Explore Market")
 
-    if submit and stock_data is not None and stock_model is not None:
-        with st.spinner("Analyzing your investment strategy..."):
-            future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-            predicted_price = stock_model.predict(future)[0]
-            current_price = stock_data['close'].iloc[-1]
-            growth = predicted_price - current_price
-            horizon_years = horizon // 12 or 1
-            recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
+        if submit and stock_data is not None and stock_model is not None:
+            with st.spinner("Analyzing your investment strategy..."):
+                future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
+                predicted_price = stock_model.predict(future)[0]
+                current_price = stock_data['close'].iloc[-1]
+                growth = predicted_price - current_price
+                horizon_years = horizon // 12 or 1
+                recommendations = get_investment_recommendations(risk_tolerance, horizon_years, invest_amount, goal)
 
-        st.subheader("🔮 Market Forecast")
-        col1, col2 = st.columns(2)
-        col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
-        col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
+            st.subheader("🔮 Market Forecast")
+            col1, col2 = st.columns(2)
+            col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
+            col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
 
-        with st.expander("📊 Price Trend", expanded=True):
-            fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
-                         hover_data=['open', 'high', 'low', 'volume'])
-            fig.update_traces(line_color='#00ff00')
-            st.plotly_chart(fig, use_container_width=True)
+            with st.expander("📊 Price Trend", expanded=True):
+                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
+                             hover_data=['open', 'high', 'low', 'volume'])
+                fig.update_traces(line_color='#00ff00')
+                st.plotly_chart(fig, use_container_width=True)
 
-        st.subheader("💡 Your Investment Strategy")
-        # Calculate total allocated amount and prepare data for pie chart
-        allocations = {"Large Cap": 0, "Medium Cap": 0, "Low Cap": 0, "Crypto": 0}
-        for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-            recs = recommendations.get(category, [])
-            if recs:
-                allocations[category] = sum(rec["Amount"] for rec in recs)
+            st.subheader("💡 Your Investment Strategy")
+            # Calculate total allocated amount and prepare data for pie chart
+            allocations = {"Large Cap": 0, "Medium Cap": 0, "Low Cap": 0, "Crypto": 0}
+            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+                recs = recommendations.get(category, [])
+                if recs:
+                    allocations[category] = sum(rec["Amount"] for rec in recs)
 
-        # Filter out categories with zero allocation and prepare data for pie chart
-        labels = [category for category, amount in allocations.items() if amount > 0]
-        values = [amount for amount, category in zip(allocations.values(), allocations.keys()) if amount > 0]
+            # Filter out categories with zero allocation and prepare data for pie chart
+            labels = [category for category, amount in allocations.items() if amount > 0]
+            values = [amount for amount, category in zip(allocations.values(), allocations.keys()) if amount > 0]
 
-        if values:  # Only show pie chart if there are allocations
-            fig = px.pie(
-                names=labels,
-                values=values,
-                title="Investment Allocation Breakdown",
-                color_discrete_sequence=px.colors.sequential.Viridis
-            )
-            fig.update_traces(textinfo='percent+label', hoverinfo='label+value', textfont_size=14)
-            fig.update_layout(showlegend=True, margin=dict(t=50, b=0, l=0, r=0))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.write("No allocations to display. Adjust your investment amount, risk tolerance, or goal to see recommendations.")
+            if values:  # Only show pie chart if there are allocations
+                fig = px.pie(
+                    names=labels,
+                    values=values,
+                    title="Investment Allocation Breakdown",
+                    color_discrete_sequence=px.colors.sequential.Viridis
+                )
+                fig.update_traces(textinfo='percent+label', hoverinfo='label+value', textfont_size=14)
+                fig.update_layout(showlegend=True, margin=dict(t=50, b=0, l=0, r=0))
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.write("No allocations to display. Adjust your investment amount, risk tolerance, or goal to see recommendations.")
 
-        for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-            recs = recommendations.get(category, [])
-            if recs:
-                with st.expander(f"{category} Options"):
-                    for rec in recs:
-                        st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
-
+            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+                recs = recommendations.get(category, [])
+                if recs:
+                    with st.expander(f"{category} Options"):
+                        for rec in recs:
+                            st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
 
     # Personalized Investment Tab
     with tab2:
