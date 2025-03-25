@@ -216,7 +216,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Arial", "", 10)
     for tip in tips:
-        pdf.cell(0, 10, f"• {tip}", ln=True)
+        pdf.cell(0, 10, f"- {tip}", ln=True)  # Changed • to -
     pdf.ln(10)
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
