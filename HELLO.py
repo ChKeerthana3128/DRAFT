@@ -212,113 +212,49 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     return recommendations
 
 # PDF Generation with FPDF
+# PDF Generation with FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
-    
-    # Add a Unicode font that supports more characters (DejaVuSans is a good option)
-    try:
-        # You may need to download this font file and place it in your project directory
-        pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
-        pdf.set_font('DejaVu', '', 16)
-    except:
-        # Fallback to Arial if font loading fails
-        pdf.set_font("Arial", "B", 16)
-    
-    # Helper function to clean text
-    def clean_text(text):
-        if isinstance(text, str):
-            # Replace problematic characters or encode safely
-            return text.encode('latin-1', 'replace').decode('latin-1')
-        return str(text)
-
-    pdf.cell(0, 10, clean_text(f"WealthWise Investment Plan for {name}"), ln=True, align="C")
-    
-    # Use smaller font for subtitle
-    try:
-        pdf.set_font('DejaVu', '', 10)
-    except:
-        pdf.set_font("Arial", "", 10)
-    
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"WealthWise Investment Plan for {name}", ln=True, align="C")
+    pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, "Powered by WealthWise | Built with love by xAI", ln=True, align="C")
     pdf.ln(10)
-    
-    # Financial Summary
-    try:
-        pdf.set_font('DejaVu', 'B', 12)
-    except:
-        pdf.set_font("Arial", "B", 12)
-    
+    pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
-    
-    try:
-        pdf.set_font('DejaVu', '', 10)
-    except:
-        pdf.set_font("Arial", "", 10)
-    
-    pdf.cell(0, 10, clean_text(f"Income: INR {income:,.2f}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Predicted Savings: INR {predicted_savings:,.2f}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Goal: {goal}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Risk Tolerance: {risk_tolerance}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Investment Horizon: {horizon_years} years"), ln=True)
+    pdf.set_font("Arial", "", 10)
+    pdf.cell(0, 10, f"Income: INR {income:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Predicted Savings: INR {predicted_savings:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Goal: {goal}", ln=True)
+    pdf.cell(0, 10, f"Risk Tolerance: {risk_tolerance}", ln=True)
+    pdf.cell(0, 10, f"Investment Horizon: {horizon_years} years", ln=True)
     pdf.ln(10)
-    
-    # Investment Recommendations
-    try:
-        pdf.set_font('DejaVu', 'B', 12)
-    except:
-        pdf.set_font("Arial", "B", 12)
-    
+    pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
-    
-    try:
-        pdf.set_font('DejaVu', '', 10)
-    except:
-        pdf.set_font("Arial", "", 10)
-    
+    pdf.set_font("Arial", "", 10)
     for category, recs in recommendations.items():
         if recs:
-            pdf.cell(0, 10, clean_text(f"{category}:"), ln=True)
+            pdf.cell(0, 10, f"{category}:", ln=True)
             for rec in recs:
-                pdf.cell(0, 10, clean_text(f"  - {rec['Company']}: INR {rec['Amount']:,.2f}"), ln=True)
+                pdf.cell(0, 10, f"  - {rec['Company']}: INR {rec['Amount']:,.2f}", ln=True)
     pdf.ln(10)
-    
-    # Budget Tips
-    try:
-        pdf.set_font('DejaVu', 'B', 12)
-    except:
-        pdf.set_font("Arial", "B", 12)
-    
+    pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
-    
-    try:
-        pdf.set_font('DejaVu', '', 10)
-    except:
-        pdf.set_font("Arial", "", 10)
-    
+    pdf.set_font("Arial", "", 10)
     for tip in tips:
-        pdf.cell(0, 10, clean_text(f"- {tip}"), ln=True)
+        pdf.cell(0, 10, f"- {tip}", ln=True)
     pdf.ln(10)
-    
-    # Peer Comparison
-    try:
-        pdf.set_font('DejaVu', 'B', 12)
-    except:
-        pdf.set_font("Arial", "B", 12)
-    
+    pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
-    
-    try:
-        pdf.set_font('DejaVu', '', 10)
-    except:
-        pdf.set_font("Arial", "", 10)
-    
-    pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
-    
+    pdf.set_font("Arial", "", 10)
+    pdf.cell(0, 10, f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}", ln=True)
     buffer = io.BytesIO()
-    buffer.write(pdf.output(dest='S').encode('latin-1', 'replace'))
+    buffer.write(pdf.output(dest='S'))
     buffer.seek(0)
     return buffer
+
+
 # Fetch Real-Time Stock Data
 def get_stock_data(symbol, api_key):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={api_key}"
