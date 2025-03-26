@@ -384,68 +384,114 @@ def main():
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
 
-    with tab2:
-        st.header("🎯 Your Investment Journey")
-        st.markdown("Craft a personalized plan for wealth growth! 🌈")
-        with st.form(key="investment_form"):
-            col1, col2 = st.columns(2)
-            with col1:
-                name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
-                income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
-                essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0, help="Food, transport, etc.")
-                non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0, help="Fun stuff!")
-                debt_payment = st.number_input("💳 Debt Payment (₹)", min_value=0.0, step=100.0)
-            with col2:
-                goal = st.selectbox("🎯 Goal", ["No specific goal", "Emergency fund", "Future expenses", "Wealth growth"])
-                goal_amount = st.number_input("💎 Goal Amount (₹)", min_value=0.0, step=1000.0, value=50000.0)
-                risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
-                horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
-            submit = st.form_submit_button("🚀 Get Your Plan")
-        if submit and survey_data is not None and survey_model is not None:
-            with st.spinner("Crafting your personalized plan..."):
-                predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
-                recommendations = predict_investment_strategy(investment_model, predicted_savings, risk_tolerance, horizon_years, [goal])  # Pass as list
-                monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
-                peer_avg_savings = survey_data["Savings"].mean()
-            st.subheader("💼 Your Investment Options")
-            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-                recs = recommendations.get(category, [])
-                if recs:
-                    with st.expander(f"{category} Investments"):
-                        for rec in recs:
-                            st.write(f"- *{rec['Company']}*: ₹{rec['Amount']:,.2f}")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("🎯 Savings Progress")
-                progress = min(1.0, predicted_savings / goal_amount) if goal_amount > 0 else 0
-                st.progress(progress)
-                st.write(f"₹{predicted_savings:,.2f} / ₹{goal_amount:,.2f}")
-            with col2:
-                st.subheader("📊 Peer Benchmark")
-                st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
-            with st.expander("💡 Budget Tips", expanded=True):
-                tips = []
-                median_non_essentials = survey_data["Non_Essentials"].median()
-                if non_essentials > median_non_essentials:
-                    tips.append(f"Reduce non-essentials by INR {non_essentials - median_non_essentials:,.2f} (peer median: INR {median_non_essentials:,.2f}).")
-                if debt_payment > income * 0.3:
-                    tips.append("Debt payment exceeds 30% of income - consider refinancing or cutting expenses.")
-                if predicted_savings < monthly_savings_needed:
-                    shortfall = monthly_savings_needed - predicted_savings
-                    tips.append(f"Boost savings by INR {shortfall:,.2f}/month to meet your goal.")
-                else:
-                    tips.append("Great job! Your savings exceed your goal - consider investing more.")
-                for tip in tips:
-                    st.write(f"- {tip}")
-            st.subheader("🎲 Risk Tolerance Assessment")
-            risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
-            st.write(f"Your Profile: *{risk_map[risk_tolerance]}*")
-            if risk_tolerance == "Low" and horizon_years > 5:
-                st.info("Long horizon with low risk? You could explore medium-risk options for better returns.")
-            elif risk_tolerance == "High" and horizon_years < 3:
-                st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
-            pdf_buffer = generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
-            st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
+   with tab2:
+    st.header("🎯 Your Investment Journey")
+    st.markdown("Craft a personalized plan for wealth growth! 🌈")
+    with st.form(key="investment_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
+            income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+            essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0, help="Food, transport, etc.")
+            non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0, help="Fun stuff!")
+            debt_payment = st.number_input("💳 Debt Payment (₹)", min_value=0.0, step=100.0)
+        with col2:
+            goals = st.multiselect(
+                "🎯 Goals",
+                ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
+                default=["Wealth growth"],
+                help="Select one or more goals!"
+            )
+            goal_amount = st.number_input("💎 Total Goal Amount (₹)", min_value=0.0, step=1000.0, value=50000.0)
+            risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
+            horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
+            invest_percent = st.slider("💸 % of Savings to Invest", 0, 100, 50, help="What portion of your savings do you want to invest?")
+        submit = st.form_submit_button("🚀 Get Your Plan")
+    
+    if submit and survey_data is not None and survey_model is not None:
+        with st.spinner("Crafting your personalized plan..."):
+            predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
+            invest_amount = predicted_savings * (invest_percent / 100)
+            recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goals)
+            monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
+            peer_avg_savings = survey_data["Savings"].mean()
+
+        # Savings Breakdown Visualization
+        st.subheader("💰 Your Monthly Breakdown")
+        breakdown_data = {
+            "Essentials": essentials,
+            "Non-Essentials": non_essentials,
+            "Debt Payment": debt_payment,
+            "Savings": predicted_savings
+        }
+        fig = px.pie(values=list(breakdown_data.values()), names=list(breakdown_data.keys()), title="Spending vs. Savings")
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Investment Options
+        st.subheader("💼 Your Investment Options")
+        st.write(f"Goals Selected: {', '.join(goals)}")
+        st.write(f"Amount to Invest: ₹{invest_amount:,.2f} ({invest_percent}% of ₹{predicted_savings:,.2f})")
+        for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+            recs = recommendations.get(category, [])
+            if recs:
+                with st.expander(f"{category} Investments"):
+                    for rec in recs:
+                        st.write(f"- *{rec['Company']}*: ₹{rec['Amount']:,.2f}")
+
+        # Savings Progress and Peer Comparison
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("🎯 Savings Progress")
+            progress = min(1.0, predicted_savings / goal_amount) if goal_amount > 0 else 0
+            st.progress(progress)
+            st.write(f"₹{predicted_savings:,.2f} / ₹{goal_amount:,.2f}")
+        with col2:
+            st.subheader("📊 Peer Benchmark")
+            st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
+
+        # Savings Goal Timeline
+        st.subheader("⏰ Time to Goal")
+        months_to_goal = goal_amount / predicted_savings if predicted_savings > 0 else float('inf')
+        years_to_goal = months_to_goal / 12
+        timeline_data = pd.DataFrame({
+            "Years": range(horizon_years + 1),
+            "Savings": [predicted_savings * 12 * y for y in range(horizon_years + 1)]
+        })
+        fig = px.line(timeline_data, x="Years", y="Savings", title=f"Projected Savings to Reach ₹{goal_amount:,.2f}")
+        fig.add_hline(y=goal_amount, line_dash="dash", line_color="red", annotation_text="Goal")
+        st.plotly_chart(fig, use_container_width=True)
+        st.write(f"Estimated Time to Goal: {years_to_goal:.1f} years at current savings rate")
+
+        # Enhanced Budget Tips
+        with st.expander("💡 Personalized Budget Tips", expanded=True):
+            tips = []
+            median_non_essentials = survey_data["Non_Essentials"].median()
+            if non_essentials > median_non_essentials:
+                tips.append(f"Reduce non-essentials by ₹{non_essentials - median_non_essentials:,.2f} (peer median: ₹{median_non_essentials:,.2f}).")
+            if debt_payment > income * 0.3:
+                tips.append("Debt payment exceeds 30% of income - consider refinancing or cutting expenses.")
+            if predicted_savings < monthly_savings_needed:
+                shortfall = monthly_savings_needed - predicted_savings
+                tips.append(f"Boost savings by ₹{shortfall:,.2f}/month to meet your goal in {horizon_years} years.")
+            else:
+                tips.append("Great job! Your savings exceed your goal - consider increasing your investment percentage.")
+            if "Wealth growth" in goals and risk_tolerance == "Low":
+                tips.append("For wealth growth, consider medium-risk options to boost returns over {horizon_years} years.")
+            for tip in tips:
+                st.write(f"- {tip}")
+
+        # Risk Tolerance Assessment
+        st.subheader("🎲 Risk Tolerance Assessment")
+        risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
+        st.write(f"Your Profile: *{risk_map[risk_tolerance]}*")
+        if risk_tolerance == "Low" and horizon_years > 5:
+            st.info("Long horizon with low risk? You could explore medium-risk options for better returns.")
+        elif risk_tolerance == "High" and horizon_years < 3:
+            st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
+
+        # PDF Download (updated to handle multiple goals)
+        pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
+        st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
     with tab3:
         st.header("🏡 Retirement Planning")
