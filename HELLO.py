@@ -265,6 +265,18 @@ def get_stock_data(symbol, api_key):
     except Exception as e:
         return None, f"Error: {str(e)}"
 
+# Fetch Market News
+def get_market_news(api_key, tickers="AAPL"):
+    url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers={tickers}&apikey={api_key}"
+    try:
+        response = requests.get(url)
+        data = response.json()
+        if "feed" not in data or not data["feed"]:
+            return None, "No news available. Free key has limited access—try a premium key!"
+        return data["feed"], None
+    except Exception as e:
+        return None, f"Error fetching news: {str(e)}"
+
 # Main Application
 def main():
     st.title("💰 WealthWise Dashboard")
@@ -304,7 +316,7 @@ def main():
                                help="This is a special code from Alpha Vantage that lets us fetch live stock data just for you!")
         st.markdown("""
         **Why do I need this?**  
-        It’s your VIP pass to see what’s happening in the stock market right now—like checking the latest price of Apple or Tesla!
+        It’s your VIP pass to see what’s happening in the stock market right now—like checking the latest price of Apple or Tata Motors!
         
         **How to Get It:**  
         1. Visit [Alpha Vantage](https://www.alphavantage.co/).  
@@ -314,7 +326,7 @@ def main():
         """)
 
     # Tabs
-    tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "📰 Market News"])
 
     with tab1:
         st.header("📈 Stock Market Adventure")
@@ -367,13 +379,15 @@ def main():
         st.write("See the latest prices for your favorite stocks—your key in the sidebar unlocks this magic!")
         with st.expander("How to Use This?"):
             st.write("""
-            1. **Add Your Key**: Paste your Alpha Vantage key in the 'Settings' sidebar (see instructions there!).
-            2. **Pick Stocks**: Type stock symbols below (e.g., AAPL for Apple, MSFT for Microsoft).
+            1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
+            2. **Pick Stocks**: Type stock symbols below:
+               - U.S. stocks: e.g., AAPL (Apple), MSFT (Microsoft)
+               - Indian stocks: e.g., TATAMOTORS.NS (Tata Motors), HDFCBANK.NS (HDFC Bank)
             3. **Track Live**: Click 'Track Portfolio' to see prices update in real-time!
             """)
             st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
         
-        portfolio_input = st.text_area("Enter stock symbols (one per line, e.g., AAPL, MSFT, TSLA):", "AAPL\nMSFT")
+        portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nTATAMOTORS.NS\nHDFCBANK.NS")
         portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
         
         if st.button("Track Portfolio"):
@@ -414,22 +428,6 @@ def main():
                             st.plotly_chart(fig, use_container_width=True)
                 
                 st.success(f"Total Portfolio Value: ${total_value:.2f}")
-                
-                # Market News Section
-                if st.checkbox("Show Market News"):
-                    news_url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=AAPL&apikey={api_key}"
-                    try:
-                        news_response = requests.get(news_url).json()
-                        if "feed" in news_response and news_response["feed"]:
-                            st.subheader("Latest Market News")
-                            for article in news_response["feed"][:5]:
-                                st.write(f"**{article['title']}**")
-                                st.write(article["summary"])
-                                st.write(f"[Read more]({article['url']})")
-                        else:
-                            st.warning("No news available. The free Alpha Vantage key has limited news access—upgrade to a premium key for more!")
-                    except Exception as e:
-                        st.warning(f"Couldn’t fetch news: {str(e)}. Try again or check your key!")
 
     with tab2:
         st.header("🎯 Your Investment Journey")
@@ -527,6 +525,26 @@ def main():
                 shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
                 st.write(f"- Increase monthly savings by ₹{shortfall:,.2f} to meet your goal.")
             st.write("- Assumes a 5% annual growth rate—adjust investments for higher returns if needed.")
+
+    with tab4:
+        st.header("📰 Market News")
+        st.markdown("Stay updated with the latest market headlines—your key unlocks this too!")
+        if not api_key:
+            st.error("Please add your Alpha Vantage key in the sidebar to see market news.")
+        else:
+            ticker_for_news = st.text_input("Enter a stock symbol for news (e.g., AAPL, TATAMOTORS.NS):", "AAPL")
+            if st.button("Fetch News"):
+                with st.spinner("Fetching latest market news..."):
+                    news_feed, error = get_market_news(api_key, ticker_for_news.upper())
+                    if error or news_feed is None:
+                        st.warning(error)
+                    else:
+                        st.subheader(f"Latest News for {ticker_for_news.upper()}")
+                        for article in news_feed[:5]:  # Show top 5 articles
+                            st.write(f"**{article['title']}**")
+                            st.write(article["summary"])
+                            st.write(f"[Read more]({article['url']})")
+            st.info("Note: News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
 
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
