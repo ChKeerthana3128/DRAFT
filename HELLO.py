@@ -213,8 +213,6 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
 
 # PDF Generation with FPDF
 
-import io
-from fpdf import FPDF, FPDFUnicodeEncodingException
 
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
