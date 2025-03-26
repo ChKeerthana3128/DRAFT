@@ -212,7 +212,6 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     return recommendations
 
 # PDF Generation with FPDF
-# PDF Generation with FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
