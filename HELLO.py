@@ -316,7 +316,8 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
     
     buffer = io.BytesIO()
-    buffer.write(pdf.output(dest='S').encode('latin-1', 'replace'))
+    buffer.write(pdf.output(dest='S').encode('utf-8'))
+
     buffer.seek(0)
     return buffer
 
