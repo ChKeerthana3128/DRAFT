@@ -316,7 +316,7 @@ def main():
                                help="This is a special code from Alpha Vantage that lets us fetch live stock data just for you!")
         st.markdown("""
         **Why do I need this?**  
-        It’s your VIP pass to see what’s happening in the stock market right now—like checking the latest price of Apple or Tata Motors!
+        It’s your VIP pass to see what’s happening in the stock market right now—like checking the latest price of Apple or Tesla!
         
         **How to Get It:**  
         1. Visit [Alpha Vantage](https://www.alphavantage.co/).  
@@ -332,7 +332,7 @@ def main():
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
         
-        # Stock Market Form (No Live Tracking Here)
+        # Stock Market Form
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -479,9 +479,11 @@ def main():
         with st.expander("How to Use This?"):
             st.write("""
             1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
-            2. **Pick Stocks**: Type stock symbols below:
-               - U.S. stocks: e.g., AAPL (Apple), MSFT (Microsoft)
-               - Indian stocks: e.g., TATAMOTORS.NS (Tata Motors), HDFCBANK.NS (HDFC Bank)
+            2. **Pick Stocks**: Edit the list below or use these popular ones:
+               - AAPL (Apple)
+               - MSFT (Microsoft)
+               - GOOGL (Google)
+               - TSLA (Tesla)
             3. **Track & Read**: Click 'Track Portfolio & News' to see live prices and headlines!
             """)
             st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
@@ -489,9 +491,9 @@ def main():
         if not api_key:
             st.error("Oops! Please add your Alpha Vantage key in the sidebar to access live market insights.")
         else:
-            # Live Portfolio Tracking
+            # Live Portfolio Tracking with Working Tickers
             st.subheader("Live Portfolio Tracking")
-            portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nTATAMOTORS.NS\nHDFCBANK.NS")
+            portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nGOOGL\nTSLA")
             portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
             
             # Combined Button for Portfolio and News
