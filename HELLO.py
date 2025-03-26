@@ -326,13 +326,13 @@ def main():
         """)
 
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "📰 Market News"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
 
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
         
-        # Existing Stock Market Form
+        # Stock Market Form (No Live Tracking Here)
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -373,61 +373,6 @@ def main():
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goal.")
-
-        # Real-Time Stock Portfolio Tracking
-        st.subheader("Live Portfolio Tracking")
-        st.write("See the latest prices for your favorite stocks—your key in the sidebar unlocks this magic!")
-        with st.expander("How to Use This?"):
-            st.write("""
-            1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
-            2. **Pick Stocks**: Type stock symbols below:
-               - U.S. stocks: e.g., AAPL (Apple), MSFT (Microsoft)
-               - Indian stocks: e.g., TATAMOTORS.NS (Tata Motors), HDFCBANK.NS (HDFC Bank)
-            3. **Track Live**: Click 'Track Portfolio' to see prices update in real-time!
-            """)
-            st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
-        
-        portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nTATAMOTORS.NS\nHDFCBANK.NS")
-        portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
-        
-        if st.button("Track Portfolio"):
-            if not api_key:
-                st.error("Oops! Please add your Alpha Vantage key in the sidebar to see live data.")
-            else:
-                total_value = 0
-                for symbol in portfolio:
-                    with st.spinner(f"Fetching live data for {symbol}..."):
-                        df, error = get_stock_data(symbol, api_key)
-                        if error or df is None:
-                            st.error(f"{symbol}: {error}")
-                            continue
-                        
-                        # Latest price and performance
-                        latest_price = df["Close"].iloc[0]
-                        previous_price = df["Close"].iloc[-1]
-                        performance = ((latest_price - previous_price) / previous_price) * 100
-                        total_value += latest_price  # Assuming 1 share per stock
-                        
-                        # Display current value and performance
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric(
-                                label=f"{symbol} Current Price",
-                                value=f"${latest_price:.2f}",
-                                delta=f"{performance:.2f}%",
-                                delta_color="normal"
-                            )
-                        with col2:
-                            fig = go.Figure()
-                            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
-                            fig.update_layout(
-                                title=f"{symbol} Live Price (Last 100 intervals)",
-                                xaxis_title="Time",
-                                yaxis_title="Price (USD)"
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                
-                st.success(f"Total Portfolio Value: ${total_value:.2f}")
 
     with tab2:
         st.header("🎯 Your Investment Journey")
@@ -527,24 +472,79 @@ def main():
             st.write("- Assumes a 5% annual growth rate—adjust investments for higher returns if needed.")
 
     with tab4:
-        st.header("📰 Market News")
-        st.markdown("Stay updated with the latest market headlines—your key unlocks this too!")
+        st.header("🌐 Live Market Insights")
+        st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
+
+        # Instructions
+        with st.expander("How to Use This?"):
+            st.write("""
+            1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
+            2. **Pick Stocks**: Type stock symbols below:
+               - U.S. stocks: e.g., AAPL (Apple), MSFT (Microsoft)
+               - Indian stocks: e.g., TATAMOTORS.NS (Tata Motors), HDFCBANK.NS (HDFC Bank)
+            3. **Track & Read**: Click 'Track Portfolio & News' to see live prices and headlines!
+            """)
+            st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
+
         if not api_key:
-            st.error("Please add your Alpha Vantage key in the sidebar to see market news.")
+            st.error("Oops! Please add your Alpha Vantage key in the sidebar to access live market insights.")
         else:
-            ticker_for_news = st.text_input("Enter a stock symbol for news (e.g., AAPL, TATAMOTORS.NS):", "AAPL")
-            if st.button("Fetch News"):
-                with st.spinner("Fetching latest market news..."):
-                    news_feed, error = get_market_news(api_key, ticker_for_news.upper())
+            # Live Portfolio Tracking
+            st.subheader("Live Portfolio Tracking")
+            portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nTATAMOTORS.NS\nHDFCBANK.NS")
+            portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
+            
+            # Combined Button for Portfolio and News
+            if st.button("Track Portfolio & News"):
+                # Portfolio Tracking
+                total_value = 0
+                for symbol in portfolio:
+                    with st.spinner(f"Fetching live data for {symbol}..."):
+                        df, error = get_stock_data(symbol, api_key)
+                        if error or df is None:
+                            st.error(f"{symbol}: {error}")
+                            continue
+                        
+                        # Latest price and performance
+                        latest_price = df["Close"].iloc[0]
+                        previous_price = df["Close"].iloc[-1]
+                        performance = ((latest_price - previous_price) / previous_price) * 100
+                        total_value += latest_price  # Assuming 1 share per stock
+                        
+                        # Display current value and performance
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric(
+                                label=f"{symbol} Current Price",
+                                value=f"${latest_price:.2f}",
+                                delta=f"{performance:.2f}%",
+                                delta_color="normal"
+                            )
+                        with col2:
+                            fig = go.Figure()
+                            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
+                            fig.update_layout(
+                                title=f"{symbol} Live Price (Last 100 intervals)",
+                                xaxis_title="Time",
+                                yaxis_title="Price (USD)"
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                
+                st.success(f"Total Portfolio Value: ${total_value:.2f}")
+
+                # Market News
+                st.subheader("Latest Market News")
+                ticker_for_news = portfolio[0] if portfolio else "AAPL"  # Default to first portfolio symbol or AAPL
+                with st.spinner(f"Fetching news for {ticker_for_news}..."):
+                    news_feed, error = get_market_news(api_key, ticker_for_news)
                     if error or news_feed is None:
                         st.warning(error)
                     else:
-                        st.subheader(f"Latest News for {ticker_for_news.upper()}")
                         for article in news_feed[:5]:  # Show top 5 articles
                             st.write(f"**{article['title']}**")
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
-            st.info("Note: News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
+                st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
 
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
