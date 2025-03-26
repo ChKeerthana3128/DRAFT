@@ -34,7 +34,7 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
     "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
 })
 
-# Data Loading Functions (unchanged)
+# Data Loading Functions
 @st.cache_data
 def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
@@ -108,7 +108,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         st.error(f"🚨 Error loading financial data: {str(e)}")
         return None
 
-# Model Training Functions (unchanged)
+# Model Training Functions
 @st.cache_resource
 def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
@@ -155,7 +155,7 @@ def train_investment_model(data):
         model.fit(X, y)
     return model
 
-# Predictive and Utility Functions (unchanged)
+# Predictive and Utility Functions
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({
         "Income": [income],
@@ -207,7 +207,7 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
         ]
     return recommendations
 
-# PDF Generation with FPDF (unchanged)
+# PDF Generation with FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
@@ -256,7 +256,7 @@ def get_stock_data(symbol, api_key):
         response = requests.get(url)
         data = response.json()
         if "Time Series (5min)" not in data:
-            return None, "Error fetching data. Check symbol or API key."
+            return None, "Error: Invalid symbol, API key, or rate limit reached."
         time_series = data["Time Series (5min)"]
         df = pd.DataFrame.from_dict(time_series, orient="index").astype(float)
         df.index = pd.to_datetime(df.index)
@@ -287,7 +287,7 @@ def main():
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
     investment_model = train_investment_model(investment_data)
 
-    # Sidebar
+    # Sidebar with API Key Explanation
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -297,8 +297,21 @@ def main():
             st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
-        api_key = st.text_input("Enter your Alpha Vantage API Key", value="demo", type="password")
-        st.info("Get your free API key from [Alpha Vantage](https://www.alphavantage.co/).")
+        
+        st.markdown("### 🔑 Your Market Data Pass")
+        st.write("To see live stock prices and news, we need a 'key'—think of it like a ticket to unlock real-time market updates! It’s free and easy to get.")
+        api_key = st.text_input("Paste Your Key Here", value="", type="password", 
+                               help="This is a special code from Alpha Vantage that lets us fetch live stock data just for you!")
+        st.markdown("""
+        **Why do I need this?**  
+        It’s your VIP pass to see what’s happening in the stock market right now—like checking the latest price of Apple or Tesla!
+        
+        **How to Get It:**  
+        1. Visit [Alpha Vantage](https://www.alphavantage.co/).  
+        2. Click 'Get Free API Key' and sign up with your email.  
+        3. Copy the code they give you (e.g., 'X7K9P2M4Q1').  
+        4. Paste it here and start tracking!
+        """)
 
     # Tabs
     tab1, tab2, tab3 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning"])
@@ -351,65 +364,74 @@ def main():
 
         # Real-Time Stock Portfolio Tracking
         st.subheader("Live Portfolio Tracking")
+        st.write("See the latest prices for your favorite stocks—your key in the sidebar unlocks this magic!")
+        with st.expander("How to Use This?"):
+            st.write("""
+            1. **Add Your Key**: Paste your Alpha Vantage key in the 'Settings' sidebar (see instructions there!).
+            2. **Pick Stocks**: Type stock symbols below (e.g., AAPL for Apple, MSFT for Microsoft).
+            3. **Track Live**: Click 'Track Portfolio' to see prices update in real-time!
+            """)
+            st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
+        
         portfolio_input = st.text_area("Enter stock symbols (one per line, e.g., AAPL, MSFT, TSLA):", "AAPL\nMSFT")
         portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
         
         if st.button("Track Portfolio"):
-            total_value = 0
-            for symbol in portfolio:
-                with st.spinner(f"Fetching data for {symbol}..."):
-                    df, error = get_stock_data(symbol, api_key)
-                    if error or df is None:
-                        st.error(f"{symbol}: {error}")
-                        continue
-                    
-                    # Latest price and performance
-                    latest_price = df["Close"].iloc[0]
-                    previous_price = df["Close"].iloc[-1]
-                    performance = ((latest_price - previous_price) / previous_price) * 100
-                    total_value += latest_price  # Assuming 1 share per stock for simplicity
-                    
-                    # Display current value and performance
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        # Ensure delta is numeric for proper color handling
-                        st.metric(
-                            label=f"{symbol} Current Price",
-                            value=f"${latest_price:.2f}",
-                            delta=f"{performance:.2f}%",
-                            delta_color="normal"  # Use "normal" to avoid color issues; adjust as needed
-                        )
-                    with col2:
-                        # Interactive chart
-                        fig = go.Figure()
-                        fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
-                        fig.update_layout(
-                            title=f"{symbol} Real-Time Price (Last 100 intervals)",
-                            xaxis_title="Time",
-                            yaxis_title="Price (USD)"
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-            
-            # Total portfolio value
-            st.success(f"Total Portfolio Value: ${total_value:.2f}")
-            
-            # Market News
-            if st.checkbox("Show Market News"):
-                news_url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=AAPL&apikey={api_key}"
-                try:
-                    news_response = requests.get(news_url).json()
-                    if "feed" in news_response:
-                        for article in news_response["feed"][:5]:  # Show top 5 articles
-                            st.write(f"**{article['title']}**")
-                            st.write(article["summary"])
-                            st.write(f"[Read more]({article['url']})")
-                    else:
-                        st.warning("News data unavailable with demo key or API limit reached.")
-                except Exception as e:
-                    st.warning(f"Failed to fetch news: {str(e)}")
+            if not api_key:
+                st.error("Oops! Please add your Alpha Vantage key in the sidebar to see live data.")
+            else:
+                total_value = 0
+                for symbol in portfolio:
+                    with st.spinner(f"Fetching live data for {symbol}..."):
+                        df, error = get_stock_data(symbol, api_key)
+                        if error or df is None:
+                            st.error(f"{symbol}: {error}")
+                            continue
+                        
+                        # Latest price and performance
+                        latest_price = df["Close"].iloc[0]
+                        previous_price = df["Close"].iloc[-1]
+                        performance = ((latest_price - previous_price) / previous_price) * 100
+                        total_value += latest_price  # Assuming 1 share per stock
+                        
+                        # Display current value and performance
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric(
+                                label=f"{symbol} Current Price",
+                                value=f"${latest_price:.2f}",
+                                delta=f"{performance:.2f}%",
+                                delta_color="normal"
+                            )
+                        with col2:
+                            fig = go.Figure()
+                            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
+                            fig.update_layout(
+                                title=f"{symbol} Live Price (Last 100 intervals)",
+                                xaxis_title="Time",
+                                yaxis_title="Price (USD)"
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                
+                st.success(f"Total Portfolio Value: ${total_value:.2f}")
+                
+                # Market News Section
+                if st.checkbox("Show Market News"):
+                    news_url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=AAPL&apikey={api_key}"
+                    try:
+                        news_response = requests.get(news_url).json()
+                        if "feed" in news_response and news_response["feed"]:
+                            st.subheader("Latest Market News")
+                            for article in news_response["feed"][:5]:
+                                st.write(f"**{article['title']}**")
+                                st.write(article["summary"])
+                                st.write(f"[Read more]({article['url']})")
+                        else:
+                            st.warning("No news available. The free Alpha Vantage key has limited news access—upgrade to a premium key for more!")
+                    except Exception as e:
+                        st.warning(f"Couldn’t fetch news: {str(e)}. Try again or check your key!")
 
     with tab2:
-        # Unchanged Personalized Investment tab
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.form(key="investment_form"):
@@ -473,7 +495,6 @@ def main():
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
     with tab3:
-        # Unchanged Retirement Planning tab
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
         with st.form(key="retirement_form"):
@@ -487,7 +508,7 @@ def main():
                 monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
             submit = st.form_submit_button("🚀 Plan My Retirement")
         if submit and financial_data is not None and retirement_model is not None:
-            with st.spinner("Projecting your retirement using financial_data.csv..."):
+            with st.spinner("Projecting your retirement..."):
                 years_to_retirement = retirement_age - age
                 predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
                 retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
