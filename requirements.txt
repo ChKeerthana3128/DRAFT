@@ -5,4 +5,5 @@ matplotlib
 plotly
 scikit-learn
 requests
-fpdf
+fpdf==1.7  # Ensures compatibility with legacy code using FPDFUnicodeEncodingException
+
