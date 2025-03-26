@@ -213,43 +213,46 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
 
 # PDF Generation with FPDF
 
+import io
+from fpdf import FPDF, FPDFUnicodeEncodingException
+
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
-    
-    # Helper function to set font safely
-    def set_font_safe(font_name, style='', size=12):
-        try:
-            pdf.set_font(font_name, style, size)
-        except Exception:
-            pdf.set_font("Arial", style, size)  # Fallback to Arial if DejaVu is missing
 
-    # Load a Unicode font for better character support
-    try:
-        pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
-    except Exception:
-        pass  # If loading fails, we use Arial as fallback throughout
-    
-    # Helper function to clean text and remove incompatible characters
+    # Helper function to set a Unicode-compatible font safely
+    def set_unicode_font():
+        try:
+            # Load DejaVuSans if available (Ensure you have the correct path)
+            pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
+            pdf.set_font('DejaVu', '', 12)
+        except:
+            pdf.set_font("Arial", "", 12)  # Fallback if font loading fails
+
+    # Initialize the font (attempt Unicode-compatible font)
+    set_unicode_font()
+
+    # Helper function to clean text for compatibility
     def clean_text(text):
-        if isinstance(text, str):
-            return text.encode('utf-8', 'replace').decode('utf-8')
-        return str(text)
+        try:
+            return text.encode('utf-8').decode('utf-8')  # Handle Unicode safely
+        except UnicodeEncodeError:
+            return text.encode('ascii', 'ignore').decode('ascii')  # Fallback to ASCII if necessary
 
     # Title
-    set_font_safe('DejaVu', '', 16)
+    pdf.set_font('DejaVu', '', 16)
     pdf.cell(0, 10, clean_text(f"WealthWise Investment Plan for {name}"), ln=True, align="C")
     
     # Subtitle
-    set_font_safe('DejaVu', '', 10)
+    pdf.set_font('DejaVu', '', 10)
     pdf.cell(0, 10, "Powered by WealthWise | Built with love by xAI", ln=True, align="C")
     pdf.ln(10)
     
     # Financial Summary Section
-    set_font_safe('DejaVu', 'B', 12)
+    pdf.set_font('DejaVu', 'B', 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
 
-    set_font_safe('DejaVu', '', 10)
+    pdf.set_font('DejaVu', '', 10)
     pdf.cell(0, 10, clean_text(f"Income: INR {income:,.2f}"), ln=True)
     pdf.cell(0, 10, clean_text(f"Predicted Savings: INR {predicted_savings:,.2f}"), ln=True)
     pdf.cell(0, 10, clean_text(f"Goal: {goal}"), ln=True)
@@ -258,10 +261,10 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.ln(10)
     
     # Investment Recommendations Section
-    set_font_safe('DejaVu', 'B', 12)
+    pdf.set_font('DejaVu', 'B', 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
 
-    set_font_safe('DejaVu', '', 10)
+    pdf.set_font('DejaVu', '', 10)
     for category, recs in recommendations.items():
         if recs:
             pdf.cell(0, 10, clean_text(f"{category}:"), ln=True)
@@ -270,31 +273,32 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.ln(10)
     
     # Budget Tips Section
-    set_font_safe('DejaVu', 'B', 12)
+    pdf.set_font('DejaVu', 'B', 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
 
-    set_font_safe('DejaVu', '', 10)
+    pdf.set_font('DejaVu', '', 10)
     for tip in tips:
-        pdf.cell(0, 10, clean_text(f"- {tip}"), ln=True)
+        try:
+            pdf.cell(0, 10, clean_text(f"- {tip}"), ln=True)
+        except FPDFUnicodeEncodingException:
+            # Fallback to ASCII text for tips that cause issues
+            pdf.cell(0, 10, clean_text(f"- {tip.encode('ascii', 'ignore').decode()}"), ln=True)
     pdf.ln(10)
     
     # Peer Comparison Section
-    set_font_safe('DejaVu', 'B', 12)
+    pdf.set_font('DejaVu', 'B', 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
 
-    set_font_safe('DejaVu', '', 10)
+    pdf.set_font('DejaVu', '', 10)
     pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
     
-    # Convert the PDF to bytes and validate content
-    pdf_content = pdf.output(dest='S').encode('utf-8')
-    if len(pdf_content) == 0:
-        raise ValueError("PDF content is empty. Please check the inputs and PDF generation logic.")
-    
-    # Write to buffer and return
+    # Convert PDF to BytesIO object
+    pdf_content = pdf.output(dest='S').encode('latin-1')  # Using latin-1 to avoid encoding issues
     buffer = io.BytesIO()
     buffer.write(pdf_content)
     buffer.seek(0)
     return buffer
+
 
 
 # Fetch Real-Time Stock Data
