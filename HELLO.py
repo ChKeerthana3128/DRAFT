@@ -206,7 +206,7 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     for category in filtered["Category"].unique():
         category_recs = filtered[filtered["Category"] == category].sort_values("Suitability_Score", ascending=False).head(1)
         recommendations[category] = [
-            {"Company": row["Company"], "Amount": invest_amount / len(filtered["Category"].unique())}
+            {"Company": row["Company"], "Amount": invest_amount / len(filtered["Category"].unique()) if len(filtered["Category"].unique()) > 0 else invest_amount}
             for _, row in category_recs.iterrows()
         ]
     return recommendations
@@ -332,57 +332,57 @@ def main():
     # Tabs
     tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
 
-with tab1:
-    st.header("📈 Stock Market Adventure")
-    st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
-    
-    # Stock Market Form
-    with st.form(key="stock_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
-            invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0, help="How much are you investing?")
-        with col2:
-            risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
-            goals = st.multiselect(
-                "🎯 Goals",
-                ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
-                default=["Wealth growth"],
-                help="Select one or more goals for your investment!"
-            )
-        submit = st.form_submit_button("🚀 Explore Market")
-    
-    if submit and stock_data is not None and stock_model is not None:
-        with st.spinner("Analyzing your investment strategy..."):
-            future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
-            predicted_price = stock_model.predict(future)[0]
-            current_price = stock_data['close'].iloc[-1]
-            growth = predicted_price - current_price
-            horizon_years = horizon // 12 or 1
-            recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goals)
-        st.subheader("🔮 Market Forecast")
-        col1, col2 = st.columns(2)
-        col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
-        col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
-        with st.expander("📊 Price Trend", expanded=True):
-            fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
-                         hover_data=['open', 'high', 'low', 'volume'])
-            fig.update_traces(line_color='#00ff00')
-            st.plotly_chart(fig, use_container_width=True)
-        st.subheader("💡 Your Investment Strategy")
-        st.write(f"Goals Selected: {', '.join(goals)}")
-        progress = min(1.0, invest_amount / 100000)
-        st.progress(progress)
-        any_recommendations = False
-        for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-            recs = recommendations.get(category, [])
-            if recs:
-                any_recommendations = True
-                with st.expander(f"{category} Options"):
-                    for rec in recs:
-                        st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
-        if not any_recommendations:
-            st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
+    with tab1:
+        st.header("📈 Stock Market Adventure")
+        st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
+        
+        # Stock Market Form
+        with st.form(key="stock_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
+                invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0, help="How much are you investing?")
+            with col2:
+                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
+                goals = st.multiselect(
+                    "🎯 Goals",
+                    ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
+                    default=["Wealth growth"],
+                    help="Select one or more goals for your investment!"
+                )
+            submit = st.form_submit_button("🚀 Explore Market")
+        
+        if submit and stock_data is not None and stock_model is not None:
+            with st.spinner("Analyzing your investment strategy..."):
+                future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
+                predicted_price = stock_model.predict(future)[0]
+                current_price = stock_data['close'].iloc[-1]
+                growth = predicted_price - current_price
+                horizon_years = horizon // 12 or 1
+                recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goals)
+            st.subheader("🔮 Market Forecast")
+            col1, col2 = st.columns(2)
+            col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
+            col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
+            with st.expander("📊 Price Trend", expanded=True):
+                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
+                             hover_data=['open', 'high', 'low', 'volume'])
+                fig.update_traces(line_color='#00ff00')
+                st.plotly_chart(fig, use_container_width=True)
+            st.subheader("💡 Your Investment Strategy")
+            st.write(f"Goals Selected: {', '.join(goals)}")
+            progress = min(1.0, invest_amount / 100000)
+            st.progress(progress)
+            any_recommendations = False
+            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
+                recs = recommendations.get(category, [])
+                if recs:
+                    any_recommendations = True
+                    with st.expander(f"{category} Options"):
+                        for rec in recs:
+                            st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
+            if not any_recommendations:
+                st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
 
     with tab2:
         st.header("🎯 Your Investment Journey")
@@ -404,7 +404,7 @@ with tab1:
         if submit and survey_data is not None and survey_model is not None:
             with st.spinner("Crafting your personalized plan..."):
                 predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
-                recommendations = predict_investment_strategy(investment_model, predicted_savings, risk_tolerance, horizon_years, goal)
+                recommendations = predict_investment_strategy(investment_model, predicted_savings, risk_tolerance, horizon_years, [goal])  # Pass as list
                 monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
             st.subheader("💼 Your Investment Options")
