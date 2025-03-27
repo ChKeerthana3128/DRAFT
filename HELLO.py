@@ -212,8 +212,6 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     return recommendations
 
 # PDF Generation with FPDF
-
-
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
@@ -277,13 +275,10 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
 
     # Write PDF to buffer
-    import io
     buffer = io.BytesIO()
     pdf.output(buffer)
     buffer.seek(0)
     return buffer
-
-
 
 # Fetch Real-Time Stock Data
 def get_stock_data(symbol, api_key):
@@ -375,7 +370,7 @@ def main():
                 horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
                 invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0, help="How much are you investing?")
             with col2:
-                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
+                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with riskContract)
                 goals = st.multiselect(
                     "🎯 Goals",
                     ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
@@ -525,87 +520,87 @@ def main():
             pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
-  with tab3:
-    st.header("🏡 Retirement Planning")
-    st.markdown("Secure your golden years with smart savings! 🌞")
+    with tab3:
+        st.header("🏡 Retirement Planning")
+        st.markdown("Secure your golden years with smart savings! 🌞")
     
-    # Retirement Planning Form with New Features
-    with st.form(key="retirement_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            age = st.number_input("🎂 Current Age", min_value=18, max_value=100, value=30)
-            income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
-            current_savings = st.number_input("🏦 Current Savings (₹)", min_value=0.0, step=1000.0)
-        with col2:
-            retirement_age = st.slider("👴 Retirement Age", age, 100, 65)
-            monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
-            inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0, help="Adjusts expenses for future value")
+        # Retirement Planning Form with New Features
+        with st.form(key="retirement_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                age = st.number_input("🎂 Current Age", min_value=18, max_value=100, value=30)
+                income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+                current_savings = st.number_input("🏦 Current Savings (₹)", min_value=0.0, step=1000.0)
+            with col2:
+                retirement_age = st.slider("👴 Retirement Age", age, 100, 65)
+                monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
+                inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0, help="Adjusts expenses for future value")
         
-        # Multiple Income Sources Input
-        st.subheader("Additional Income Sources in Retirement")
-        income_sources = st.multiselect(
-            "Select Sources", 
-            ["Pension", "Rental Income", "Part-Time Work", "Other"],
-            help="Add income streams to reduce your savings need"
-        )
-        additional_income = 0
-        for source in income_sources:
-            amount = st.number_input(f"Monthly {source} (₹)", min_value=0.0, step=500.0, key=source)
-            additional_income += amount
+            # Multiple Income Sources Input
+            st.subheader("Additional Income Sources in Retirement")
+            income_sources = st.multiselect(
+                "Select Sources", 
+                ["Pension", "Rental Income", "Part-Time Work", "Other"],
+                help="Add income streams to reduce your savings need"
+            )
+            additional_income = 0
+            for source in income_sources:
+                amount = st.number_input(f"Monthly {source} (₹)", min_value=0.0, step=500.0, key=source)
+                additional_income += amount
         
-        submit = st.form_submit_button("🚀 Plan My Retirement")
+            submit = st.form_submit_button("🚀 Plan My Retirement")
     
-    # Process Submission
-    if submit and financial_data is not None and retirement_model is not None:
-        with st.spinner("Projecting your retirement..."):
-            years_to_retirement = retirement_age - age
-            
-            # Inflation-Adjusted Expenses
-            future_expenses = monthly_expenses * (1 + inflation_rate / 100) ** years_to_retirement
-            retirement_goal = future_expenses * 12 * 20  # 20 years of retirement expenses
-            
-            # Adjust for Additional Income Sources
-            annual_additional_income = additional_income * 12
-            retirement_goal -= annual_additional_income * 20  # Reduce goal by 20 years of additional income
-            if retirement_goal < 0:
-                retirement_goal = 0  # Ensure goal doesn't go negative
-            
-            # Predict Savings and Forecast Wealth
-            predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
-            retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
+        # Process Submission
+        if submit and financial_data is not None and retirement_model is not None:
+            with st.spinner("Projecting your retirement..."):
+                years_to_retirement = retirement_age - age
+                
+                # Inflation-Adjusted Expenses
+                future_expenses = monthly_expenses * (1 + inflation_rate / 100) ** years_to_retirement
+                retirement_goal = future_expenses * 12 * 20  # 20 years of retirement expenses
+                
+                # Adjust for Additional Income Sources
+                annual_additional_income = additional_income * 12
+                retirement_goal -= annual_additional_income * 20  # Reduce goal by 20 years of additional income
+                if retirement_goal < 0:
+                    retirement_goal = 0  # Ensure goal doesn't go negative
+                
+                # Predict Savings and Forecast Wealth
+                predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
+                retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
         
-        # Display Retirement Outlook
-        st.subheader("🌟 Retirement Outlook")
-        col1, col2 = st.columns(2)
-        col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
-        col2.metric(
-            "Inflation-Adjusted Goal (After Income)",
-            f"₹{retirement_goal:,.2f}",
-            f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}"
-        )
-        
-        # Savings Trajectory with Inflation Adjustment
-        st.subheader("📈 Savings Trajectory")
-        trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
-        adjusted_goals = [future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20)) for y in range(years_to_retirement + 1)]
-        fig = px.line(
-            x=range(years_to_retirement + 1), 
-            y=trajectory, 
-            labels={"x": "Years", "y": "Wealth (₹)"}, 
-            title="Retirement Growth vs Inflation-Adjusted Goal"
-        )
-        fig.add_scatter(x=range(years_to_retirement + 1), y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Retirement Tips
-        st.subheader("💡 Retirement Tips")
-        if retirement_wealth < retirement_goal:
-            shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
-            st.write(f"- Increase monthly savings by ₹{shortfall:,.2f} to meet your inflation-adjusted goal.")
-        if additional_income > 0:
-            st.write(f"- Your additional income of ₹{additional_income:,.2f}/month reduces your savings burden significantly!")
-        st.write(f"- Inflation at {inflation_rate}% increases your future expenses to ₹{future_expenses:,.2f}/month.")
-        st.write("- Consider adjusting investments for higher returns if needed.")
+            # Display Retirement Outlook
+            st.subheader("🌟 Retirement Outlook")
+            col1, col2 = st.columns(2)
+            col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
+            col2.metric(
+                "Inflation-Adjusted Goal (After Income)",
+                f"₹{retirement_goal:,.2f}",
+                f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}"
+            )
+            
+            # Savings Trajectory with Inflation Adjustment
+            st.subheader("📈 Savings Trajectory")
+            trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
+            adjusted_goals = [future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20)) for y in range(years_to_retirement + 1)]
+            fig = px.line(
+                x=range(years_to_retirement + 1), 
+                y=trajectory, 
+                labels={"x": "Years", "y": "Wealth (₹)"}, 
+                title="Retirement Growth vs Inflation-Adjusted Goal"
+            )
+            fig.add_scatter(x=range(years_to_retirement + 1), y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Retirement Tips
+            st.subheader("💡 Retirement Tips")
+            if retirement_wealth < retirement_goal:
+                shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
+                st.write(f"- Increase monthly savings by ₹{shortfall:,.2f} to meet your inflation-adjusted goal.")
+            if additional_income > 0:
+                st.write(f"- Your additional income of ₹{additional_income:,.2f}/month reduces your savings burden significantly!")
+            st.write(f"- Inflation at {inflation_rate}% increases your future expenses to ₹{future_expenses:,.2f}/month.")
+            st.write("- Consider adjusting investments for higher returns if needed.")
 
     with tab4:
         st.header("🌐 Live Market Insights")
