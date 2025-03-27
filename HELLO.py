@@ -532,7 +532,7 @@ def main():
                 income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
                 current_savings = st.number_input("🏦 Current Savings (₹)", min_value=0.0, step=1000.0)
             with col2:
-                retirement_age = st.slider("👴 Retirement Age", age, 100, 65)
+                retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)  # Start at age + 1
                 monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
                 inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0, help="Adjusts expenses for future value")
             
@@ -555,7 +555,7 @@ def main():
             with st.spinner("Projecting your retirement..."):
                 years_to_retirement = retirement_age - age
                 
-                # Stricter validation
+                # Validation (shouldn’t be needed with slider adjustment, but kept for safety)
                 if years_to_retirement <= 0:
                     st.error("🚨 Retirement age must be greater than current age!")
                 else:
@@ -567,7 +567,7 @@ def main():
                     annual_additional_income = additional_income * 12
                     retirement_goal -= annual_additional_income * 20  # Reduce goal by 20 years of additional income
                     if retirement_goal < 0:
-                        retirement_goal = 0  # Ensure goal doesn't go negative
+                        retirement_goal = 0  # Ensure goal doesn’t go negative
                     
                     # Predict Savings and Forecast Wealth
                     predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
@@ -588,12 +588,15 @@ def main():
                     trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
                     adjusted_goals = [future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20)) for y in range(years_to_retirement + 1)]
                     
-                    # Debugging output
+                    # Enhanced Debugging
                     st.write(f"Debug: years_to_retirement = {years_to_retirement}")
                     st.write(f"Debug: len(trajectory) = {len(trajectory)}, len(adjusted_goals) = {len(adjusted_goals)}")
+                    st.write(f"Debug: adjusted_goals = {adjusted_goals}")
                     
-                    # Ensure data is valid before plotting
-                    if len(trajectory) > 1 and len(adjusted_goals) > 1 and all(isinstance(x, (int, float)) for x in trajectory) and all(isinstance(x, (int, float)) for x in adjusted_goals):
+                    # Sanitize and validate data
+                    if (len(trajectory) > 1 and len(adjusted_goals) > 1 and 
+                        all(isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) for x in trajectory) and 
+                        all(isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) for x in adjusted_goals)):
                         fig = px.line(
                             x=range(years_to_retirement + 1), 
                             y=trajectory, 
@@ -603,7 +606,7 @@ def main():
                         fig.add_scatter(x=range(years_to_retirement + 1), y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
                         st.plotly_chart(fig, use_container_width=True)
                     else:
-                        st.warning("Unable to plot trajectory due to invalid data.")
+                        st.warning("Unable to plot trajectory due to invalid data (NaN or inf detected).")
                     
                     # Retirement Tips
                     st.subheader("💡 Retirement Tips")
