@@ -243,7 +243,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.cell(0, 10, "Financial Summary", ln=True)
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, clean_text(f"Income: INR {income:,.2f}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Predicted LumpurSavings: INR {predicted_savings:,.2f}"), ln=True)
+    pdf.cell(0, 10, clean_text(f"Predicted Savings: INR {predicted_savings:,.2f}"), ln=True)
     pdf.cell(0, 10, clean_text(f"Goal: {goal}"), ln=True)
     pdf.cell(0, 10, clean_text(f"Risk Tolerance: {risk_tolerance}"), ln=True)
     pdf.cell(0, 10, clean_text(f"Investment Horizon: {horizon_years} years"), ln=True)
@@ -555,7 +555,7 @@ def main():
             with st.spinner("Projecting your retirement..."):
                 years_to_retirement = retirement_age - age
                 
-                # Validate years_to_retirement
+                # Stricter validation
                 if years_to_retirement <= 0:
                     st.error("🚨 Retirement age must be greater than current age!")
                 else:
@@ -587,14 +587,23 @@ def main():
                     st.subheader("📈 Savings Trajectory")
                     trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
                     adjusted_goals = [future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20)) for y in range(years_to_retirement + 1)]
-                    fig = px.line(
-                        x=range(years_to_retirement + 1), 
-                        y=trajectory, 
-                        labels={"x": "Years", "y": "Wealth (₹)"}, 
-                        title="Retirement Growth vs Inflation-Adjusted Goal"
-                    )
-                    fig.add_scatter(x=range(years_to_retirement + 1), y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
-                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Debugging output
+                    st.write(f"Debug: years_to_retirement = {years_to_retirement}")
+                    st.write(f"Debug: len(trajectory) = {len(trajectory)}, len(adjusted_goals) = {len(adjusted_goals)}")
+                    
+                    # Ensure data is valid before plotting
+                    if len(trajectory) > 1 and len(adjusted_goals) > 1 and all(isinstance(x, (int, float)) for x in trajectory) and all(isinstance(x, (int, float)) for x in adjusted_goals):
+                        fig = px.line(
+                            x=range(years_to_retirement + 1), 
+                            y=trajectory, 
+                            labels={"x": "Years", "y": "Wealth (₹)"}, 
+                            title="Retirement Growth vs Inflation-Adjusted Goal"
+                        )
+                        fig.add_scatter(x=range(years_to_retirement + 1), y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("Unable to plot trajectory due to invalid data.")
                     
                     # Retirement Tips
                     st.subheader("💡 Retirement Tips")
