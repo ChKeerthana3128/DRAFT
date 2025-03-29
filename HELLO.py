@@ -274,11 +274,10 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
 
-    # Write PDF to buffer
+    # Write PDF to BytesIO buffer
     buffer = io.BytesIO()
-    pdf_bytes = pdf.output()  # Get the PDF as bytes
-    buffer.write(pdf_bytes)   # Write bytes to the buffer
-    buffer.seek(0)            # Reset buffer position to the beginning
+    pdf.output(dest='F', name=buffer)  # Write directly to the file-like buffer object
+    buffer.seek(0)  # Reset buffer position to the beginning
     return buffer
 # Fetch Real-Time Stock Data
 def get_stock_data(symbol, api_key):
