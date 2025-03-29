@@ -527,8 +527,8 @@ def main():
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
    with tab3:
-    st.header("🏡 Retirement Planning")
-    st.markdown("Secure your golden years with smart savings! 🌞")
+       st.header("🏡 Retirement Planning")
+       st.markdown("Secure your golden years with smart savings! 🌞")
     
     # Retirement Planning Form with New Features
     with st.form(key="retirement_form"):
