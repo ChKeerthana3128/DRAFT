@@ -276,10 +276,10 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
 
     # Write PDF to buffer
     buffer = io.BytesIO()
-    pdf.output(buffer)
-    buffer.seek(0)
+    pdf_bytes = pdf.output()  # Get the PDF as bytes
+    buffer.write(pdf_bytes)   # Write bytes to the buffer
+    buffer.seek(0)            # Reset buffer position to the beginning
     return buffer
-
 # Fetch Real-Time Stock Data
 def get_stock_data(symbol, api_key):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={api_key}"
