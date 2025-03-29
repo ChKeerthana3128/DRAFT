@@ -10,6 +10,7 @@ import requests
 from fpdf import FPDF
 import io
 import os
+import tempfile
 import plotly.graph_objects as go
 from datetime import datetime
 
@@ -274,10 +275,15 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
 
-    # Write PDF to BytesIO buffer
+    # Use a temporary file to generate the PDF, then read it into a buffer
     buffer = io.BytesIO()
-    pdf.output(dest='F', name=buffer)  # Write directly to the file-like buffer object
-    buffer.seek(0)  # Reset buffer position to the beginning
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        pdf.output(tmp_file.name)  # Write PDF to a temporary file
+        tmp_file.close()
+        with open(tmp_file.name, 'rb') as f:
+            buffer.write(f.read())  # Read the file into the buffer
+        os.unlink(tmp_file.name)  # Delete the temporary file
+    buffer.seek(0)
     return buffer
 # Fetch Real-Time Stock Data
 def get_stock_data(symbol, api_key):
