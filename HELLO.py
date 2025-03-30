@@ -709,97 +709,116 @@ def main():
                             st.write(f"[Read more]({article['url']})")
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
 
-    with tab5:
-       st.header("🎯 Your Financial Adventure")
-       st.markdown("Complete these fun challenges to master WealthWise and earn rewards!")
+ with tab5:
+    st.header("🏴‍☠️ Pirate’s Treasure Quest")
+    st.markdown("""
+    **Ahoy, Captain!** The Treasure of WealthWise be out there—gold doubloons, crew badges, and the secrets o’ riches! 
+    Sail me four islands, plunder their quests, and claim the ultimate loot! Argh!
+    """)
 
-    # Rewards Section
-    st.subheader("💰 Your Rewards")
-    if 'points' not in st.session_state:
-        st.session_state.points = 0
+    # Crew's Loot (Rewards)
+    st.subheader("💰 Yer Crew’s Loot")
+    if 'doubloons' not in st.session_state:
+        st.session_state.doubloons = 0
     if 'badges' not in st.session_state:
         st.session_state.badges = []
-    if 'step' not in st.session_state:
-        st.session_state.step = 0
-    
+    if 'island' not in st.session_state:
+        st.session_state.island = 0
+
     col1, col2 = st.columns(2)
     with col1:
-        st.write(f"Points Earned: {st.session_state.points}")
+        st.write(f"Doubloons Plundered: {st.session_state.doubloons} 💰")
     with col2:
-        st.write("Badges: " + ", ".join([f"🏅 {badge}" for badge in st.session_state.badges]) or "None yet!")
+        st.write("Crew Badges: " + ", ".join([f"⚔️ {badge}" for badge in st.session_state.badges]) or "None yet, ye scallywag!")
 
-    # Progress Bar
-    st.subheader("📈 Your Progress")
-    total_steps = 4
-    st.progress(st.session_state.step / total_steps)
+    # Treasure Trail (Progress)
+    st.subheader("🗺️ The Treasure Trail")
+    total_islands = 4
+    st.progress(st.session_state.island / total_islands)
+    st.write(f"Islands Conquered: {st.session_state.island} of {total_islands}")
 
-    # Challenges Section
-    st.subheader("🗺️ Your Challenges")
-    
-    # Challenge 1: Stock Starter
-    if st.session_state.step >= 0:
-        st.write("**1. Stock Starter: Guess the NIFTY price!**")
-        st.info("Guess within ₹500 of the latest NIFTY CONSUMPTION price (check Tab 1).")
-        guess = st.number_input("Your Guess (₹)", min_value=0.0, key="guess")
-        if st.button("Submit Guess") and stock_data is not None:
+    # Island Raids (Quests)
+    st.subheader("🏝️ Island Raids")
+
+    # Island 1: Stock Reef
+    if st.session_state.island >= 0:
+        st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
+        st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
+        guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
+        if st.button("Fire the Cannon!") and stock_data is not None:
             latest_price = stock_data['close'].iloc[-1]
             if abs(guess - latest_price) <= 500:
-                st.success(f"Spot on! Latest price: ₹{latest_price:.2f}. +20 points!")
-                st.session_state.points += 20
-                st.session_state.badges.append("Stock Starter")
-                st.session_state.step = 1
+                st.success(f"BOOM! Nailed it, Captain! Latest haul: ₹{latest_price:.2f}. +20 doubloons!")
+                st.session_state.doubloons += 20
+                st.session_state.badges.append("Reef Raider")
+                st.session_state.island = 1
                 st.balloons()
             else:
-                st.error(f"Close, but not quite! Latest price: ₹{latest_price:.2f}. Try again!")
+                st.error(f"Argh! Missed the mark! Latest price: ₹{latest_price:.2f}. Lower yer sails and try again!")
+        elif st.button("Fire the Cannon!") and stock_data is None:
+            st.warning("No map to Stock Reef yet! For now, guess ₹5000—me demo treasure!")
+            if abs(guess - 5000) <= 500:
+                st.success("BOOM! Ye hit me demo stash! +20 doubloons!")
+                st.session_state.doubloons += 20
+                st.session_state.badges.append("Reef Raider")
+                st.session_state.island = 1
+                st.balloons()
 
-    # Challenge 2: Savings Challenge
-    if st.session_state.step >= 1:
-        st.write("**2. Savings Challenge: Set a ₹50,000 goal!**")
-        st.info("Go to Tab 2, enter your details, and set a ₹50,000 goal.")
-        if st.button("I Did It!"):
-            st.success("Great budgeting! +20 points!")
-            st.session_state.points += 20
-            st.session_state.badges.append("Savings Guru")
-            st.session_state.step = 2
+    # Island 2: Savings Cove
+    if st.session_state.island >= 1:
+        st.write("**2. Savings Cove: Bury Yer Treasure!**")
+        st.info("Sail to Savings Cove [Tab 2], set a ₹50,000 goal, and bury it deep!")
+        if st.button("I Buried It!"):
+            st.success("Shiver me timbers! Ye’ve stashed ₹50,000! +20 doubloons!")
+            st.session_state.doubloons += 20
+            st.session_state.badges.append("Cove Captain")
+            st.session_state.island = 2
+            st.snow()  # Gold dust falling!
+            st.write("Psst… me parrot says ye’re a savvy saver now!")
+    else:
+        st.write("**2. Savings Cove** (Fog o’ the Sea)")
+
+    # Island 3: Retirement Bay
+    if st.session_state.island >= 2:
+        st.write("**3. Retirement Bay: Chart Yer Sunset!**")
+        st.info("Drop anchor at Retirement Bay [Tab 3] and set yer sails for age 65!")
+        if st.button("Course Charted!"):
+            st.success("Yo ho ho! Retirement at 65 be secured! +20 doubloons!")
+            st.session_state.doubloons += 20
+            st.session_state.badges.append("Bay Buccaneer")
+            st.session_state.island = 3
             st.balloons()
     else:
-        st.write("**2. Savings Challenge** (Locked)")
+        st.write("**3. Retirement Bay** (Fog o’ the Sea)")
 
-    # Challenge 3: Retirement Rookie
-    if st.session_state.step >= 2:
-        st.write("**3. Retirement Rookie: Plan to age 65!**")
-        st.info("Visit Tab 3 and set your retirement age to 65.")
-        if st.button("I Planned It!"):
-            st.success("Future secured! +20 points!")
-            st.session_state.points += 20
-            st.session_state.badges.append("Retirement Rookie")
-            st.session_state.step = 3
-            st.balloons()
+    # Island 4: Market Lagoon
+    if st.session_state.island >= 3:
+        st.write("**4. Market Lagoon: Spy the Horizon!**")
+        st.info("Sneak to Market Lagoon [Tab 4], use yer spyglass (API key), and track any stock!")
+        if st.button("Stock Spotted!"):
+            st.success("Argh! Ye’ve spied the market’s secrets! +20 doubloons!")
+            st.session_state.doubloons += 20
+            st.session_state.badges.append("Lagoon Lookout")
+            st.session_state.island = 4
+            st.snow()
     else:
-        st.write("**3. Retirement Rookie** (Locked)")
+        st.write("**4. Market Lagoon** (Fog o’ the Sea)")
 
-    # Challenge 4: Market Scout
-    if st.session_state.step >= 3:
-        st.write("**4. Market Scout: Track a stock!**")
-        st.info("Go to Tab 4, add your API key, and track any stock (e.g., AAPL).")
-        if st.button("I Tracked It!"):
-            st.success("Market master! +20 points!")
-            st.session_state.points += 20
-            st.session_state.badges.append("Market Scout")
-            st.session_state.step = 4
-            st.balloons()
-    else:
-        st.write("**4. Market Scout** (Locked)")
+    # Grand Finale
+    if st.session_state.island自主
 
-    # Completion Reward
-    if st.session_state.step >= total_steps:
-        st.subheader("🎉 You’re a WealthWise Champion!")
-        st.write(f"Total Points: {st.session_state.points}")
+    if st.session_state.island >= total_islands:
+        st.subheader("🏴‍☠️ Ye’ve Found the Treasure!")
+        st.markdown("""
+        **Blimey, Captain!** Ye’ve plundered all islands and claimed the Treasure of WealthWise! 
+        Yer haul: **{st.session_state.doubloons} doubloons** and a legendary crew!
+        """)
         st.download_button(
-            "🏆 Download Your Certificate",
-            data="Congratulations! You’ve mastered WealthWise.",
-            file_name="wealthwise_champion.txt"
+            "🗝️ Claim Yer Treasure Map",
+            data="Secret Code: WEALTHY2025\nHint: More riches await ye in the future!",
+            file_name="pirate_treasure_map.txt"
         )
+        st.write("Show this code to me crew later for a surprise, arr!")
 
 if __name__ == "__main__":
     main()
