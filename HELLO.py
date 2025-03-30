@@ -710,44 +710,96 @@ def main():
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
 
     with tab5:
-        st.header("🎮 The Financial Hero’s Journey")
-        st.markdown("""
-        🌍 Welcome, brave soul, to WealthWise! Five ancient towers guard the secrets of wealth. 
-        Conquer their quests, gather gold, and claim legendary artifacts! 🏆
-        """)
+       st.header("🎯 Your Financial Adventure")
+       st.markdown("Complete these fun challenges to master WealthWise and earn rewards!")
 
-        # Treasure Chest
-        st.subheader("💰 Your Treasure Chest")
-        st.write(f"Gold Coins: {st.session_state.tutorial_points}")
-        badges_display = {"Quest Starter": "🌟", "Market Explorer": "📈", "Savings Guru": "💎"}
-        st.write("Artifacts: " + ", ".join([f"{icon} {badge}" for badge, icon in badges_display.items() if badge in st.session_state.badges]))
+    # Rewards Section
+    st.subheader("💰 Your Rewards")
+    if 'points' not in st.session_state:
+        st.session_state.points = 0
+    if 'badges' not in st.session_state:
+        st.session_state.badges = []
+    if 'step' not in st.session_state:
+        st.session_state.step = 0
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"Points Earned: {st.session_state.points}")
+    with col2:
+        st.write("Badges: " + ", ".join([f"🏅 {badge}" for badge in st.session_state.badges]) or "None yet!")
 
-        # Quest Map
-        st.subheader("🗺️ Quest Map")
-        quests = [
-            ("🏰 Tower of Stocks", "Guess the stock price!", lambda: st.number_input("Guess (₹)") and st.button("Submit")),
-            ("💎 Tower of Savings", "Set a ₹50,000 goal!", lambda: st.write("Go to Personalized Investment!")),
-            ("🏡 Tower of Retirement", "Plan to age 65!", lambda: st.write("Visit Retirement Planning!"))
-        ]
-        for i, (name, task, action) in enumerate(quests):
-            if st.session_state.tutorial_step > i:
-                st.button(f"{name} (Conquered)", disabled=True)
-            elif st.session_state.tutorial_step == i:
-                st.write(f"**Quest:** {task}")
-                if action() and st.button("Claim Victory"):
-                    st.session_state.tutorial_points += 20
-                    st.session_state.badges.append(quests[i][0].split()[1] + " Master")
-                    st.session_state.tutorial_step += 1
-                    st.balloons()
-                    st.success(f"🎉 +20 Gold Coins and {quests[i][0].split()[1]} Master artifact!")
+    # Progress Bar
+    st.subheader("📈 Your Progress")
+    total_steps = 4
+    st.progress(st.session_state.step / total_steps)
+
+    # Challenges Section
+    st.subheader("🗺️ Your Challenges")
+    
+    # Challenge 1: Stock Starter
+    if st.session_state.step >= 0:
+        st.write("**1. Stock Starter: Guess the NIFTY price!**")
+        st.info("Guess within ₹500 of the latest NIFTY CONSUMPTION price (check Tab 1).")
+        guess = st.number_input("Your Guess (₹)", min_value=0.0, key="guess")
+        if st.button("Submit Guess") and stock_data is not None:
+            latest_price = stock_data['close'].iloc[-1]
+            if abs(guess - latest_price) <= 500:
+                st.success(f"Spot on! Latest price: ₹{latest_price:.2f}. +20 points!")
+                st.session_state.points += 20
+                st.session_state.badges.append("Stock Starter")
+                st.session_state.step = 1
+                st.balloons()
             else:
-                st.button(f"{name} (Locked)", disabled=True)
+                st.error(f"Close, but not quite! Latest price: ₹{latest_price:.2f}. Try again!")
 
-        # Completion
-        if st.session_state.tutorial_step >= len(quests):
-            st.subheader("🎉 You’re a Wealth Lord!")
-            st.write(f"Total Gold: {st.session_state.tutorial_points}")
-            st.download_button("🏅 Claim Your Legend Status", data="Wealth Lord Certificate", file_name="wealth_lord.txt")
+    # Challenge 2: Savings Challenge
+    if st.session_state.step >= 1:
+        st.write("**2. Savings Challenge: Set a ₹50,000 goal!**")
+        st.info("Go to Tab 2, enter your details, and set a ₹50,000 goal.")
+        if st.button("I Did It!"):
+            st.success("Great budgeting! +20 points!")
+            st.session_state.points += 20
+            st.session_state.badges.append("Savings Guru")
+            st.session_state.step = 2
+            st.balloons()
+    else:
+        st.write("**2. Savings Challenge** (Locked)")
+
+    # Challenge 3: Retirement Rookie
+    if st.session_state.step >= 2:
+        st.write("**3. Retirement Rookie: Plan to age 65!**")
+        st.info("Visit Tab 3 and set your retirement age to 65.")
+        if st.button("I Planned It!"):
+            st.success("Future secured! +20 points!")
+            st.session_state.points += 20
+            st.session_state.badges.append("Retirement Rookie")
+            st.session_state.step = 3
+            st.balloons()
+    else:
+        st.write("**3. Retirement Rookie** (Locked)")
+
+    # Challenge 4: Market Scout
+    if st.session_state.step >= 3:
+        st.write("**4. Market Scout: Track a stock!**")
+        st.info("Go to Tab 4, add your API key, and track any stock (e.g., AAPL).")
+        if st.button("I Tracked It!"):
+            st.success("Market master! +20 points!")
+            st.session_state.points += 20
+            st.session_state.badges.append("Market Scout")
+            st.session_state.step = 4
+            st.balloons()
+    else:
+        st.write("**4. Market Scout** (Locked)")
+
+    # Completion Reward
+    if st.session_state.step >= total_steps:
+        st.subheader("🎉 You’re a WealthWise Champion!")
+        st.write(f"Total Points: {st.session_state.points}")
+        st.download_button(
+            "🏆 Download Your Certificate",
+            data="Congratulations! You’ve mastered WealthWise.",
+            file_name="wealthwise_champion.txt"
+        )
 
 if __name__ == "__main__":
     main()
