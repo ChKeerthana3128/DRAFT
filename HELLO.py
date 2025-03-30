@@ -348,7 +348,9 @@ def main():
             with st.spinner("Analyzing your investment strategy..."):
                 future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
                 predicted_price = stock_model.predict(future)[0]
-                current_price = stock_data['close'].iloc[-1]
+                current_price
+
+ = stock_data['close'].iloc[-1]
                 growth = predicted_price - current_price
                 horizon_years = horizon // 12 or 1
                 recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goals)
@@ -438,7 +440,7 @@ def main():
                         latest_price = df["Close"].iloc[0]
                         st.metric(f"{symbol} Current Price", f"${latest_price:.2f}")
     
-  with tab5:
+    with tab5:
         st.header("🏴‍☠️ Pirate’s Treasure Quest")
         st.markdown("""
         **Ahoy, Captain!** The Treasure of WealthWise be out there—gold doubloons, crew badges, and the secrets o’ riches! 
