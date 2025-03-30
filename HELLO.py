@@ -184,7 +184,7 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     risk_map = {"Low": 0, "Medium": 1, "High": 2}
     goal_map = {"Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3}
     risk_encoded = risk_map[risk_tolerance]
-    goal_encoded_list = [goal_map[goal] for goal in goals]  # Convert selected goals to their encoded values
+    goal_encoded_list = [goal_map[goal] for goal in goals]
     
     input_data = investment_data[["Min_Invest", "Risk_Encoded", "Goal_Encoded", "Expected_Return", "Volatility"]].copy()
     input_data["Expected_Return"] = input_data["Expected_Return"] * (1 + horizon_years * 0.05)
@@ -193,7 +193,6 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     scores = model.predict(input_data)
     investment_data["Suitability_Score"] = scores
     
-    # Filter investments: match risk tolerance and ANY of the selected goals (or "No specific goal")
     filtered = investment_data[
         (investment_data["Min_Invest"] <= invest_amount) &
         (investment_data["Risk_Encoded"] <= risk_encoded) &
@@ -216,73 +215,41 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
-
-    # Check and add the font
-    font_path = "DejaVuSans.ttf"
-    if os.path.exists(font_path):
-        pdf.add_font('DejaVu', '', font_path, uni=True)
-        pdf.set_font('DejaVu', '', 16)
-    else:
-        print(f"Font file {font_path} not found. Defaulting to Arial.")
-        pdf.set_font("Arial", "B", 16)
-
-    # Helper function to handle Unicode characters
-    def clean_text(text):
-        if isinstance(text, str):
-            return text.encode('latin-1', 'replace').decode('latin-1')
-        return str(text)
-
-    pdf.cell(0, 10, clean_text(f"WealthWise Investment Plan for {name}"), ln=True, align="C")
-
-    # Subtitle
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"WealthWise Investment Plan for {name}", ln=True, align="C")
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, "Powered by WealthWise | Built with love by xAI", ln=True, align="C")
     pdf.ln(10)
-
-    # Financial Summary Section
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 10, clean_text(f"Income: INR {income:,.2f}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Predicted Savings: INR {predicted_savings:,.2f}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Goal: {goal}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Risk Tolerance: {risk_tolerance}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Investment Horizon: {horizon_years} years"), ln=True)
+    pdf.cell(0, 10, f"Income: INR {income:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Predicted Savings: INR {predicted_savings:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Goal: {goal}", ln=True)
+    pdf.cell(0, 10, f"Risk Tolerance: {risk_tolerance}", ln=True)
+    pdf.cell(0, 10, f"Investment Horizon: {horizon_years} years", ln=True)
     pdf.ln(10)
-
-    # Investment Recommendations
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
     pdf.set_font("Arial", "", 10)
     for category, recs in recommendations.items():
         if recs:
-            pdf.cell(0, 10, clean_text(f"{category}:"), ln=True)
+            pdf.cell(0, 10, f"{category}:", ln=True)
             for rec in recs:
-                pdf.cell(0, 10, clean_text(f"  - {rec['Company']}: INR {rec['Amount']:,.2f}"), ln=True)
+                pdf.cell(0, 10, f"  - {rec['Company']}: INR {rec['Amount']:,.2f}", ln=True)
     pdf.ln(10)
-
-    # Budget Tips Section
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Arial", "", 10)
     for tip in tips:
-        pdf.cell(0, 10, clean_text(f"- {tip}"), ln=True)
+        pdf.cell(0, 10, f"- {tip}", ln=True)
     pdf.ln(10)
-
-    # Peer Comparison Section
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
-
-    # Use a temporary file to generate the PDF, then read it into a buffer
+    pdf.cell(0, 10, f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}", ln=True)
     buffer = io.BytesIO()
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        pdf.output(tmp_file.name)  # Write PDF to a temporary file
-        tmp_file.close()
-        with open(tmp_file.name, 'rb') as f:
-            buffer.write(f.read())  # Read the file into the buffer
-        os.unlink(tmp_file.name)  # Delete the temporary file
+    pdf.output(buffer)
     buffer.seek(0)
     return buffer
 
@@ -318,12 +285,12 @@ def get_market_news(api_key, tickers="AAPL"):
 def main():
     st.title("💰 WealthWise Dashboard")
     st.markdown("Hello, WealthWise!")
-
+    
     # Load data
     stock_data = load_stock_data()
     survey_data = load_survey_data()
     financial_data = load_financial_data()
-
+    
     # Train models
     stock_model, stock_r2 = None, 0.0
     if stock_data is not None:
@@ -335,8 +302,8 @@ def main():
     if financial_data is not None:
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
     investment_model = train_investment_model(investment_data)
-
-    # Sidebar with API Key Explanation
+    
+    # Sidebar
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -346,53 +313,29 @@ def main():
             st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
-        
         st.markdown("### 🔑 Your Market Data Pass")
-        st.write("To see live stock prices and news, we need a 'key'—think of it like a ticket to unlock real-time market updates! It’s free and easy to get.")
-        api_key = st.text_input("Paste Your Key Here", value="", type="password", 
-                               help="This is a special code from Alpha Vantage that lets us fetch live stock data just for you!")
+        api_key = st.text_input("Paste Your Key Here", value="", type="password")
         st.markdown("""
-        **Why do I need this?**  
-        It’s your VIP pass to see what’s happening in the stock market right now—like checking the latest price of Apple or Tesla!
-        
         **How to Get It:**  
         1. Visit [Alpha Vantage](https://www.alphavantage.co/).  
-        2. Click 'Get Free API Key' and sign up with your email.  
-        3. Copy the code they give you (e.g., 'X7K9P2M4Q1').  
-        4. Paste it here and start tracking!
+        2. Click 'Get Free API Key' and sign up.  
+        3. Copy the code and paste it here!
         """)
-
-    # Initialize session state for gamification
-    if 'tutorial_points' not in st.session_state:
-        st.session_state.tutorial_points = 0
-    if 'tutorial_step' not in st.session_state:
-        st.session_state.tutorial_step = 0
-    if 'badges' not in st.session_state:
-        st.session_state.badges = []
-
-    # Updated Tabs with Tutorial
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights", "🎮 Tutorial Quest"])
- 
+    
+    # Tabs
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights", "🏴‍☠️ Pirate’s Treasure Quest"])
+    
     with tab1:
         st.header("📈 Stock Market Adventure")
-        st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
-        
-        # Stock Market Form
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
-                horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
-                invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0, help="How much are you investing?")
+                horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12)
+                invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0)
             with col2:
-                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
-                goals = st.multiselect(
-                    "🎯 Goals",
-                    ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
-                    default=["Wealth growth"],
-                    help="Select one or more goals for your investment!"
-                )
+                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"])
+                goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"])
             submit = st.form_submit_button("🚀 Explore Market")
-        
         if submit and stock_data is not None and stock_model is not None:
             with st.spinner("Analyzing your investment strategy..."):
                 future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
@@ -406,139 +349,51 @@ def main():
             col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
             col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
             with st.expander("📊 Price Trend", expanded=True):
-                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
-                             hover_data=['open', 'high', 'low', 'volume'])
-                fig.update_traces(line_color='#00ff00')
+                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend")
                 st.plotly_chart(fig, use_container_width=True)
             st.subheader("💡 Your Investment Strategy")
-            st.write(f"Goals Selected: {', '.join(goals)}")
-            progress = min(1.0, invest_amount / 100000)
-            st.progress(progress)
-            any_recommendations = False
-            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-                recs = recommendations.get(category, [])
+            for category, recs in recommendations.items():
                 if recs:
-                    any_recommendations = True
                     with st.expander(f"{category} Options"):
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
-            if not any_recommendations:
-                st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
-
+    
     with tab2:
         st.header("🎯 Your Investment Journey")
-        st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
             with col1:
-                name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
+                name = st.text_input("👤 Your Name")
                 income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
-                essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0, help="Food, transport, etc.")
-                non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0, help="Fun stuff!")
+                essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0)
+                non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0)
                 debt_payment = st.number_input("💳 Debt Payment (₹)", min_value=0.0, step=100.0)
             with col2:
-                goals = st.multiselect(
-                    "🎯 Goals",
-                    ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
-                    default=["Wealth growth"],
-                    help="Select one or more goals!"
-                )
+                goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"])
                 goal_amount = st.number_input("💎 Total Goal Amount (₹)", min_value=0.0, step=1000.0, value=50000.0)
                 risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
                 horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
-                invest_percent = st.slider("💸 % of Savings to Invest", 0, 100, 50, help="What portion of your savings do you want to invest?")
+                invest_percent = st.slider("💸 % of Savings to Invest", 0, 100, 50)
             submit = st.form_submit_button("🚀 Get Your Plan")
-        
         if submit and survey_data is not None and survey_model is not None:
-            with st.spinner("Crafting your personalized plan..."):
-                predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
-                invest_amount = predicted_savings * (invest_percent / 100)
-                recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goals)
-                monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
-                peer_avg_savings = survey_data["Savings"].mean()
-
-            # Savings Breakdown Visualization
+            predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
+            invest_amount = predicted_savings * (invest_percent / 100)
+            recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goals)
             st.subheader("💰 Your Monthly Breakdown")
-            breakdown_data = {
-                "Essentials": essentials,
-                "Non-Essentials": non_essentials,
-                "Debt Payment": debt_payment,
-                "Savings": predicted_savings
-            }
+            breakdown_data = {"Essentials": essentials, "Non-Essentials": non_essentials, "Debt Payment": debt_payment, "Savings": predicted_savings}
             fig = px.pie(values=list(breakdown_data.values()), names=list(breakdown_data.keys()), title="Spending vs. Savings")
             st.plotly_chart(fig, use_container_width=True)
-
-            # Investment Options
             st.subheader("💼 Your Investment Options")
-            st.write(f"Goals Selected: {', '.join(goals)}")
-            st.write(f"Amount to Invest: ₹{invest_amount:,.2f} ({invest_percent}% of ₹{predicted_savings:,.2f})")
-            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-                recs = recommendations.get(category, [])
+            for category, recs in recommendations.items():
                 if recs:
                     with st.expander(f"{category} Investments"):
                         for rec in recs:
                             st.write(f"- *{rec['Company']}*: ₹{rec['Amount']:,.2f}")
-
-            # Savings Progress and Peer Comparison
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("🎯 Savings Progress")
-                progress = min(1.0, predicted_savings / goal_amount) if goal_amount > 0 else 0
-                st.progress(progress)
-                st.write(f"₹{predicted_savings:,.2f} / ₹{goal_amount:,.2f}")
-            with col2:
-                st.subheader("📊 Peer Benchmark")
-                st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
-
-            # Savings Goal Timeline
-            st.subheader("⏰ Time to Goal")
-            months_to_goal = goal_amount / predicted_savings if predicted_savings > 0 else float('inf')
-            years_to_goal = months_to_goal / 12
-            timeline_data = pd.DataFrame({
-                "Years": range(horizon_years + 1),
-                "Savings": [predicted_savings * 12 * y for y in range(horizon_years + 1)]
-            })
-            fig = px.line(timeline_data, x="Years", y="Savings", title=f"Projected Savings to Reach ₹{goal_amount:,.2f}")
-            fig.add_hline(y=goal_amount, line_dash="dash", line_color="red", annotation_text="Goal")
-            st.plotly_chart(fig, use_container_width=True)
-            st.write(f"Estimated Time to Goal: {years_to_goal:.1f} years at current savings rate")
-
-            # Enhanced Budget Tips
-            with st.expander("💡 Personalized Budget Tips", expanded=True):
-                tips = []
-                median_non_essentials = survey_data["Non_Essentials"].median()
-                if non_essentials > median_non_essentials:
-                    tips.append(f"Reduce non-essentials by ₹{non_essentials - median_non_essentials:,.2f} (peer median: ₹{median_non_essentials:,.2f}).")
-                if debt_payment > income * 0.3:
-                    tips.append("Debt payment exceeds 30% of income - consider refinancing or cutting expenses.")
-                if predicted_savings < monthly_savings_needed:
-                    shortfall = monthly_savings_needed - predicted_savings
-                    tips.append(f"Boost savings by ₹{shortfall:,.2f}/month to meet your goal in {horizon_years} years.")
-                else:
-                    tips.append("Great job! Your savings exceed your goal - consider increasing your investment percentage.")
-                if "Wealth growth" in goals and risk_tolerance == "Low":
-                    tips.append("For wealth growth, consider medium-risk options to boost returns over {horizon_years} years.")
-                for tip in tips:
-                    st.write(f"- {tip}")
-
-            # Risk Tolerance Assessment
-            st.subheader("🎲 Risk Tolerance Assessment")
-            risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
-            st.write(f"Your Profile: *{risk_map[risk_tolerance]}*")
-            if risk_tolerance == "Low" and horizon_years > 5:
-                st.info("Long horizon with low risk? You could explore medium-risk options for better returns.")
-            elif risk_tolerance == "High" and horizon_years < 3:
-                st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
-
-            # PDF Download (updated to handle multiple goals)
-            pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
+            pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, survey_data["Savings"].mean(), [])
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
-
+    
     with tab3:
         st.header("🏡 Retirement Planning")
-        st.markdown("Secure your golden years with smart savings! 🌞")
-    
-        # Retirement Planning Form with New Features
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -546,279 +401,143 @@ def main():
                 income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
                 current_savings = st.number_input("🏦 Current Savings (₹)", min_value=0.0, step=1000.0)
             with col2:
-                retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)  # Start at age + 1
+                retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)
                 monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
-                inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0, help="Adjusts expenses for future value")
-        
-            # Multiple Income Sources Input
-            st.subheader("Additional Income Sources in Retirement")
-            income_sources = st.multiselect(
-                "Select Sources", 
-                ["Pension", "Rental Income", "Part-Time Work", "Other"],
-                help="Add income streams to reduce your savings need"
-            )
-            additional_income = 0
-            for source in income_sources:
-                amount = st.number_input(f"Monthly {source} (₹)", min_value=0.0, step=500.0, key=source)
-                additional_income += amount
-        
+                inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0)
             submit = st.form_submit_button("🚀 Plan My Retirement")
-    
-        # Process Submission
         if submit and financial_data is not None and retirement_model is not None:
-            with st.spinner("Projecting your retirement..."):
-                years_to_retirement = retirement_age - age
-            
-                if years_to_retirement <= 0:
-                    st.error("🚨 Retirement age must be greater than current age!")
-                else:
-                    # Inflation-Adjusted Expenses with safeguard
-                    future_expenses = monthly_expenses * (1 + inflation_rate / 100) ** years_to_retirement if monthly_expenses > 0 else 0
-                    retirement_goal = future_expenses * 12 * 20  # 20 years of retirement expenses
-                
-                    # Adjust for Additional Income Sources with safeguard
-                    annual_additional_income = additional_income * 12
-                    retirement_goal -= annual_additional_income * 20
-                    retirement_goal = max(0, retirement_goal)  # Ensure non-negative goal
-                
-                    # Predict Savings and Forecast Wealth
-                    predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
-                    retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
-        
-                    # Display Retirement Outlook
-                    st.subheader("🌟 Retirement Outlook")
-                    col1, col2 = st.columns(2)
-                    col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
-                    col2.metric(
-                        "Inflation-Adjusted Goal (After Income)",
-                        f"₹{retirement_goal:,.2f}",
-                        f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}"
-                    )
-                
-                    # Savings Trajectory with Inflation Adjustment
-                    st.subheader("📈 Savings Trajectory")
-                    trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
-                    adjusted_goals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
-                
-                    # Debug output
-                    st.write(f"Debug: years_to_retirement = {years_to_retirement}")
-                    st.write(f"Debug: future_expenses = {future_expenses}, annual_additional_income = {annual_additional_income}")
-                    st.write(f"Debug: adjusted_goals = {adjusted_goals}")
-                
-                    # Sanitize adjusted_goals to remove NaN or inf
-                    adjusted_goals = [float(x) if isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) else 0 for x in adjusted_goals]
-                
-                    # Ensure lengths match
-                    x_values = list(range(years_to_retirement + 1))
-                    if len(x_values) != len(trajectory) or len(x_values) != len(adjusted_goals):
-                        st.error("Data length mismatch detected. Unable to plot trajectory.")
-                    else:
-                        fig = px.line(
-                            x=x_values, 
-                            y=trajectory, 
-                            labels={"x": "Years", "y": "Wealth (₹)"}, 
-                            title="Retirement Growth vs Inflation-Adjusted Goal"
-                        )
-                        fig.add_scatter(x=x_values, y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
-                        st.plotly_chart(fig, use_container_width=True)
-                
-                    # Retirement Tips
-                    st.subheader("💡 Retirement Tips")
-                    if retirement_wealth < retirement_goal:
-                        shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
-                        st.write(f"- Increase monthly savings by ₹{shortfall:,.2f} to meet your inflation-adjusted goal.")
-                    if additional_income > 0:
-                        st.write(f"- Your additional income of ₹{additional_income:,.2f}/month reduces your savings burden significantly!")
-                    st.write(f"- Inflation at {inflation_rate}% increases your future expenses to ₹{future_expenses:,.2f}/month.")
-                    st.write("- Consider adjusting investments for higher returns if needed.")
-
+            years_to_retirement = retirement_age - age
+            future_expenses = monthly_expenses * (1 + inflation_rate / 100) ** years_to_retirement
+            retirement_goal = future_expenses * 12 * 20
+            predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
+            retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
+            st.subheader("🌟 Retirement Outlook")
+            col1, col2 = st.columns(2)
+            col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
+            col2.metric("Inflation-Adjusted Goal", f"₹{retirement_goal:,.2f}")
+    
     with tab4:
         st.header("🌐 Live Market Insights")
-        st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
-
-        # Instructions
-        with st.expander("How to Use This?"):
-            st.write("""
-            1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
-            2. **Pick Stocks**: Edit the list below or use these popular ones:
-               - AAPL (Apple)
-               - MSFT (Microsoft)
-               - GOOGL (Google)
-               - TSLA (Tesla)
-            3. **Track & Read**: Click 'Track Portfolio & News' to see live prices and headlines!
-            """)
-            st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
-
         if not api_key:
-            st.error("Oops! Please add your Alpha Vantage key in the sidebar to access live market insights.")
+            st.error("Please add your Alpha Vantage key in the sidebar!")
         else:
-            # Live Portfolio Tracking with Working Tickers
-            st.subheader("Live Portfolio Tracking")
-            portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nGOOGL\nTSLA")
+            portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT")
             portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
-            
-            # Combined Button for Portfolio and News
             if st.button("Track Portfolio & News"):
-                # Portfolio Tracking
-                total_value = 0
                 for symbol in portfolio:
-                    with st.spinner(f"Fetching live data for {symbol}..."):
-                        df, error = get_stock_data(symbol, api_key)
-                        if error or df is None:
-                            st.error(f"{symbol}: {error}")
-                            continue
-                        
-                        # Latest price and performance
+                    df, error = get_stock_data(symbol, api_key)
+                    if df is not None:
                         latest_price = df["Close"].iloc[0]
-                        previous_price = df["Close"].iloc[-1]
-                        performance = ((latest_price - previous_price) / previous_price) * 100
-                        total_value += latest_price  # Assuming 1 share per stock
-                        
-                        # Display current value and performance
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric(
-                                label=f"{symbol} Current Price",
-                                value=f"${latest_price:.2f}",
-                                delta=f"{performance:.2f}%",
-                                delta_color="normal"
-                            )
-                        with col2:
-                            fig = go.Figure()
-                            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
-                            fig.update_layout(
-                                title=f"{symbol} Live Price (Last 100 intervals)",
-                                xaxis_title="Time",
-                                yaxis_title="Price (USD)"
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                
-                st.success(f"Total Portfolio Value: ${total_value:.2f}")
-
-                # Market News
-                st.subheader("Latest Market News")
-                ticker_for_news = portfolio[0] if portfolio else "AAPL"  # Default to first portfolio symbol or AAPL
-                with st.spinner(f"Fetching news for {ticker_for_news}..."):
-                    news_feed, error = get_market_news(api_key, ticker_for_news)
-                    if error or news_feed is None:
-                        st.warning(error)
-                    else:
-                        for article in news_feed[:5]:  # Show top 5 articles
-                            st.write(f"**{article['title']}**")
-                            st.write(article["summary"])
-                            st.write(f"[Read more]({article['url']})")
-                st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
-
- with tab5:
-    st.header("🏴‍☠️ Pirate’s Treasure Quest")
-    st.markdown("""
-    **Ahoy, Captain!** The Treasure of WealthWise be out there—gold doubloons, crew badges, and the secrets o’ riches! 
-    Sail me four islands, plunder their quests, and claim the ultimate loot! Argh!
-    """)
-
-    # Crew's Loot (Rewards)
-    st.subheader("💰 Yer Crew’s Loot")
-    if 'doubloons' not in st.session_state:
-        st.session_state.doubloons = 0
-    if 'badges' not in st.session_state:
-        st.session_state.badges = []
-    if 'island' not in st.session_state:
-        st.session_state.island = 0
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"Doubloons Plundered: {st.session_state.doubloons} 💰")
-    with col2:
-        st.write("Crew Badges: " + ", ".join([f"⚔️ {badge}" for badge in st.session_state.badges]) or "None yet, ye scallywag!")
-
-    # Treasure Trail (Progress)
-    st.subheader("🗺️ The Treasure Trail")
-    total_islands = 4
-    st.progress(st.session_state.island / total_islands)
-    st.write(f"Islands Conquered: {st.session_state.island} of {total_islands}")
-
-    # Island Raids (Quests)
-    st.subheader("🏝️ Island Raids")
-
-    # Island 1: Stock Reef
-    if st.session_state.island >= 0:
-        st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
-        st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
-        guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
-        if st.button("Fire the Cannon!") and stock_data is not None:
-            latest_price = stock_data['close'].iloc[-1]
-            if abs(guess - latest_price) <= 500:
-                st.success(f"BOOM! Nailed it, Captain! Latest haul: ₹{latest_price:.2f}. +20 doubloons!")
-                st.session_state.doubloons += 20
-                st.session_state.badges.append("Reef Raider")
-                st.session_state.island = 1
-                st.balloons()
-            else:
-                st.error(f"Argh! Missed the mark! Latest price: ₹{latest_price:.2f}. Lower yer sails and try again!")
-        elif st.button("Fire the Cannon!") and stock_data is None:
-            st.warning("No map to Stock Reef yet! For now, guess ₹5000—me demo treasure!")
-            if abs(guess - 5000) <= 500:
-                st.success("BOOM! Ye hit me demo stash! +20 doubloons!")
-                st.session_state.doubloons += 20
-                st.session_state.badges.append("Reef Raider")
-                st.session_state.island = 1
-                st.balloons()
-
-    # Island 2: Savings Cove
-    if st.session_state.island >= 1:
-        st.write("**2. Savings Cove: Bury Yer Treasure!**")
-        st.info("Sail to Savings Cove [Tab 2], set a ₹50,000 goal, and bury it deep!")
-        if st.button("I Buried It!"):
-            st.success("Shiver me timbers! Ye’ve stashed ₹50,000! +20 doubloons!")
-            st.session_state.doubloons += 20
-            st.session_state.badges.append("Cove Captain")
-            st.session_state.island = 2
-            st.snow()  # Gold dust falling!
-            st.write("Psst… me parrot says ye’re a savvy saver now!")
-    else:
-        st.write("**2. Savings Cove** (Fog o’ the Sea)")
-
-    # Island 3: Retirement Bay
-    if st.session_state.island >= 2:
-        st.write("**3. Retirement Bay: Chart Yer Sunset!**")
-        st.info("Drop anchor at Retirement Bay [Tab 3] and set yer sails for age 65!")
-        if st.button("Course Charted!"):
-            st.success("Yo ho ho! Retirement at 65 be secured! +20 doubloons!")
-            st.session_state.doubloons += 20
-            st.session_state.badges.append("Bay Buccaneer")
-            st.session_state.island = 3
-            st.balloons()
-    else:
-        st.write("**3. Retirement Bay** (Fog o’ the Sea)")
-
-    # Island 4: Market Lagoon
-    if st.session_state.island >= 3:
-        st.write("**4. Market Lagoon: Spy the Horizon!**")
-        st.info("Sneak to Market Lagoon [Tab 4], use yer spyglass (API key), and track any stock!")
-        if st.button("Stock Spotted!"):
-            st.success("Argh! Ye’ve spied the market’s secrets! +20 doubloons!")
-            st.session_state.doubloons += 20
-            st.session_state.badges.append("Lagoon Lookout")
-            st.session_state.island = 4
-            st.snow()
-    else:
-        st.write("**4. Market Lagoon** (Fog o’ the Sea)")
-
-    # Grand Finale
-    if st.session_state.island自主
-
-    if st.session_state.island >= total_islands:
-        st.subheader("🏴‍☠️ Ye’ve Found the Treasure!")
+                        st.metric(f"{symbol} Current Price", f"${latest_price:.2f}")
+    
+    with tab5:
+        st.header("🏴‍☠️ Pirate’s Treasure Quest")
         st.markdown("""
-        **Blimey, Captain!** Ye’ve plundered all islands and claimed the Treasure of WealthWise! 
-        Yer haul: **{st.session_state.doubloons} doubloons** and a legendary crew!
+        **Ahoy, Captain!** The Treasure of WealthWise be out there—gold doubloons, crew badges, and the secrets o’ riches! 
+        Sail me four islands, plunder their quests, and claim the ultimate loot! Argh!
         """)
-        st.download_button(
-            "🗝️ Claim Yer Treasure Map",
-            data="Secret Code: WEALTHY2025\nHint: More riches await ye in the future!",
-            file_name="pirate_treasure_map.txt"
-        )
-        st.write("Show this code to me crew later for a surprise, arr!")
+        
+        # Crew's Loot (Rewards)
+        st.subheader("💰 Yer Crew’s Loot")
+        if 'doubloons' not in st.session_state:
+            st.session_state.doubloons = 0
+        if 'badges' not in st.session_state:
+            st.session_state.badges = []
+        if 'island' not in st.session_state:
+            st.session_state.island = 0
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"Doubloons Plundered: {st.session_state.doubloons} 💰")
+        with col2:
+            st.write("Crew Badges: " + ", ".join([f"⚔️ {badge}" for badge in st.session_state.badges]) or "None yet, ye scallywag!")
+        
+        # Treasure Trail (Progress)
+        st.subheader("🗺️ The Treasure Trail")
+        total_islands = 4
+        st.progress(st.session_state.island / total_islands)
+        st.write(f"Islands Conquered: {st.session_state.island} of {total_islands}")
+        
+        # Island Raids (Quests)
+        st.subheader("🏝️ Island Raids")
+        
+        # Island 1: Stock Reef
+        if st.session_state.island >= 0:
+            st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
+            st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
+            guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
+            if st.button("Fire the Cannon!") and stock_data is not None:
+                latest_price = stock_data['close'].iloc[-1]
+                if abs(guess - latest_price) <= 500:
+                    st.success(f"BOOM! Nailed it, Captain! Latest haul: ₹{latest_price:.2f}. +20 doubloons!")
+                    st.session_state.doubloons += 20
+                    st.session_state.badges.append("Reef Raider")
+                    st.session_state.island = 1
+                    st.balloons()
+                else:
+                    st.error(f"Argh! Missed the mark! Latest price: ₹{latest_price:.2f}. Lower yer sails and try again!")
+            elif st.button("Fire the Cannon!") and stock_data is None:
+                st.warning("No map to Stock Reef yet! For now, guess ₹5000—me demo treasure!")
+                if abs(guess - 5000) <= 500:
+                    st.success("BOOM! Ye hit me demo stash! +20 doubloons!")
+                    st.session_state.doubloons += 20
+                    st.session_state.badges.append("Reef Raider")
+                    st.session_state.island = 1
+                    st.balloons()
+        
+        # Island 2: Savings Cove
+        if st.session_state.island >= 1:
+            st.write("**2. Savings Cove: Bury Yer Treasure!**")
+            st.info("Sail to Savings Cove [Tab 2], set a ₹50,000 goal, and bury it deep!")
+            if st.button("I Buried It!"):
+                st.success("Shiver me timbers! Ye’ve stashed ₹50,000! +20 doubloons!")
+                st.session_state.doubloons += 20
+                st.session_state.badges.append("Cove Captain")
+                st.session_state.island = 2
+                st.snow()
+                st.write("Psst… me parrot says ye’re a savvy saver now!")
+        else:
+            st.write("**2. Savings Cove** (Fog o’ the Sea)")
+        
+        # Island 3: Retirement Bay
+        if st.session_state.island >= 2:
+            st.write("**3. Retirement Bay: Chart Yer Sunset!**")
+            st.info("Drop anchor at Retirement Bay [Tab 3] and set yer sails for age 65!")
+            if st.button("Course Charted!"):
+                st.success("Yo ho ho! Retirement at 65 be secured! +20 doubloons!")
+                st.session_state.doubloons += 20
+                st.session_state.badges.append("Bay Buccaneer")
+                st.session_state.island = 3
+                st.balloons()
+        else:
+            st.write("**3. Retirement Bay** (Fog o’ the Sea)")
+        
+        # Island 4: Market Lagoon
+        if st.session_state.island >= 3:
+            st.write("**4. Market Lagoon: Spy the Horizon!**")
+            st.info("Sneak to Market Lagoon [Tab 4], use yer spyglass (API key), and track any stock!")
+            if st.button("Stock Spotted!"):
+                st.success("Argh! Ye’ve spied the market’s secrets! +20 doubloons!")
+                st.session_state.doubloons += 20
+                st.session_state.badges.append("Lagoon Lookout")
+                st.session_state.island = 4
+                st.snow()
+        else:
+            st.write("**4. Market Lagoon** (Fog o’ the Sea)")
+        
+        # Grand Finale
+        if st.session_state.island >= total_islands:
+            st.subheader("🏴‍☠️ Ye’ve Found the Treasure!")
+            st.markdown(f"""
+            **Blimey, Captain!** Ye’ve plundered all islands and claimed the Treasure of WealthWise! 
+            Yer haul: **{st.session_state.doubloons} doubloons** and a legendary crew!
+            """)
+            st.download_button(
+                "🗝️ Claim Yer Treasure Map",
+                data="Secret Code: WEALTHY2025\nHint: More riches await ye in the future!",
+                file_name="pirate_treasure_map.txt"
+            )
+            st.write("Show this code to me crew later for a surprise, arr!")
 
 if __name__ == "__main__":
     main()
