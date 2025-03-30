@@ -501,11 +501,11 @@ def main():
         
         # Island 3: Retirement Bay
         if st.session_state.island >= 0:
-    st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
-    st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
-    guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
+            st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
+            st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
+            guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
     
-    if stock_data is not None:
+     if stock_data is not None:
         if st.button("Fire the Cannon!", key="cannon_with_data"):
             latest_price = stock_data['close'].iloc[-1]
             if abs(guess - latest_price) <= 500:
