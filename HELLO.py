@@ -500,17 +500,31 @@ def main():
             st.write("**2. Savings Cove** (Fog o’ the Sea)")
         
         # Island 3: Retirement Bay
-        if st.session_state.island >= 2:
-            st.write("**3. Retirement Bay: Chart Yer Sunset!**")
-            st.info("Drop anchor at Retirement Bay [Tab 3] and set yer sails for age 65!")
-            if st.button("Course Charted!"):
-                st.success("Yo ho ho! Retirement at 65 be secured! +20 doubloons!")
+        if st.session_state.island >= 0:
+    st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
+    st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
+    guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
+    
+    if stock_data is not None:
+        if st.button("Fire the Cannon!", key="cannon_with_data"):
+            latest_price = stock_data['close'].iloc[-1]
+            if abs(guess - latest_price) <= 500:
+                st.success(f"BOOM! Nailed it, Captain! Latest haul: ₹{latest_price:.2f}. +20 doubloons!")
                 st.session_state.doubloons += 20
-                st.session_state.badges.append("Bay Buccaneer")
-                st.session_state.island = 3
+                st.session_state.badges.append("Reef Raider")
+                st.session_state.island = 1
                 st.balloons()
-        else:
-            st.write("**3. Retirement Bay** (Fog o’ the Sea)")
+            else:
+                st.error(f"Argh! Missed the mark! Latest price: ₹{latest_price:.2f}. Lower yer sails and try again!")
+    else:
+        if st.button("Fire the Cannon!", key="cannon_no_data"):
+            st.warning("No map to Stock Reef yet! For now, guess ₹5000—me demo treasure!")
+            if abs(guess - 5000) <= 500:
+                st.success("BOOM! Ye hit me demo stash! +20 doubloons!")
+                st.session_state.doubloons += 20
+                st.session_state.badges.append("Reef Raider")
+                st.session_state.island = 1
+                st.balloons()
         
         # Island 4: Market Lagoon
         if st.session_state.island >= 3:
