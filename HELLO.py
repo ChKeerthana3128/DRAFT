@@ -708,99 +708,97 @@ def main():
                             st.write(f"[Read more]({article['url']})")
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
 
-    # Inside your main() function, replace the existing tab5 with this:
-
     with tab5:
         st.header("🎮 WealthWise Tutorial Quest")
         st.markdown("Embark on a financial adventure! Earn points, unlock badges, and master your dashboard! 🏆")
       
-    # Points and Progress Display
-    st.subheader(f"Points: {st.session_state.tutorial_points}")
-    progress = min(1.0, st.session_state.tutorial_step / 5)  # 5 steps total
-    st.progress(progress)
-    if st.session_state.badges:
-        st.write("🏅 Badges Earned: " + ", ".join(st.session_state.badges))
+        # Points and Progress Display
+        st.subheader(f"Points: {st.session_state.tutorial_points}")
+        progress = min(1.0, st.session_state.tutorial_step / 5)  # 5 steps total
+        st.progress(progress)
+        if st.session_state.badges:
+            st.write("🏅 Badges Earned: " + ", ".join(st.session_state.badges))
 
-    # Tutorial Steps
-    steps = [
-        {
-            "title": "Step 1: Welcome to WealthWise!",
-            "description": "Learn the basics of your dashboard.",
-            "task": "Click 'Start Quest' to begin!",
-            "points": 10,
-            "badge": "Quest Starter",
-            "action": lambda: st.button("Start Quest")
-        },
-        {
-            "title": "Step 2: Explore Stock Investments",
-            "description": "Navigate to the 'Stock Investments' tab and enter an investment amount.",
-            "task": "Enter ₹5000 as your investment amount and submit the form.",
-            "points": 20,
-            "badge": "Market Explorer",
-            "action": lambda: st.write("Go to the 'Stock Investments' tab and try it!")
-        },
-        {
-            "title": "Step 3: Plan Your Savings",
-            "description": "Visit the 'Personalized Investment' tab to set a savings goal.",
-            "task": "Set a goal amount of ₹50,000 and submit.",
-            "points": 20,
-            "badge": "Savings Guru",
-            "action": lambda: st.write("Head to 'Personalized Investment' and give it a shot!")
-        },
-        {
-            "title": "Step 4: Secure Your Retirement",
-            "description": "Check out the 'Retirement Planning' tab.",
-            "task": "Set your retirement age to 65 and submit.",
-            "points": 20,
-            "badge": "Retirement Planner",
-            "action": lambda: st.write("Visit 'Retirement Planning' to plan your future!")
-        },
-        {
-            "title": "Step 5: Unlock Market Insights",
-            "description": "Add your Alpha Vantage API key and track a stock.",
-            "task": "Paste your API key in the sidebar and track 'AAPL'.",
-            "points": 30,
-            "badge": "Market Master",
-            "action": lambda: st.write("Add your key in the sidebar and track a stock in 'Live Market Insights'!")
-        }
-    ]
+        # Tutorial Steps
+        steps = [
+            {
+                "title": "Step 1: Welcome to WealthWise!",
+                "description": "Learn the basics of your dashboard.",
+                "task": "Click 'Start Quest' to begin!",
+                "points": 10,
+                "badge": "Quest Starter",
+                "action": lambda: st.button("Start Quest")
+            },
+            {
+                "title": "Step 2: Explore Stock Investments",
+                "description": "Navigate to the 'Stock Investments' tab and enter an investment amount.",
+                "task": "Enter ₹5000 as your investment amount and submit the form.",
+                "points": 20,
+                "badge": "Market Explorer",
+                "action": lambda: st.write("Go to the 'Stock Investments' tab and try it!")
+            },
+            {
+                "title": "Step 3: Plan Your Savings",
+                "description": "Visit the 'Personalized Investment' tab to set a savings goal.",
+                "task": "Set a goal amount of ₹50,000 and submit.",
+                "points": 20,
+                "badge": "Savings Guru",
+                "action": lambda: st.write("Head to 'Personalized Investment' and give it a shot!")
+            },
+            {
+                "title": "Step 4: Secure Your Retirement",
+                "description": "Check out the 'Retirement Planning' tab.",
+                "task": "Set your retirement age to 65 and submit.",
+                "points": 20,
+                "badge": "Retirement Planner",
+                "action": lambda: st.write("Visit 'Retirement Planning' to plan your future!")
+            },
+            {
+                "title": "Step 5: Unlock Market Insights",
+                "description": "Add your Alpha Vantage API key and track a stock.",
+                "task": "Paste your API key in the sidebar and track 'AAPL'.",
+                "points": 30,
+                "badge": "Market Master",
+                "action": lambda: st.write("Add your key in the sidebar and track a stock in 'Live Market Insights'!")
+            }
+        ]
 
-    # Check if tutorial is completed
-    if st.session_state.tutorial_step >= len(steps):
-        st.balloons()
-        st.subheader("🎉 Quest Completed!")
-        st.write(f"Congratulations! You’ve mastered WealthWise! Total Points: {st.session_state.tutorial_points}")
-        if st.button("Restart Quest"):
-            st.session_state.tutorial_points = 0
-            st.session_state.tutorial_step = 0
-            st.session_state.badges = []
-            st.experimental_rerun()  # Rerun to reset the UI
-    else:
-        # Display Current Step
-        current_step = steps[st.session_state.tutorial_step]
-        st.subheader(current_step["title"])
-        st.write(current_step["description"])
-        st.write(f"**Task:** {current_step['task']}")
-        st.write(f"Reward: {current_step['points']} points + '{current_step['badge']}' badge")
+        # Check if tutorial is completed
+        if st.session_state.tutorial_step >= len(steps):
+            st.balloons()
+            st.subheader("🎉 Quest Completed!")
+            st.write(f"Congratulations! You’ve mastered WealthWise! Total Points: {st.session_state.tutorial_points}")
+            if st.button("Restart Quest"):
+                st.session_state.tutorial_points = 0
+                st.session_state.tutorial_step = 0
+                st.session_state.badges = []
+                st.experimental_rerun()  # Rerun to reset the UI
+        else:
+            # Display Current Step
+            current_step = steps[st.session_state.tutorial_step]
+            st.subheader(current_step["title"])
+            st.write(current_step["description"])
+            st.write(f"**Task:** {current_step['task']}")
+            st.write(f"Reward: {current_step['points']} points + '{current_step['badge']}' badge")
 
-        # Handle Step Completion
-        if current_step["action"]():
-            if st.session_state.tutorial_step == 0:  # Only "Start Quest" has a button here
+            # Handle Step Completion
+            if current_step["action"]():
+                if st.session_state.tutorial_step == 0:  # Only "Start Quest" has a button here
+                    st.session_state.tutorial_points += current_step["points"]
+                    st.session_state.badges.append(current_step["badge"])
+                    st.session_state.tutorial_step += 1
+                    st.success(f"Congrats! You earned {current_step['points']} points and the '{current_step['badge']}' badge!")
+                else:
+                    st.info("Complete this task in the respective tab. Come back here and click 'Next' when done!")
+
+            # Next Button (except for Step 1, which uses the action button)
+            if st.session_state.tutorial_step > 0 and st.button("Next"):
                 st.session_state.tutorial_points += current_step["points"]
                 st.session_state.badges.append(current_step["badge"])
                 st.session_state.tutorial_step += 1
                 st.success(f"Congrats! You earned {current_step['points']} points and the '{current_step['badge']}' badge!")
-            else:
-                st.info("Complete this task in the respective tab. Come back here and click 'Next' when done!")
-
-        # Next Button (except for Step 1, which uses the action button)
-        if st.session_state.tutorial_step > 0 and st.button("Next"):
-            st.session_state.tutorial_points += current_step["points"]
-            st.session_state.badges.append(current_step["badge"])
-            st.session_state.tutorial_step += 1
-            st.success(f"Congrats! You earned {current_step['points']} points and the '{current_step['badge']}' badge!")
-    st.markdown("---")
-    st.write("Powered by WealthWise | Built with love by xAI")
+        st.markdown("---")
+        st.write("Powered by WealthWise | Built with love by xAI")
 
 if __name__ == "__main__":
     main()
