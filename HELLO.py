@@ -458,54 +458,15 @@ def main():
         st.progress(st.session_state.island / total_islands)
         st.write(f"Islands Conquered: {st.session_state.island} of {total_islands}")
         
-        # Island Raids (Quests)
-        st.subheader("🏝️ Island Raids")
-        
-        # Island 1: Stock Reef
-        if st.session_state.island >= 0:
-            st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
-            st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
-            guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
-            if st.button("Fire the Cannon!") and stock_data is not None:
-                latest_price = stock_data['close'].iloc[-1]
-                if abs(guess - latest_price) <= 500:
-                    st.success(f"BOOM! Nailed it, Captain! Latest haul: ₹{latest_price:.2f}. +20 doubloons!")
-                    st.session_state.doubloons += 20
-                    st.session_state.badges.append("Reef Raider")
-                    st.session_state.island = 1
-                    st.balloons()
-                else:
-                    st.error(f"Argh! Missed the mark! Latest price: ₹{latest_price:.2f}. Lower yer sails and try again!")
-            elif st.button("Fire the Cannon!") and stock_data is None:
-                st.warning("No map to Stock Reef yet! For now, guess ₹5000—me demo treasure!")
-                if abs(guess - 5000) <= 500:
-                    st.success("BOOM! Ye hit me demo stash! +20 doubloons!")
-                    st.session_state.doubloons += 20
-                    st.session_state.badges.append("Reef Raider")
-                    st.session_state.island = 1
-                    st.balloons()
-        
-        # Island 2: Savings Cove
-        if st.session_state.island >= 1:
-            st.write("**2. Savings Cove: Bury Yer Treasure!**")
-            st.info("Sail to Savings Cove [Tab 2], set a ₹50,000 goal, and bury it deep!")
-            if st.button("I Buried It!"):
-                st.success("Shiver me timbers! Ye’ve stashed ₹50,000! +20 doubloons!")
-                st.session_state.doubloons += 20
-                st.session_state.badges.append("Cove Captain")
-                st.session_state.island = 2
-                st.snow()
-                st.write("Psst… me parrot says ye’re a savvy saver now!")
-        else:
-            st.write("**2. Savings Cove** (Fog o’ the Sea)")
-        
-        # Island 3: Retirement Bay
-        if st.session_state.island >= 0:
-            st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
-            st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
-            guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
-    
-     if stock_data is not None:
+      # Island Raids (Quests)
+st.subheader("🏝️ Island Raids")
+
+# Island 1: Stock Reef
+if st.session_state.island >= 0:
+    st.write("**1. Stock Reef: Plunder the NIFTY’s Gold!**")
+    st.info("Guess the NIFTY CONSUMPTION price within 500 doubloons! Spy the latest haul in Stock Reef [Tab 1].")
+    guess = st.slider("Yer Guess (₹)", 0, 10000, 5000, step=100, key="stock_guess")
+    if stock_data is not None:
         if st.button("Fire the Cannon!", key="cannon_with_data"):
             latest_price = stock_data['close'].iloc[-1]
             if abs(guess - latest_price) <= 500:
@@ -525,33 +486,60 @@ def main():
                 st.session_state.badges.append("Reef Raider")
                 st.session_state.island = 1
                 st.balloons()
-        
-        # Island 4: Market Lagoon
-        if st.session_state.island >= 3:
-            st.write("**4. Market Lagoon: Spy the Horizon!**")
-            st.info("Sneak to Market Lagoon [Tab 4], use yer spyglass (API key), and track any stock!")
-            if st.button("Stock Spotted!"):
-                st.success("Argh! Ye’ve spied the market’s secrets! +20 doubloons!")
-                st.session_state.doubloons += 20
-                st.session_state.badges.append("Lagoon Lookout")
-                st.session_state.island = 4
-                st.snow()
-        else:
-            st.write("**4. Market Lagoon** (Fog o’ the Sea)")
-        
-        # Grand Finale
-        if st.session_state.island >= total_islands:
-            st.subheader("🏴‍☠️ Ye’ve Found the Treasure!")
-            st.markdown(f"""
-            **Blimey, Captain!** Ye’ve plundered all islands and claimed the Treasure of WealthWise! 
-            Yer haul: **{st.session_state.doubloons} doubloons** and a legendary crew!
-            """)
-            st.download_button(
-                "🗝️ Claim Yer Treasure Map",
-                data="Secret Code: WEALTHY2025\nHint: More riches await ye in the future!",
-                file_name="pirate_treasure_map.txt"
-            )
-            st.write("Show this code to me crew later for a surprise, arr!")
 
+# Island 2: Savings Cove
+if st.session_state.island >= 1:
+    st.write("**2. Savings Cove: Bury Yer Treasure!**")
+    st.info("Sail to Savings Cove [Tab 2], set a ₹50,000 goal, and bury it deep!")
+    if st.button("I Buried It!", key="savings_cove_button"):
+        st.success("Shiver me timbers! Ye’ve stashed ₹50,000! +20 doubloons!")
+        st.session_state.doubloons += 20
+        st.session_state.badges.append("Cove Captain")
+        st.session_state.island = 2
+        st.snow()
+        st.write("Psst… me parrot says ye’re a savvy saver now!")
+else:
+    st.write("**2. Savings Cove** (Fog o’ the Sea)")
+
+# Island 3: Retirement Bay
+if st.session_state.island >= 2:
+    st.write("**3. Retirement Bay: Chart Yer Sunset!**")
+    st.info("Drop anchor at Retirement Bay [Tab 3] and set yer sails for age 65!")
+    if st.button("Course Charted!", key="retirement_bay_button"):
+        st.success("Yo ho ho! Retirement at 65 be secured! +20 doubloons!")
+        st.session_state.doubloons += 20
+        st.session_state.badges.append("Bay Buccaneer")
+        st.session_state.island = 3
+        st.balloons()
+else:
+    st.write("**3. Retirement Bay** (Fog o’ the Sea)")
+
+# Island 4: Market Lagoon
+if st.session_state.island >= 3:
+    st.write("**4. Market Lagoon: Spy the Horizon!**")
+    st.info("Sneak to Market Lagoon [Tab 4], use yer spyglass (API key), and track any stock!")
+    if st.button("Stock Spotted!", key="market_lagoon_button"):
+        st.success("Argh! Ye’ve spied the market’s secrets! +20 doubloons!")
+        st.session_state.doubloons += 20
+        st.session_state.badges.append("Lagoon Lookout")
+        st.session_state.island = 4
+        st.snow()
+else:
+    st.write("**4. Market Lagoon** (Fog o’ the Sea)")
+
+# Grand Finale
+if st.session_state.island >= total_islands:
+    st.subheader("🏴‍☠️ Ye’ve Found the Treasure!")
+    st.markdown(f"""
+    **Blimey, Captain!** Ye’ve plundered all islands and claimed the Treasure of WealthWise! 
+    Yer haul: **{st.session_state.doubloons} doubloons** and a legendary crew!
+    """)
+    st.download_button(
+        "🗝️ Claim Yer Treasure Map",
+        data="Secret Code: WEALTHY2025\nHint: More riches await ye in the future!",
+        file_name="pirate_treasure_map.txt",
+        key="treasure_map_button"
+    )
+    st.write("Show this code to me crew later for a surprise, arr!")
 if __name__ == "__main__":
     main()
