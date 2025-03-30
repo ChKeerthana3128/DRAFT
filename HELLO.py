@@ -710,10 +710,10 @@ def main():
 
     # Inside your main() function, replace the existing tab5 with this:
 
-with tab5:
-    st.header("🎮 Tutorial Quest")
-    st.markdown("Embark on a financial adventure! Earn points, unlock badges, and master your dashboard! 🏆")
-
+    with tab5:
+        st.header("🎮 WealthWise Tutorial Quest")
+        st.markdown("Embark on a financial adventure! Earn points, unlock badges, and master your dashboard! 🏆")
+      
     # Points and Progress Display
     st.subheader(f"Points: {st.session_state.tutorial_points}")
     progress = min(1.0, st.session_state.tutorial_step / 5)  # 5 steps total
