@@ -317,7 +317,7 @@ def get_market_news(api_key, tickers="AAPL"):
 # Main Application
 def main():
     st.title("💰 WealthWise Dashboard")
-    st.markdown("Your ultimate wealth management companion! 🚀")
+    st.markdown("Hello, WealthWise!")
 
     # Load data
     stock_data = load_stock_data()
