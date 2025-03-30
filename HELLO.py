@@ -707,7 +707,6 @@ def main():
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
-
    with tab5:
     st.header("🎮 The Financial Hero’s Journey")
     st.markdown("""
@@ -747,8 +746,7 @@ def main():
         st.subheader("🎉 You’re a Wealth Lord!")
         st.write(f"Total Gold: {st.session_state.tutorial_points}")
         st.download_button("🏅 Claim Your Legend Status", data="Wealth Lord Certificate", file_name="wealth_lord.txt")
-        st.markdown("---")
-        st.write("Powered by WealthWise | Built with love by xAI")
+
 
 if __name__ == "__main__":
     main()
