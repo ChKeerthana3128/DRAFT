@@ -361,6 +361,7 @@ def main():
         3. Copy the code they give you (e.g., 'X7K9P2M4Q1').  
         4. Paste it here and start tracking!
         """)
+
     # Initialize session state for gamification
     if 'tutorial_points' not in st.session_state:
         st.session_state.tutorial_points = 0
@@ -707,46 +708,46 @@ def main():
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
-   with tab5:
-    st.header("🎮 The Financial Hero’s Journey")
-    st.markdown("""
-    🌍 Welcome, brave soul, to WealthWise! Five ancient towers guard the secrets of wealth. 
-    Conquer their quests, gather gold, and claim legendary artifacts! 🏆
-    """)
 
-    # Treasure Chest
-    st.subheader("💰 Your Treasure Chest")
-    st.write(f"Gold Coins: {st.session_state.tutorial_points}")
-    badges_display = {"Quest Starter": "🌟", "Market Explorer": "📈", "Savings Guru": "💎"}
-    st.write("Artifacts: " + ", ".join([f"{icon} {badge}" for badge, icon in badges_display.items() if badge in st.session_state.badges]))
+    with tab5:
+        st.header("🎮 The Financial Hero’s Journey")
+        st.markdown("""
+        🌍 Welcome, brave soul, to WealthWise! Five ancient towers guard the secrets of wealth. 
+        Conquer their quests, gather gold, and claim legendary artifacts! 🏆
+        """)
 
-    # Quest Map
-    st.subheader("🗺️ Quest Map")
-    quests = [
-        ("🏰 Tower of Stocks", "Guess the stock price!", lambda: st.number_input("Guess (₹)") and st.button("Submit")),
-        ("💎 Tower of Savings", "Set a ₹50,000 goal!", lambda: st.write("Go to Personalized Investment!")),
-        ("🏡 Tower of Retirement", "Plan to age 65!", lambda: st.write("Visit Retirement Planning!"))
-    ]
-    for i, (name, task, action) in enumerate(quests):
-        if st.session_state.tutorial_step > i:
-            st.button(f"{name} (Conquered)", disabled=True)
-        elif st.session_state.tutorial_step == i:
-            st.write(f"**Quest:** {task}")
-            if action() and st.button("Claim Victory"):
-                st.session_state.tutorial_points += 20
-                st.session_state.badges.append(quests[i][0].split()[1] + " Master")
-                st.session_state.tutorial_step += 1
-                st.balloons()
-                st.success(f"🎉 +20 Gold Coins and {quests[i][0].split()[1]} Master artifact!")
-        else:
-            st.button(f"{name} (Locked)", disabled=True)
+        # Treasure Chest
+        st.subheader("💰 Your Treasure Chest")
+        st.write(f"Gold Coins: {st.session_state.tutorial_points}")
+        badges_display = {"Quest Starter": "🌟", "Market Explorer": "📈", "Savings Guru": "💎"}
+        st.write("Artifacts: " + ", ".join([f"{icon} {badge}" for badge, icon in badges_display.items() if badge in st.session_state.badges]))
 
-    # Completion
-    if st.session_state.tutorial_step >= len(quests):
-        st.subheader("🎉 You’re a Wealth Lord!")
-        st.write(f"Total Gold: {st.session_state.tutorial_points}")
-        st.download_button("🏅 Claim Your Legend Status", data="Wealth Lord Certificate", file_name="wealth_lord.txt")
+        # Quest Map
+        st.subheader("🗺️ Quest Map")
+        quests = [
+            ("🏰 Tower of Stocks", "Guess the stock price!", lambda: st.number_input("Guess (₹)") and st.button("Submit")),
+            ("💎 Tower of Savings", "Set a ₹50,000 goal!", lambda: st.write("Go to Personalized Investment!")),
+            ("🏡 Tower of Retirement", "Plan to age 65!", lambda: st.write("Visit Retirement Planning!"))
+        ]
+        for i, (name, task, action) in enumerate(quests):
+            if st.session_state.tutorial_step > i:
+                st.button(f"{name} (Conquered)", disabled=True)
+            elif st.session_state.tutorial_step == i:
+                st.write(f"**Quest:** {task}")
+                if action() and st.button("Claim Victory"):
+                    st.session_state.tutorial_points += 20
+                    st.session_state.badges.append(quests[i][0].split()[1] + " Master")
+                    st.session_state.tutorial_step += 1
+                    st.balloons()
+                    st.success(f"🎉 +20 Gold Coins and {quests[i][0].split()[1]} Master artifact!")
+            else:
+                st.button(f"{name} (Locked)", disabled=True)
 
+        # Completion
+        if st.session_state.tutorial_step >= len(quests):
+            st.subheader("🎉 You’re a Wealth Lord!")
+            st.write(f"Total Gold: {st.session_state.tutorial_points}")
+            st.download_button("🏅 Claim Your Legend Status", data="Wealth Lord Certificate", file_name="wealth_lord.txt")
 
 if __name__ == "__main__":
     main()
