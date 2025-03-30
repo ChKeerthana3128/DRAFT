@@ -711,7 +711,7 @@ def main():
     # Inside your main() function, replace the existing tab5 with this:
 
 with tab5:
-    st.header("🎮 WealthWise Tutorial Quest")
+    st.header("🎮 Tutorial Quest")
     st.markdown("Embark on a financial adventure! Earn points, unlock badges, and master your dashboard! 🏆")
 
     # Points and Progress Display
